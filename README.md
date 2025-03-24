@@ -1,10 +1,7 @@
-<<<<<<< HEAD
 # course-allocation
 
 课程分配的DApp项目
 
-=======
->>>>>>> origin1/main
 ## Build
 
 ```
