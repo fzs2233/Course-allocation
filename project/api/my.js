@@ -27,8 +27,6 @@ let contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
 let voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
 let classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
 
-
-
 // 自动为老师分配课程（适合度≥50且意愿≥60）并更新结构体
 async function init_TeacherCourses() {
     const allocationResults = [];
@@ -116,129 +114,6 @@ async function printAssignments() { //查看目前的课程分配情况
     console.log('\n目前课程的分配情况:');
     console.table(assignments);
 }
-
-
-
-/**
- * 获取指定教师的课程性价比数据（适合度/工资）
- * @param {number} targetTeacherId - 要查询的教师ID
- * @returns {Promise<{code: number, data?: {teacherId: number, salary: number, costPerformance: number[]}, message?: string}>}
- */
-async function getTeacherCostPerformance(targetTeacherId) { //获取某个教师的性价比数组
-    try {
-        // 参数验证
-        if (!Number.isInteger(targetTeacherId) || targetTeacherId <= 0) {
-            throw new Error('教师ID必须为正整数');
-        }
-
-        // 获取课程ID列表
-        const courseIds = (await contract.getCourseIds())
-            .map(id => id.toNumber())
-            .sort((a, b) => a - b);
-
-        // 获取教师工资
-        const salary = (await contract.teachers(targetTeacherId)).value.toNumber();
-        if (salary === 0) throw new Error('教师工资不能为0');
-
-        // 获取所有课程的适合度
-        const suitabilities = await Promise.all(
-            courseIds.map(courseId => 
-                contract.getTeacherSuitability(targetTeacherId, courseId)
-            )
-        );
-
-        // 计算性价比数组
-        const costPerformance = suitabilities.map(s => 
-            Number((s.toNumber() / salary).toFixed(4))
-        );
-
-        // 控制台输出
-        console.log(`\n教师 ${targetTeacherId} 的课程性价比：`);
-        courseIds.forEach((courseId, index) => {
-            console.log(`课程 ${courseId}: ${costPerformance[index]}`);
-        });
-
-        return {
-            code: 0,
-            data: {
-                teacherId: targetTeacherId,
-                salary,
-                costPerformance
-            }
-        };
-
-    } catch (error) {
-        // 错误处理
-        let code = -1;
-        if (error.message.includes("revert")) code = 404;  // 教师不存在
-        if (error.message.includes("invalid arrayify")) code = 400;  // 数据格式错误
-
-        console.error(`错误：${error.message}`);
-        return { code, message: error.message };
-    }
-}
-
-/**
- * 获取指定教师的课程性价比数据（适合度/工资）
- * @param {number} targetAgentId - 要查询的教师ID
- * @returns {Promise<{code: number, data?: {agentId: number, salary: number, costPerformance: number[]}, message?: string}>}
- */
-async function getAgentCostPerformance(targetAgentId) { //获取某个智能体的性价比数组
-    try {
-        // 参数验证
-        if (!Number.isInteger(targetAgentId) || targetAgentId <= 0) {
-            throw new Error('ID必须为正整数');
-        }
-
-        // 获取课程ID列表
-        const courseIds = (await contract.getCourseIds())
-            .map(id => id.toNumber())
-            .sort((a, b) => a - b);
-
-        // 获取智能体工资
-        const salary = (await contract.agents(targetAgentId)).value.toNumber();
-        if (salary === 0) throw new Error('智能体工资不能为0');
-
-        // 获取所有课程的适合度
-        const suitabilities = await Promise.all(
-            courseIds.map(courseId => 
-                contract.getAgentSuitability(targetAgentId, courseId)
-            )
-        );
-
-        // 计算性价比数组
-        const costPerformance = suitabilities.map(s => 
-            Number((s.toNumber() / salary).toFixed(4))
-        );
-
-        // 控制台输出
-        console.log(`\n智能体 ${targetAgentId} 的课程性价比：`);
-        courseIds.forEach((courseId, index) => {
-            console.log(`课程 ${courseId}: ${costPerformance[index]}`);
-        });
-
-        return {
-            code: 0,
-            data: {
-                agentId: targetAgentId,
-                salary,
-                costPerformance
-            }
-        };
-
-    } catch (error) {
-        // 错误处理
-        let code = -1;
-        if (error.message.includes("revert")) code = 404;  // 教师不存在
-        if (error.message.includes("invalid arrayify")) code = 400;  // 数据格式错误
-
-        console.error(`错误：${error.message}`);
-        return { code, message: error.message };
-    }
-}
-
-
-
 
 // 创建课程提案 手动投票的
 async function createProposalForCourse() {
@@ -754,7 +629,7 @@ async function assignCourseToTeacherWithoutCourse(courseId, teacherId) {
 
 // 结束投票并分配课程
 async function endProposalAndAssignCourseforWithoutteacher(proposalId) {
-    let [teacherId, courseId] = await voteContract.endVoteChooseCourse(proposalId);
+    let (teacherId, courseId) = voteContract.endVoteChooseCourse(proposalId);
     await assignCourseToTeacherWithoutCourse(courseId, teacherId);
     return {
         code: 0,
@@ -882,13 +757,133 @@ async function registerAgent(name, addr) {
     await contract.setAgentId(addr, agentCount);
     await contract.setAgentName(agentCount, name);
     await contract.setAgentAddress(agentCount, addr);
-    await voteContract.registerVoter(addr);
     return {
         code: 0,
         message: "Agent Registered successfully",
         courseId: agentCount
     };
 }
+
+
+/**
+ * 获取指定教师的课程性价比数据（适合度/工资）
+ * @param {number} targetTeacherId - 要查询的教师ID
+ * @returns {Promise<{code: number, data?: {teacherId: number, salary: number, costPerformance: number[]}, message?: string}>}
+ */
+async function getTeacherCostPerformance(targetTeacherId) { //获取某个教师的性价比数组
+    try {
+        // 参数验证
+        if (!Number.isInteger(targetTeacherId) || targetTeacherId <= 0) {
+            throw new Error('教师ID必须为正整数');
+        }
+
+        // 获取课程ID列表
+        const courseIds = (await contract.getCourseIds())
+            .map(id => id.toNumber())
+            .sort((a, b) => a - b);
+
+        // 获取教师工资
+        const salary = (await contract.teachers(targetTeacherId)).value.toNumber();
+        if (salary === 0) throw new Error('教师工资不能为0');
+
+        // 获取所有课程的适合度
+        const suitabilities = await Promise.all(
+            courseIds.map(courseId => 
+                contract.getTeacherSuitability(targetTeacherId, courseId)
+            )
+        );
+
+        // 计算性价比数组
+        const costPerformance = suitabilities.map(s => 
+            Number((s.toNumber() / salary).toFixed(4))
+        );
+
+        // 控制台输出
+        console.log(`\n教师 ${targetTeacherId} 的课程性价比：`);
+        courseIds.forEach((courseId, index) => {
+            console.log(`课程 ${courseId}: ${costPerformance[index]}`);
+        });
+
+        return {
+            code: 0,
+            data: {
+                teacherId: targetTeacherId,
+                salary,
+                costPerformance
+            }
+        };
+
+    } catch (error) {
+        // 错误处理
+        let code = -1;
+        if (error.message.includes("revert")) code = 404;  // 教师不存在
+        if (error.message.includes("invalid arrayify")) code = 400;  // 数据格式错误
+
+        console.error(`错误：${error.message}`);
+        return { code, message: error.message };
+    }
+}
+
+/**
+ * 获取指定教师的课程性价比数据（适合度/工资）
+ * @param {number} targetAgentId - 要查询的教师ID
+ * @returns {Promise<{code: number, data?: {agentId: number, salary: number, costPerformance: number[]}, message?: string}>}
+ */
+async function getAgentCostPerformance(targetAgentId) { //获取某个智能体的性价比数组
+    try {
+        // 参数验证
+        if (!Number.isInteger(targetAgentId) || targetAgentId <= 0) {
+            throw new Error('ID必须为正整数');
+        }
+
+        // 获取课程ID列表
+        const courseIds = (await contract.getCourseIds())
+            .map(id => id.toNumber())
+            .sort((a, b) => a - b);
+
+        // 获取智能体工资
+        const salary = (await contract.agents(targetAgentId)).value.toNumber();
+        if (salary === 0) throw new Error('智能体工资不能为0');
+
+        // 获取所有课程的适合度
+        const suitabilities = await Promise.all(
+            courseIds.map(courseId => 
+                contract.getAgentSuitability(targetAgentId, courseId)
+            )
+        );
+
+        // 计算性价比数组
+        const costPerformance = suitabilities.map(s => 
+            Number((s.toNumber() / salary).toFixed(4))
+        );
+
+        // 控制台输出
+        console.log(`\n智能体 ${targetAgentId} 的课程性价比：`);
+        courseIds.forEach((courseId, index) => {
+            console.log(`课程 ${courseId}: ${costPerformance[index]}`);
+        });
+
+        return {
+            code: 0,
+            data: {
+                agentId: targetAgentId,
+                salary,
+                costPerformance
+            }
+        };
+
+    } catch (error) {
+        // 错误处理
+        let code = -1;
+        if (error.message.includes("revert")) code = 404;  // 教师不存在
+        if (error.message.includes("invalid arrayify")) code = 400;  // 数据格式错误
+
+        console.error(`错误：${error.message}`);
+        return { code, message: error.message };
+    }
+}
+
+
 
 // 为老师分配课程
 async function AssignedTeacherCourse(teacherId, courseId){
@@ -987,63 +982,6 @@ async function switchAcount(Index){
     classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
 }
 
-// 创建冲突提案
-async function createConflictProposal() {
-    let courseIds = await contract.getCourseIds();
-    let courses = [];
-    let candidateId = [];
-    let selectedCourseId = 0;
-    for (let courseIndex = 0; courseIndex < courseIds.length; courseIndex++) {
-        let course = await contract.courses(courseIds[courseIndex]);
-        // 将 importance 属性转换为数字
-        course.importance = course.importance.toNumber();
-        courses.push(course);
-    }
-    // 按照 importance 属性对课程进行排序（降序）
-    courses.sort((a, b) => b.importance - a.importance);
-    // console.log(courses)
-    for (let courseIndex = 0; courseIndex < courses.length; courseIndex++){
-        let courseId = courses[courseIndex].id;
-        courseId = courseId.toNumber();
-        
-        let teachers = await contract.getCoursesAssignedTeacher(courseId);
-        teachers = teachers.map(id => id.toNumber());
-
-        // console.log(teachers)
-
-        if (teachers.length != 0){
-            selectedCourseId = courseId;
-
-            let candidateTeachers = [];
-
-            // 只有适合程度＞50的老师才能成为候选老师
-            for(let teacherIndex = 0; teacherIndex < teachers.length; teacherIndex++){
-                let teacherId = teachers[teacherIndex];
-                let suitability = await contract.getTeacherSuitability(teacherId, courseId);
-                if(suitability > 50){
-                    // console.log(teacherId);
-                    candidateTeachers.push(teacherId);
-                }
-            }
-            // console.log(candidateTeachers);
-            candidateId = candidateTeachers;
-        }
-    }
-
-    let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateId, 7);
-    let receipt = await tx.wait();
-    const event = receipt.events.find(event => event.event === "ProposalCreated");
-    let { proposalId, description } = event.args;
-
-    return {
-        code: 0,
-        message: `Create Conflict Proposal successfully, Proposal Id: ${proposalId}`,
-        proposalId: proposalId,
-        selectedCourseId : selectedCourseId,
-        candidateTeacherId : candidateId
-    };
-}
-
 // 教师投票
 async function teacherVote(teacherAddress, proposalId, voteForId){
     voteContract.voteChooseTeacher(teacherAddress, proposalId, voteForId);
@@ -1054,56 +992,6 @@ async function teacherVote(teacherAddress, proposalId, voteForId){
     }
 }
 
-// 智能体投票
-async function agentVote(agentAddress, proposalId){
-    // 计算每个老师的性价比
-    let [voteIds, voteForId] = await voteContract.getVotedIds(proposalId);
-    voteIds = voteIds.map(id => id.toNumber());
-
-    let max_Cost_effectiveness = 0;
-    let chooseId = 0;
-    for(let candidateIndex = 0; candidateIndex < voteIds.length; candidateIndex++){
-        let candidateId = voteIds[candidateIndex];
-        let candidate = await contract.teachers(candidateId);
-        let value = candidate.value;
-        value = value.toNumber();
-
-        let suitability = await contract.getTeacherSuitability(candidateId, voteForId);
-        let Cost_effectiveness = suitability/value;
-
-        if(Cost_effectiveness > max_Cost_effectiveness){
-            max_Cost_effectiveness = Cost_effectiveness;
-            chooseId = candidateId;
-        }
-    }
-
-    voteContract.voteChooseTeacher(agentAddress, proposalId, chooseId);
-    let agentId = await contract.addressToAgentId(agentAddress);
-    return {
-        code: 0,
-        message: `agent ${agentId} Vote for teacher ${chooseId} successfully`,
-    }
-}
-
-// 结束冲突投票
-async function endConfictProposal(proposalId){
-    let [winningTeacherId, courseId] = await voteContract.endVoteChooseCourse(proposalId);
-    winningTeacherId = winningTeacherId.toNumber();
-    courseId = courseId.toNumber();
-
-    let allTeacher = await contract.getCoursesAssignedTeacher(courseId);
-    allTeacher = allTeacher.map(id => id.toNumber());
-    for(let teacherId of allTeacher){
-        if(teacherId != winningTeacherId){
-            let remove_result = await removeTeacherCourse(teacherId, courseId);
-            console.log(remove_result);
-        }
-    }
-    return {
-        code: 0,
-        message: `End Conflict Proposal successfully, Winning Teacher Id: ${winningTeacherId}, Course Id: ${courseId}`,
-    }
-}
 
 async function initializeData() {
     const accounts = await web3.eth.getAccounts();
@@ -1124,49 +1012,49 @@ async function initializeData() {
     console.log("Registering teachers...");
     await switchAcount(1);
     await registerTeacher("teacher_1", accounts[1]);
-    await contract.setTeacherValue(1, 800);
     await contract.setTeacherSuitabilityWeight(1,1);
-    await contract.setAllTeacherCourseSuitability(1, [26,44,65,88,70,37,79,92,14,87]);
-    await contract.setAllTeacherCoursePreferences(1, [35,54,76,27,93,48,64,17,86,70]);
+    await contract.setAllTeacherCourseSuitability(1, [26,44,65,88,100,37,79,92,14,87]);
+    await contract.setAllTeacherCoursePreferences(1, [35,54,76,27,93,48,64,17,86,100]);
+    await contract.setTeacherValue(1,800);
 
     await switchAcount(2);
     await registerTeacher("teacher_2", accounts[2]);
-    await contract.setTeacherValue(2, 1000);
     await contract.setTeacherSuitabilityWeight(2,2);
-    await contract.setAllTeacherCourseSuitability(2, [11,32,53,74,95,26,67,88,55,43]);
-    await contract.setAllTeacherCoursePreferences(2, [35,74,17,95,57,23,88,46,64,60]);
+    await contract.setAllTeacherCourseSuitability(2, [11,32,53,74,95,26,67,88,100,43]);
+    await contract.setAllTeacherCoursePreferences(2, [35,74,17,95,57,23,88,46,64,100]);
+    await contract.setTeacherValue(2,1000);
 
     await switchAcount(3);
     await registerTeacher("teacher_3", accounts[3]);
     await contract.setTeacherSuitabilityWeight(3,3);
-    await contract.setTeacherValue(3, 1500);
-    await contract.setAllTeacherCourseSuitability(3, [32,11,64,43,68,27,74,92,58,90]);
-    await contract.setAllTeacherCoursePreferences(3, [51,32,83,14,95,76,27,70,45,67]);
+    await contract.setAllTeacherCourseSuitability(3, [32,11,64,43,88,27,74,92,58,100]);
+    await contract.setAllTeacherCoursePreferences(3, [51,32,83,14,95,76,27,100,45,67]);
+    await contract.setTeacherValue(3,1500);
 
     await switchAcount(4);
     await registerTeacher("teacher_4", accounts[4]);
-    await contract.setTeacherValue(4, 1200);
     await contract.setTeacherSuitabilityWeight(4,4);
-    await contract.setAllTeacherCourseSuitability(4, [43,24,35,56,77,18,99,80,61,33]);
-    await contract.setAllTeacherCoursePreferences(4, [22,63,44,85,16,87,38,79,57,60]);
+    await contract.setAllTeacherCourseSuitability(4, [43,24,35,56,77,18,99,80,61,100]);
+    await contract.setAllTeacherCoursePreferences(4, [22,63,44,95,16,87,38,79,57,100]);
+    await contract.setTeacherValue(4,1200);
 
     await switchAcount(5);
     await registerTeacher("teacher_5", accounts[5]);
     await contract.setTeacherSuitabilityWeight(5,5);
-    await contract.setTeacherValue(5, 1100);
-    await contract.setAllTeacherCourseSuitability(5, [22,43,14,35,66,57,58,79,55,83]);
-    await contract.setAllTeacherCoursePreferences(5, [43,14,75,35,56,97,28,89,59,79]);
+    await contract.setAllTeacherCourseSuitability(5, [22,43,14,35,66,87,58,79,95,100]);
+    await contract.setAllTeacherCoursePreferences(5, [43,14,75,35,56,97,28,89,69,100]);
+    await contract.setTeacherValue(5,1100);
 
     // 注册智能体
     console.log("Registering agents...");
     await switchAcount(6);
     await registerAgent("Agent_1", accounts[6]);
-    await contract.setAllAgentCourseSuitability(1, [85,94,68,27,48,34,37,42,46,14]);
+    await contract.setAllAgentCourseSuitability(1, [85,94,99,27,48,34,37,42,46,14]);
     await contract.setAgentValue(1,1000);
 
     await switchAcount(7);
     await registerAgent("Agent_2", accounts[7]);
-    await contract.setAllAgentCourseSuitability(2, [43,86,90,47,24,36,32,45,16,34]);
+    await contract.setAllAgentCourseSuitability(2, [93,86,100,47,24,36,32,45,16,34]);
     await contract.setAgentValue(2,1200);
 
     // 注册班级
@@ -1191,33 +1079,6 @@ async function initializeData() {
 }
 
 
-
-
-async function testConfictProposal(){
-    const accounts = await web3.eth.getAccounts();
-    for (let teacherId = 1; teacherId <=5; teacherId++){
-        let result = await AssignedTeacherCourse(teacherId, 10);
-        console.log(result);
-    }
-    let proposal = await createConflictProposal();
-    console.log(proposal)
-    for(let teacherId = 1; teacherId <=5; teacherId++){
-        let teacher_vote = await teacherVote(accounts[teacherId], 1, 1);
-    }
-    let agent_1_vote = await agentVote(accounts[6], 1);
-    console.log(agent_1_vote);
-    let agent_2_vote = await agentVote(accounts[7], 1);
-    console.log(agent_2_vote);
-
-    let proposal_1_result = await endConfictProposal(1);
-    console.log(proposal_1_result);
-    for(let teacherId =1; teacherId<=5; teacherId++) {
-        await switchAcount(teacherId);
-        let courses = await contract.getTeacherAssignedCourses(teacherId);
-        console.log(`Teacher ${teacherId} assigned courses: ${courses}`);
-    }
-
-}
 async function runTestsForFirstFiveFunctions() {
     await allocateAgentCourses();
     let proposal1 = await createProposalForCourse();
@@ -1246,100 +1107,9 @@ async function runTestsForFirstFiveFunctions() {
     return 0;
 }
 
-/**
- * 转移课程给性价比更高的目标
- * @param {number} courseId - 要转移的课程ID
- * @param {number} targetId - 目标老师/智能体ID
- * @param {string} targetType - 目标类型 ("teacher" 或 "agent")
- * @returns {Promise<{code: number, message: string}>}
- */
-async function transferCourse(courseId, targetId, targetType) {
-    try {
-        // 参数校验
-        if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(courseId)) {
-            throw new Error("课程ID必须为1-10的整数");
-        }
-        if (!["teacher", "agent"].includes(targetType)) {
-            throw new Error("目标类型必须是teacher或agent");
-        }
-
-        // 获取当前分配者信息
-        const currentTeachers = await contract.getCoursesAssignedTeacher(courseId);
-        const currentAgents = await contract.getCoursesAssignedAgent(courseId);
-        const currentAssigned = [...currentTeachers, ...currentAgents].map(id => id.toNumber());
-        
-        const currentAddress = await currentSigner.getAddress();
-
-        // 验证调用者是当前分配者
-        const senderTeacherId = (await contract.addressToTeacherId(currentAddress)).toNumber();
-        const senderAgentId = (await contract.addressToAgentId(currentAddress)).toNumber();
-        const isCurrentHolder = currentAssigned.includes(senderTeacherId) || currentAssigned.includes(senderAgentId);
-        if (!isCurrentHolder) {
-            throw new Error("只有当前课程分配者可以转移");
-        }
-
-        // 获取当前分配者性价比
-        let currentPerf;
-        if (senderTeacherId !== 0) {
-            const suitability = await contract.getTeacherSuitability(senderTeacherId, courseId);
-            const salary = (await contract.teachers(senderTeacherId)).value;
-            currentPerf = suitability.toNumber() / salary.toNumber();
-        } else {
-            const suitability = await contract.getAgentSuitability(senderAgentId, courseId);
-            const salary = (await contract.agents(senderAgentId)).value;
-            currentPerf = suitability.toNumber() / salary.toNumber();
-        }
-
-        // 获取目标性价比
-        let targetPerf;
-        if (targetType === "teacher") {
-            const suitability = await contract.getTeacherSuitability(targetId, courseId);
-            const salary = (await contract.teachers(targetId)).value;
-            targetPerf = suitability.toNumber() / salary.toNumber();
-        } else {
-            const suitability = await contract.getAgentSuitability(targetId, courseId);
-            const salary = (await contract.agents(targetId)).value;
-            targetPerf = suitability.toNumber() / salary.toNumber();
-        }
-
-        // 验证性价比提升
-        if (targetPerf <= currentPerf) {
-            throw new Error(`目标性价比需大于当前值（当前: ${currentPerf.toFixed(2)}, 目标: ${targetPerf.toFixed(2)}）`);
-        }
-
-        // 执行转移
-        if (senderTeacherId !== 0) {
-            await removeTeacherCourse(senderTeacherId, courseId);
-        } else {
-            await removeAgentCourse(senderAgentId, courseId);
-        }
-
-        if (targetType === "teacher") {
-            await AssignedTeacherCourse(targetId, courseId);
-        } else {
-            await AssignedAgentCourse(targetId, courseId);
-        }
-
-        return { 
-            code: 0, 
-            message: `课程 ${courseId} 已从 ${senderTeacherId || senderAgentId} 转移至 ${targetType} ${targetId}`,
-            performanceImprovement: (targetPerf - currentPerf).toFixed(2) 
-        };
-
-    } catch (error) {
-        console.error("转移失败:", error.message);
-        return { 
-            code: -1, 
-            message: error.message,
-            errorDetails: error.stack 
-        };
-    }
-}
-
 async function main() {
     // 运行初始化
     await initializeData();
-  
     await init_TeacherCourses();
     await init_AgentCourses();
     await printAssignments();//查看初始化后 教师的课程分配情况
@@ -1350,10 +1120,7 @@ async function main() {
     await getTeacherCostPerformance(5);
     await getAgentCostPerformance(1);//智能体的性价比
     await getAgentCostPerformance(2);
-    await switchAcount(5);
-    await transferCourse(10, 2, "teacher");
-
-    //await testConfictProposal();
+    //await runTestsForFirstFiveFunctions();
 }
 
-main(); 
+main();
