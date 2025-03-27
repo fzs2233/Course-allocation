@@ -1,10 +1,10 @@
 var Vote = artifacts.require("../contracts/Vote.sol");
-var CourseAllocation = artifacts.require("../contracts/CourseAllocation.sol");
+var ICourseAllocation = artifacts.require("../contracts/ICourseAllocation.sol");
 var IStudentVote = artifacts.require("../contracts/IStudentVote.sol");
 
 module.exports = function(deployer) {
   // 部署 CourseAllocation 合约
-  deployer.deploy(CourseAllocation);
+  deployer.deploy(ICourseAllocation);
 
   // 部署 Vote 合约
   deployer.deploy(Vote);

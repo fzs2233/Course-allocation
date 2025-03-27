@@ -1,4 +1,4 @@
-var CourseAllocation = artifacts.require("../contracts/CourseAllocation.sol");
+var CourseAllocation = artifacts.require("../contracts/ICourseAllocation.sol");
 // var baseproposal = artifacts.require("../contracts/newContracts/baseproposal.sol");
 // var baseproposal = artifacts.require("../contracts/newContracts/baseproposal.sol");
 // var PunchCard = artifacts.require("../contracts/newContracts/PunchCard.sol");
