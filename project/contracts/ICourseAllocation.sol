@@ -8,6 +8,7 @@ contract ICourseAllocation {
         string name;
         address addr;
         uint256[] assignedCourses;
+        uint256[] reallyAssignedCourses;
         uint256 suitabilityWeight;
         uint256 value;
         mapping(uint256 => uint256) courseSuitabilities;
@@ -142,6 +143,14 @@ contract ICourseAllocation {
         teachers[teacherId].assignedCourses.push(_assignedCourses);
     }
 
+    // 设置教师已分配课程
+    function addTeacherReallyAssignedCourses(
+        uint256 teacherId,
+        uint256 _assignedCourses
+    ) public {
+        teachers[teacherId].reallyAssignedCourses.push(_assignedCourses);
+    }
+
     // 移除教师已分配课程
     function removeTeacherAssignedCourses(
         uint256 teacherId,
@@ -171,6 +180,41 @@ contract ICourseAllocation {
             ].assignedCourses[teachers[teacherId].assignedCourses.length - 1];
             // 移除数组中的最后一个元素
             teachers[teacherId].assignedCourses.pop();
+        } else {
+            // 如果没有找到课程 ID，可以抛出一个错误或者进行其他处理
+            revert("Course not found");
+        }
+    }
+
+    // 移除教师已分配课程
+    function removeTeacherReallyAssignedCourses(
+        uint256 teacherId,
+        uint256 _assignedCourses
+    ) public {
+        bool found = false;
+        uint256 indexToRemove;
+
+        // 遍历数组，找到课程 ID 的位置
+        for (
+            uint256 i = 0;
+            i < teachers[teacherId].reallyAssignedCourses.length;
+            i++
+        ) {
+            if (teachers[teacherId].reallyAssignedCourses[i] == _assignedCourses) {
+                found = true;
+                indexToRemove = i;
+                break;
+            }
+        }
+
+        // 如果找到了课程 ID
+        if (found) {
+            // 将要移除的课程位置的元素替换为数组中最后一个元素
+            teachers[teacherId].reallyAssignedCourses[indexToRemove] = teachers[
+                teacherId
+            ].reallyAssignedCourses[teachers[teacherId].reallyAssignedCourses.length - 1];
+            // 移除数组中的最后一个元素
+            teachers[teacherId].reallyAssignedCourses.pop();
         } else {
             // 如果没有找到课程 ID，可以抛出一个错误或者进行其他处理
             revert("Course not found");
@@ -561,6 +605,13 @@ contract ICourseAllocation {
         uint256 _teacherId
     ) public view returns (uint256[] memory) {
         return teachers[_teacherId].assignedCourses;
+    }
+
+    // 获取老师真正分配的课程
+    function getTeacherReallyAssignedCourses(
+        uint256 _teacherId
+    ) public view returns (uint256[] memory) {
+        return teachers[_teacherId].reallyAssignedCourses;
     }
 
     // 获取智能体分配的课程

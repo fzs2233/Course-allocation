@@ -1020,7 +1020,8 @@ async function createConflictProposal() {
             for(let teacherIndex = 0; teacherIndex < teachers.length; teacherIndex++){
                 let teacherId = teachers[teacherIndex];
                 let suitability = await contract.getTeacherSuitability(teacherId, courseId);
-                if(suitability > 50){
+                let reallyTeacher = await contract.getTeacherReallyAssignedCourses(teacherId);
+                if(suitability > 50 && reallyTeacher.length < 2){
                     // console.log(teacherId);
                     candidateTeachers.push(teacherId);
                 }
@@ -1099,6 +1100,7 @@ async function endConfictProposal(proposalId){
             console.log(remove_result);
         }
     }
+    await contract.addTeacherReallyAssignedCourses(winningTeacherId, courseId);
     return {
         code: 0,
         message: `End Conflict Proposal successfully, Winning Teacher Id: ${winningTeacherId}, Course Id: ${courseId}`,
