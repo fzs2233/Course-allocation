@@ -1133,29 +1133,29 @@ async function initializeData() {
     await registerTeacher("teacher_2", accounts[2]);
     await contract.setTeacherValue(2, 1000);
     await contract.setTeacherSuitabilityWeight(2,2);
-    await contract.setAllTeacherCourseSuitability(2, [11,32,53,74,95,26,67,88,55,43]);
+    await contract.setAllTeacherCourseSuitability(2, [51,32,53,74,85,26,67,48,55,43]);
     await contract.setAllTeacherCoursePreferences(2, [35,74,17,95,57,23,88,46,64,60]);
 
     await switchAcount(3);
     await registerTeacher("teacher_3", accounts[3]);
     await contract.setTeacherSuitabilityWeight(3,3);
     await contract.setTeacherValue(3, 1500);
-    await contract.setAllTeacherCourseSuitability(3, [32,11,64,43,68,27,74,92,58,90]);
+    await contract.setAllTeacherCourseSuitability(3, [32,31,54,43,68,27,74,72,58,90]);
     await contract.setAllTeacherCoursePreferences(3, [51,32,83,14,95,76,27,70,45,67]);
 
     await switchAcount(4);
     await registerTeacher("teacher_4", accounts[4]);
     await contract.setTeacherValue(4, 1200);
     await contract.setTeacherSuitabilityWeight(4,4);
-    await contract.setAllTeacherCourseSuitability(4, [43,24,35,56,77,18,99,80,61,33]);
+    await contract.setAllTeacherCourseSuitability(4, [43,24,35,56,67,18,79,80,61,33]);
     await contract.setAllTeacherCoursePreferences(4, [22,63,44,85,16,87,38,79,57,60]);
 
     await switchAcount(5);
     await registerTeacher("teacher_5", accounts[5]);
     await contract.setTeacherSuitabilityWeight(5,5);
     await contract.setTeacherValue(5, 1100);
-    await contract.setAllTeacherCourseSuitability(5, [22,43,14,35,66,57,58,79,55,83]);
-    await contract.setAllTeacherCoursePreferences(5, [43,14,75,35,56,97,28,89,59,79]);
+    await contract.setAllTeacherCourseSuitability(5, [22,43,44,35,66,57,58,79,55,83]);
+    await contract.setAllTeacherCoursePreferences(5, [43,14,75,35,56,67,28,59,59,79]);
 
     // 注册智能体
     console.log("Registering agents...");
@@ -1350,9 +1350,13 @@ async function main() {
     await getTeacherCostPerformance(5);
     await getAgentCostPerformance(1);//智能体的性价比
     await getAgentCostPerformance(2);
-    await switchAcount(5);
-    await transferCourse(10, 2, "teacher");
+    await switchAcount(3);
+    console.log(await transferCourse(10, 1, "teacher"));
+    await printAssignments()
 
+    await switchAcount(3);
+    console.log(await transferCourse(5, 2, "teacher"));
+    await printAssignments()
     //await testConfictProposal();
 }
 
