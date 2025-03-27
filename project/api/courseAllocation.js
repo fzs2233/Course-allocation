@@ -27,45 +27,6 @@ let contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
 let voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
 let classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
 
-main();
-async function main() {
-    // await initializeCourse("c1", 1, true);
-    // await initializeCourse("c2", 2, true);
-    // await initializeCourse("c3", 2, false);
-    // await initializeCourse("c4", 3, false); 
-
-    // await registerTeacher("teacher_1", "0xB94b84de351711686B2E6Da78fB9bA245d68c357")
-    // await registerTeacher("teacher_2", "0x56D6F9e32f326E85934c7843861B0E36561Ed4d7")
-    // await registerTeacher("teacher_3", "0x80F3166f7626aFA1edA03606218993Fb9d372bF3")
-
-    // let id1 = await contract.addressToTeacherId("0xB94b84de351711686B2E6Da78fB9bA245d68c357")
-    // await contract.setAllTeacherCourseSuitability(id1, [17, 23, 38, 45])
-    // await contract.setAllTeacherCoursePreferences(id1, [17, 23, 38, 45])
-    // let id2 = await contract.addressToTeacherId("0x56D6F9e32f326E85934c7843861B0E36561Ed4d7")
-    // await contract.setAllTeacherCourseSuitability(id2, [45, 35, 26, 35])
-    // await contract.setAllTeacherCoursePreferences(id2, [45, 35, 26, 35])
-    // let id3 = await contract.addressToTeacherId("0x80F3166f7626aFA1edA03606218993Fb9d372bF3")
-    // await contract.setAllTeacherCourseSuitability(id3, [14, 63, 78, 65])
-    // await contract.setAllTeacherCoursePreferences(id3, [14, 63, 78, 65])
-
-    // await registerAgent("agent_1", "0x8316Adc565FaeDfFFb25e4EA8D491A23F9682Bc7")
-    // await registerAgent("agent_2", "0x6B0Ba8FBA15b06f43f53a224AAb0171Be8950AbB")
-    // await registerAgent("agent_3", "0x3475Aae37d9Ea2224C855aaeCD69Af78a62e782c")
-
-    // await createProposalForCourse();
-    // await machineVoting();
-    // await checkAndMachineVoteForTeacher();
-    // let result = await checkAndCreateProposalForTeacher();
-    // console.log(result);
-    // let result = await allocateAgentCourses();
-    // console.log(result);
-    // let assignedAgentId = await contract.getCoursesAssignedAgent(1);
-    // console.log(assignedAgentId);
-    // let assignedAgentId2 = await contract.getCoursesAssignedAgent(2);
-    // console.log(assignedAgentId2);
-
-}
-
 // 创建课程提案 手动投票的
 async function createProposalForCourse() {
     let highestImportance = 0;
@@ -105,6 +66,7 @@ async function createProposalForCourse() {
             candidateTeachers.push(teacherId);
         }
     }
+    let topThreeTeachers = new Array(2);
     // 按偏好程度排序，选择前二名
     if (candidateTeachers.length > 0) {
         // 冒泡排序
@@ -129,7 +91,7 @@ async function createProposalForCourse() {
 
         // 对符合条件的老师进行排序
         // 取前二名
-        let topThreeTeachers = new Array(2);
+        
         for (let i = 0; i < 2 && i < candidateTeachers.length; i++) {
             if(candidateTeachers[i] != 0){
                 topThreeTeachers[i] = candidateTeachers[i]; // 这里2是候选老师的数量
@@ -165,6 +127,7 @@ async function machineVoting() {
         course = await contract.courses(courseId);
         let AssignedTeacherArray = await contract.getCoursesAssignedTeacher(courseId);
         let AssignedAgentArray = await contract.getCoursesAssignedAgent(courseId);
+        // console.log(courseId, AssignedTeacherArray, AssignedAgentArray)
         if (AssignedAgentArray.length == 0 && AssignedTeacherArray.length == 0 && course.importance > highestImportance) {
             highestImportance = course.importance;
             selectedCourseId = courseId;
@@ -181,7 +144,7 @@ async function machineVoting() {
 
     let classweights = await classContract.getClassWeight();
     classweights = classweights.toNumber();
-    totalWeight += classweights;
+    totalWeight = totalWeight + classweights;
     let teacher;
     let teacherId;
     let teacherIds = await contract.getTeacherIds();
@@ -191,7 +154,7 @@ async function machineVoting() {
     for (let teacherIndex = 0; teacherIndex < teacherIds.length; teacherIndex++) {
         teacherId = teacherIds[teacherIndex];
         teacher = await contract.teachers(teacherId);
-        totalWeight += teacher.suitabilityWeight.toNumber();
+        totalWeight = totalWeight + teacher.suitabilityWeight.toNumber();
     }
 
     // 找到对课程评分最高的教师
@@ -236,12 +199,12 @@ async function machineVoting() {
     candidateTeachers = candidateTeachers.data;
     let scores = await getTeachersScores(selectedCourseId);
     scores = scores.data;
-    
     let proposalId = await voteContract.createMachineVoteProposal("MachineProposal", selectedCourseId, candidateTeachers, scores);
     await classContract.createProposal("createProposal", selectedCourseId, candidateTeachers);
-    // emit MachineProposal(proposalId, selectedCourseId, candidateTeachers, getTeachersScores(selectedCourseId));
-    // 创建提案并分配课程
-    await AssignedTeacherCourse(selectedCourseId, selectedTeacherId);
+    // // emit MachineProposal(proposalId, selectedCourseId, candidateTeachers, getTeachersScores(selectedCourseId));
+    // // 创建提案并分配课程
+    let result = await AssignedTeacherCourse(selectedTeacherId, selectedCourseId);
+    // console.log(result)
     return {
         code: 0,
         message: "成功为课程 "+ selectedCourseId +" 分配教师 "+ selectedTeacherId
@@ -253,7 +216,6 @@ async function getLeastSuitableAgentCourse() {
     let leastSuitableCourseId = 0;
     let minSuitability = 1000000;
     let course;
-    let agent;
     let courseIds = await contract.getCourseIds();
     courseIds = courseIds.map(id => id.toNumber());
     for (let i = 0; i < courseIds.length; i++) {
@@ -265,8 +227,7 @@ async function getLeastSuitableAgentCourse() {
             if (AssignedAgentCourses.length == 1) {
                 let agentId = AssignedAgentCourses[0];
                 agentId = agentId.toNumber();
-                agent = await contract.agents(agentId);
-                suitability = agent.courseSuitability[courseId];
+                suitability = await contract.getAgentSuitability(agentId, courseId);
                 suitability = suitability.toNumber();
             }else if(AssignedAgentCourses.length > 1){
                 return {
@@ -322,12 +283,12 @@ async function checkAndMachineVoteForTeacher(){
     let classweights = await classContract.getClassWeight();
     classweights = classweights.toNumber();
 
-    totalWeight += classweights;
+    totalWeight = totalWeight + classweights;
 
     for (let index = 0; index < teacherIds.length; index++) {
         let teacherId = teacherIds[index];
         teacher = await contract.teachers(teacherId);
-        totalWeight += teacher.suitabilityWeight.toNumber();
+        totalWeight = totalWeight + teacher.suitabilityWeight.toNumber();
     }
 
     // 找到对课程评分最高的教师
@@ -413,7 +374,9 @@ async function checkAndCreateProposalForTeacher(){
     // emit ProposalCreated(studentProposalId, candidateCourse, teacherWithoutCourse);
     return {
         code: 0,
-        message: "成功为没有课程的老师创建提案"
+        message: "成功为没有课程的老师创建提案",
+        candidateCourse: candidateCourse,
+        teacherWithoutCourse: teacherWithoutCourse
     }
 }
 
@@ -471,7 +434,8 @@ async function getTeachersScores(courseId) {
     let teachersScores = [];
     let totalWeight = 0;
 
-    totalWeight += await classContract.getClassWeight();
+    let classWeight = await classContract.getClassWeight();
+    totalWeight = totalWeight + classWeight.toNumber();
     let teacherIds = await contract.getTeacherIds();
     teacherIds = teacherIds.map(id => id.toNumber());
 
@@ -482,21 +446,17 @@ async function getTeachersScores(courseId) {
 
     for (let teacherId of teacherIds) {
         let teacher = await contract.teachers(teacherId);
-        totalWeight += teacher.suitabilityWeight;
+        totalWeight = totalWeight + teacher.suitabilityWeight.toNumber();
     }
-
     for (let teacherId of teacherIds) {
         let teacher = await contract.teachers(teacherId);
         let assignedCourse = await contract.getTeacherAssignedCourses(teacherId);
         if(assignedCourse.length < 2){
-            let teacherWeight = totalWeight - teacher.suitabilityWeight;
+            let teacherWeight = totalWeight - teacher.suitabilityWeight.toNumber();
             let courseSuitability = await contract.getTeacherSuitability(teacherId, courseId);
             let coursePreference = await contract.getPreference(teacherId, courseId);
             let teacherScore = teacherWeight * courseSuitability + (10 * (teacherCount + classCount -1) - teacherWeight) * coursePreference;
-            teachersScores.push({
-                    teacherId: teacherId,
-                    score: teacherScore
-                });
+            teachersScores.push(teacherScore);
         }
     }
     return {
@@ -588,12 +548,41 @@ async function endProposalAndAssignCourseforWithoutteacher(proposalId) {
         message: `proposal ${proposalId} has been finished and course has been assigned successfully`
     }
 }
- 
+
+// 把智能体课程分给老师 (allreadfinished, To test functional)
+async function assignCourseToTeacher(courseId, teacherId) {
+    let assignedTeacherIds = await contract.getCoursesAssignedTeacher(courseId);
+    if(assignedTeacherIds.length > 0){
+    return {
+        code: -1,
+        message: "课程 " + courseId + " 已经被分配"
+    }
+    }
+    await contract.addCourseAssignedTeacherId(courseId, teacherId);
+    await contract.addTeacherAssignedCourses(teacherId, courseId);
+    return {
+        code: 0,
+        message: "课程 " + courseId + " 分配给教师 " + teacherId
+    }
+}
+
+// 结束投票并分配课程
+async function endProposalAndAssignCourse(proposalId) {
+    let [teacherId, courseId] = await voteContract.endVoteChooseTeacher(proposalId);
+    teacherId = teacherId.toNumber();
+    courseId = courseId.toNumber();
+    await assignCourseToTeacher(courseId, teacherId);
+    return {
+        code: 0,
+        message: `proposal ${proposalId} has been finished and course ${courseId} has been assigned to teacher ${teacherId} successfully`
+    }
+}
+
 // 创建课程
 async function initializeCourse(name, Importance, IsAgentSuitable) {
     let courseCount = await contract.courseCount();
     courseCount = courseCount.toNumber();
-    courseCount += 1;
+    courseCount = courseCount + 1;
     // console.log(courseCount);
     await contract.setCourseCount(courseCount);
     await contract.setCourseId(courseCount);
@@ -608,10 +597,6 @@ async function initializeCourse(name, Importance, IsAgentSuitable) {
     };
 }
 
-// 测试用例
-// initializeCourse("c1", 1, true);
-
-
 // 创建教师
 async function registerTeacher(name, addr) {
     let isregister = await contract.addressToTeacherId(addr);
@@ -625,7 +610,7 @@ async function registerTeacher(name, addr) {
     }
     let teacherCount = await contract.teacherCount();
     teacherCount = teacherCount.toNumber();
-    teacherCount += 1;
+    teacherCount = teacherCount + 1;
     // console.log(teacherCount);
     await contract.setTeacherCount(teacherCount);
     await contract.setTeacherId(addr, teacherCount);
@@ -638,9 +623,6 @@ async function registerTeacher(name, addr) {
         courseId: teacherCount
     };
 }
-// 测试用例
-// registerTeacher("teacher_1", "0xB94b84de351711686B2E6Da78fB9bA245d68c357")
-
 
 // 注册班级
 async function registerClass(name, addr) {
@@ -655,7 +637,7 @@ async function registerClass(name, addr) {
     }
     let classCount = await contract.classCount();
     classCount = classCount.toNumber();
-    classCount += 1;
+    classCount = classCount + 1;
     // console.log(classCount);
     await contract.setClassCount(classCount);
     await contract.setClassId(addr, classCount);
@@ -667,8 +649,6 @@ async function registerClass(name, addr) {
         courseId: classCount
     };
 }
-// 测试用例
-// registerClass("class_1", "0xD5791327307961073785632956945816BFb7A723")
 
 // 创建智能体
 async function registerAgent(name, addr) {
@@ -683,7 +663,7 @@ async function registerAgent(name, addr) {
     }
     let agentCount = await contract.agentCount();
     agentCount = agentCount.toNumber();
-    agentCount += 1;
+    agentCount = agentCount + 1;
     // console.log(agentCount);
     await contract.setAgentCount(agentCount);
     await contract.setAgentId(addr, agentCount);
@@ -695,8 +675,6 @@ async function registerAgent(name, addr) {
         courseId: agentCount
     };
 }
-// 测试用例
-// registerAgent("agent_1", "0x8316Adc565FaeDfFFb25e4EA8D491A23F9682Bc7")
 
 // 为老师分配课程
 async function AssignedTeacherCourse(teacherId, courseId){
@@ -713,7 +691,7 @@ async function AssignedTeacherCourse(teacherId, courseId){
         };
     }
     await contract.addTeacherAssignedCourses(teacherId, courseId);
-    await contract.addCourseAssignedTeacherId(teacherId, courseId);
+    await contract.addCourseAssignedTeacherId(courseId, teacherId);
     return {
         code: 0,
         message: `Course ${courseId} Assigned to teacher ${teacherId} successfully`,
@@ -787,3 +765,136 @@ async function removeAgentCourse(agentId, courseId){    // 获取教师已分配
         message: `Course ${courseId} removed from agent ${agentId} successfully`,
     };
 }
+
+async function switchAcount(Index){
+    currentSigner = provider.getSigner(Index);
+    contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
+    voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
+    classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+}
+
+// 教师投票
+async function teacherVote(teacherAddress, proposalId, voteForId){
+    voteContract.voteChooseTeacher(teacherAddress, proposalId, voteForId);
+    let teacherId = await contract.addressToTeacherId(teacherAddress);
+    return {
+        code: 0,
+        message: `teacher ${teacherId} Vote for teacher ${voteForId} successfully`,
+    }
+}
+
+
+async function initializeData() {
+    const accounts = await web3.eth.getAccounts();
+    // 初始化课程
+    console.log("Initializing courses...");
+    await initializeCourse("c1", 3, true);
+    await initializeCourse("c2", 7, true);
+    await initializeCourse("c3", 1, true);
+    await initializeCourse("c4", 9, false);
+    await initializeCourse("c5", 5, false);
+    await initializeCourse("c6", 2, false);
+    await initializeCourse("c7", 8, false);
+    await initializeCourse("c8", 4, false);
+    await initializeCourse("c9", 6, false);
+    await initializeCourse("c10", 10, false);
+
+    // 注册教师
+    console.log("Registering teachers...");
+    await switchAcount(1);
+    await registerTeacher("teacher_1", accounts[1]);
+    await contract.setTeacherSuitabilityWeight(1,1);
+    await contract.setAllTeacherCourseSuitability(1, [26,44,65,88,100,37,79,92,14,87]);
+    await contract.setAllTeacherCoursePreferences(1, [35,54,76,27,93,48,64,17,86,100]);
+
+    await switchAcount(2);
+    await registerTeacher("teacher_2", accounts[2]);
+    await contract.setTeacherSuitabilityWeight(2,2);
+    await contract.setAllTeacherCourseSuitability(2, [11,32,53,74,95,26,67,88,100,43]);
+    await contract.setAllTeacherCoursePreferences(2, [35,74,17,95,57,23,88,46,64,100]);
+
+    await switchAcount(3);
+    await registerTeacher("teacher_3", accounts[3]);
+    await contract.setTeacherSuitabilityWeight(3,3);
+    await contract.setAllTeacherCourseSuitability(3, [32,11,64,43,88,27,74,92,58,100]);
+    await contract.setAllTeacherCoursePreferences(3, [51,32,83,14,95,76,27,100,45,67]);
+
+    await switchAcount(4);
+    await registerTeacher("teacher_4", accounts[4]);
+    await contract.setTeacherSuitabilityWeight(4,4);
+    await contract.setAllTeacherCourseSuitability(4, [43,24,35,56,77,18,99,80,61,100]);
+    await contract.setAllTeacherCoursePreferences(4, [22,63,44,95,16,87,38,79,57,100]);
+
+    await switchAcount(5);
+    await registerTeacher("teacher_5", accounts[5]);
+    await contract.setTeacherSuitabilityWeight(5,5);
+    await contract.setAllTeacherCourseSuitability(5, [22,43,14,35,66,87,58,79,95,100]);
+    await contract.setAllTeacherCoursePreferences(5, [43,14,75,35,56,97,28,89,69,100]);
+
+    // 注册智能体
+    console.log("Registering agents...");
+    await switchAcount(6);
+    await registerAgent("Agent_1", accounts[6]);
+    await contract.setAllAgentCourseSuitability(1, [85,94,99,27,48,34,37,42,46,14]);
+
+    await switchAcount(7);
+    await registerAgent("Agent_2", accounts[7]);
+    await contract.setAllAgentCourseSuitability(2, [93,86,100,47,24,36,32,45,16,34]);
+
+    // 注册班级
+    console.log("Registering classes...");
+    await switchAcount(8);
+    await registerClass("Class_1", accounts[8]);
+    for (let i = 1; i <= 25; i++) {
+        const studentName = `Student_${i}`; // 学生姓名
+        await classContract.addStudentToClass(studentName);
+    }
+    console.log("班级1学生注册完毕");
+
+
+    await switchAcount(9);
+    await registerClass("Class_2", accounts[9]);
+    for (let i = 26; i <= 50; i++) {
+        const studentName = `Student_${i}`; // 学生姓名
+        await classContract.addStudentToClass(studentName);
+    }
+    console.log("班级2学生注册完毕");
+
+}
+
+
+async function runTestsForFirstFiveFunctions() {
+    await allocateAgentCourses();
+    let proposal1 = await createProposalForCourse();
+    console.log(proposal1)
+
+    for(let teacherId =1; teacherId<=5; ++teacherId) {
+        await switchAcount(teacherId);
+        const accounts = await web3.eth.getAccounts();
+        teacherAddress = accounts[teacherId];
+        await teacherVote(teacherAddress, 1, 3);
+    }
+    let proposal1_result = await endProposalAndAssignCourse(1);
+    console.log(proposal1_result)
+    for(let i = 2; i <= 7; i++) {
+        let machineVote_result = await machineVoting();
+        console.log(machineVote_result);
+    }
+
+    for(let teacherId =1; teacherId<=5; teacherId++) {
+        await switchAcount(teacherId);
+        let courses = await contract.getTeacherAssignedCourses(teacherId);
+        console.log(`Teacher ${teacherId} assigned courses: ${courses}`);
+    }
+    let proposalWithoutCourse = await checkAndCreateProposalForTeacher();
+    console.log(proposalWithoutCourse);
+    return 0;
+}
+
+async function main() {
+    // 运行初始化
+    await initializeData();
+    await runTestsForFirstFiveFunctions();
+}
+
+main();
