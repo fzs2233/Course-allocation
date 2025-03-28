@@ -1001,7 +1001,6 @@ async function createConflictProposal() {
     }
     // 按照 importance 属性对课程进行排序（降序）
     courses.sort((a, b) => b.importance - a.importance);
-    // console.log(courses)
     for (let courseIndex = 0; courseIndex < courses.length; courseIndex++){
         let courseId = courses[courseIndex].id;
         courseId = courseId.toNumber();
@@ -1009,29 +1008,23 @@ async function createConflictProposal() {
         let teachers = await contract.getCoursesAssignedTeacher(courseId);
         teachers = teachers.map(id => id.toNumber());
 
-        // console.log(teachers)
-
-        if (teachers.length != 0){
+        if (teachers.length > 1){
             selectedCourseId = courseId;
 
             let candidateTeachers = [];
 
-            // 只有适合程度＞50的老师才能成为候选老师
             for(let teacherIndex = 0; teacherIndex < teachers.length; teacherIndex++){
                 let teacherId = teachers[teacherIndex];
-                let suitability = await contract.getTeacherSuitability(teacherId, courseId);
                 let reallyTeacher = await contract.getTeacherReallyAssignedCourses(teacherId);
-                if(suitability > 50 && reallyTeacher.length < 2){
-                    // console.log(teacherId);
+                if(reallyTeacher.length < 2)
                     candidateTeachers.push(teacherId);
-                }
             }
-            // console.log(candidateTeachers);
             candidateId = candidateTeachers;
+            break;
         }
     }
 
-    let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateId, 7);
+    let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateId, 9);//7老师+2班级
     let receipt = await tx.wait();
     const event = receipt.events.find(event => event.event === "ProposalCreated");
     let { proposalId, description } = event.args;
@@ -1220,6 +1213,7 @@ async function testConfictProposal(){
     }
 
 }
+
 async function runTestsForFirstFiveFunctions() {
     await allocateAgentCourses();
     let proposal1 = await createProposalForCourse();
@@ -1338,28 +1332,146 @@ async function transferCourse(courseId, targetId, targetType) {
     }
 }
 
+
+async function checkCourseConflicts() {
+    const courseIds = await contract.getCourseIds();
+    let conflictCourses = [];
+    
+    for (const courseId of courseIds) {
+        // 同时获取教师和智能体分配情况
+        const [teachers, agents] = await Promise.all([
+            contract.getCoursesAssignedTeacher(courseId),
+            contract.getCoursesAssignedAgent(courseId)
+        ]);
+
+        // 冲突条件：教师或智能体被分配超过1人
+        const hasTeacherConflict = teachers.length > 1;
+        const hasAgentConflict = agents.length > 1;
+        const hasMixedConflict = teachers.length > 0 && agents.length > 0;
+        if (hasTeacherConflict || hasAgentConflict || hasMixedConflict) {
+            conflictCourses.push({
+                courseId,
+                teacherCount: teachers.length,
+                agentCount: agents.length
+            });
+        }
+    }
+
+    if (conflictCourses.length === 0) return '无课程冲突';
+
+    // 生成详细冲突报告
+    return conflictCourses.map(conflict => 
+        `课程 ${conflict.courseId} 冲突：${conflict.teacherCount}位教师 + ${conflict.agentCount}位智能体`
+    ).join('\n');
+}
+
+
+
+
+
+
 async function main() {
     // 运行初始化
     await initializeData();
   
     await init_TeacherCourses();
     await init_AgentCourses();
+    // await getTeacherCostPerformance(1); //教师的性价比
+    // await getTeacherCostPerformance(2);
+    // await getTeacherCostPerformance(3);
+    // await getTeacherCostPerformance(4);
+    // await getTeacherCostPerformance(5);
+    // await getAgentCostPerformance(1);//智能体的性价比
+    // await getAgentCostPerformance(2);
     await printAssignments();//查看初始化后 教师的课程分配情况
-    await getTeacherCostPerformance(1); //教师的性价比
-    await getTeacherCostPerformance(2);
-    await getTeacherCostPerformance(3);
-    await getTeacherCostPerformance(4);
-    await getTeacherCostPerformance(5);
-    await getAgentCostPerformance(1);//智能体的性价比
-    await getAgentCostPerformance(2);
+
     await switchAcount(3);
-    console.log(await transferCourse(10, 1, "teacher"));
+    console.log(await transferCourse(10, 1, "teacher"));//转移课程id 目标老师id 目标老师类型
     await printAssignments()
 
     await switchAcount(3);
     console.log(await transferCourse(5, 2, "teacher"));
     await printAssignments()
-    //await testConfictProposal();
+
+    await switchAcount(6);
+    console.log(await transferCourse(3, 2, "agent"));
+    await switchAcount(7);
+    console.log(await transferCourse(2, 1, "agent"));
+    await printAssignments()
+    
+    console.log(await checkCourseConflicts());
+
+
+    const accounts = await web3.eth.getAccounts();
+    //冲突提案1
+    console.log(await createConflictProposal());        
+    for(let teacherId = 1; teacherId <=5; teacherId++) {
+        await switchAcount(teacherId);
+        const x = teacherId <= 3 ? 1 : 5; 
+        const teacher_vote = await teacherVote(accounts[teacherId], 1, x);
+    }
+    let agent_1_vote = await agentVote(accounts[6], 1);//自动投票投给性价比最高的老师
+    console.log(agent_1_vote);
+    let agent_2_vote = await agentVote(accounts[7], 1);
+    console.log(agent_2_vote);
+    console.log(await endConfictProposal(1));
+    await printAssignments();
+    console.log(await checkCourseConflicts());
+
+
+    //冲突提案2
+    console.log(await createConflictProposal());   
+    for(let teacherId = 1; teacherId <=5; teacherId++) {
+        await switchAcount(teacherId);
+        const x = teacherId <= 3 ? 2 : 4; 
+        const teacher_vote = await teacherVote(accounts[teacherId], 2, x);
+    }
+    console.log(await agentVote(accounts[6], 2));
+    console.log(await agentVote(accounts[7], 2));
+    console.log(await endConfictProposal(2));
+    await printAssignments();
+    console.log(await checkCourseConflicts());
+
+    //冲突提案3
+    console.log(await createConflictProposal());   
+    for(let teacherId = 1; teacherId <=5; teacherId++) {
+        await switchAcount(teacherId);
+        const x = teacherId <= 3 ? 1 : 2; 
+        const teacher_vote = await teacherVote(accounts[teacherId], 3, x);
+    }
+    console.log(await agentVote(accounts[6], 3));
+    console.log(await agentVote(accounts[7], 3));
+    console.log(await endConfictProposal(3));
+    await printAssignments();
+    console.log(await checkCourseConflicts());
+
+    //冲突提案4
+    console.log(await createConflictProposal());   
+    for(let teacherId = 1; teacherId <=5; teacherId++) {
+        await switchAcount(teacherId);
+        const teacher_vote = await teacherVote(accounts[teacherId], 4, 2);
+    }
+    console.log(await agentVote(accounts[6], 4));
+    console.log(await agentVote(accounts[7], 4));
+    console.log(await endConfictProposal(4));
+    await printAssignments();
+    console.log(await checkCourseConflicts());
+
+    //冲突提案5
+    console.log(await createConflictProposal());   
+    for(let teacherId = 1; teacherId <=5; teacherId++) {
+        await switchAcount(teacherId);
+        const x = teacherId <= 3 ? 3 : 4; 
+        const teacher_vote = await teacherVote(accounts[teacherId], 5, x);
+    }
+    console.log(await agentVote(accounts[6], 5));
+    console.log(await agentVote(accounts[7], 5));
+    console.log(await endConfictProposal(5));
+    await printAssignments();
+    console.log(await checkCourseConflicts());
+
+    console.log(await checkAndCreateProposalForTeacher());
+
 }
 
-main(); 
+main();
