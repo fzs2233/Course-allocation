@@ -1121,7 +1121,7 @@ async function initializeData() {
     await registerTeacher("teacher_1", accounts[1]);
     await contract.setTeacherValue(1, 800);
     await contract.setTeacherSuitabilityWeight(1,1);
-    await contract.setAllTeacherCourseSuitability(1, [26,44,65,88,70,37,79,92,14,87]);
+    await contract.setAllTeacherCourseSuitability(1, [26,44,65,88,40,37,79,92,14,87]);
     await contract.setAllTeacherCoursePreferences(1, [35,54,76,27,93,48,64,17,86,70]);
 
     await switchAcount(2);
@@ -1143,7 +1143,7 @@ async function initializeData() {
     await contract.setTeacherValue(4, 1200);
     await contract.setTeacherSuitabilityWeight(4,4);
     await contract.setAllTeacherCourseSuitability(4, [43,24,35,56,67,18,79,80,61,33]);
-    await contract.setAllTeacherCoursePreferences(4, [22,63,44,85,16,87,38,79,57,60]);
+    await contract.setAllTeacherCoursePreferences(4, [22,63,44,85,66,87,38,79,57,60]);
 
     await switchAcount(5);
     await registerTeacher("teacher_5", accounts[5]);
@@ -1331,8 +1331,42 @@ async function transferCourse(courseId, targetId, targetType) {
         };
     }
 }
+async function preprocessConflictCourses() {
+    try {
+        const courseIds = (await contract.getCourseIds()).map(id => id.toNumber());
+        let successCount = 0;
+        let skippedCourses = 0;
 
+        // 并行处理所有课程
+        await Promise.all(courseIds.map(async courseId => {
+            const [teachers, agents] = await Promise.all([
+                contract.getCoursesAssignedTeacher(courseId),
+                contract.getCoursesAssignedAgent(courseId)
+            ]);
 
+            // 检查无冲突条件
+            if (teachers.length === 1 && agents.length === 0) {
+                const teacherId = teachers[0].toNumber();
+                const existingCourses = await contract.getTeacherReallyAssignedCourses(teacherId);
+                
+                // 检查课程数量限制
+                if (existingCourses.length < 2) {
+                    const tx = await contract.addTeacherReallyAssignedCourses(teacherId, courseId);
+                    await tx.wait();
+                    successCount++;
+                } else {
+                    skippedCourses++;
+                }
+            }
+        }));
+
+        console.log(`预处理完成，成功分配 ${successCount} 个课程`);
+        return { code: 0, message: "预处理完成" };
+    } catch (error) {
+        console.error("处理失败:", error);
+        return { code: -1, message: error.message };
+    }
+}
 async function checkCourseConflicts() {
     const courseIds = await contract.getCourseIds();
     let conflictCourses = [];
@@ -1364,10 +1398,6 @@ async function checkCourseConflicts() {
         `课程 ${conflict.courseId} 冲突：${conflict.teacherCount}位教师 + ${conflict.agentCount}位智能体`
     ).join('\n');
 }
-
-
-
-
 
 
 async function main() {
@@ -1403,6 +1433,9 @@ async function main() {
 
 
     const accounts = await web3.eth.getAccounts();
+
+
+    console.log(await preprocessConflictCourses());
     //冲突提案1
     console.log(await createConflictProposal());        
     for(let teacherId = 1; teacherId <=5; teacherId++) {
@@ -1418,7 +1451,7 @@ async function main() {
     await printAssignments();
     console.log(await checkCourseConflicts());
 
-
+  
     //冲突提案2
     console.log(await createConflictProposal());   
     for(let teacherId = 1; teacherId <=5; teacherId++) {
@@ -1436,8 +1469,7 @@ async function main() {
     console.log(await createConflictProposal());   
     for(let teacherId = 1; teacherId <=5; teacherId++) {
         await switchAcount(teacherId);
-        const x = teacherId <= 3 ? 1 : 2; 
-        const teacher_vote = await teacherVote(accounts[teacherId], 3, x);
+        const teacher_vote = await teacherVote(accounts[teacherId], 3, 1);
     }
     console.log(await agentVote(accounts[6], 3));
     console.log(await agentVote(accounts[7], 3));
@@ -1449,7 +1481,7 @@ async function main() {
     console.log(await createConflictProposal());   
     for(let teacherId = 1; teacherId <=5; teacherId++) {
         await switchAcount(teacherId);
-        const teacher_vote = await teacherVote(accounts[teacherId], 4, 2);
+        const teacher_vote = await teacherVote(accounts[teacherId], 4,4);
     }
     console.log(await agentVote(accounts[6], 4));
     console.log(await agentVote(accounts[7], 4));
@@ -1471,6 +1503,7 @@ async function main() {
     console.log(await checkCourseConflicts());
 
     console.log(await checkAndCreateProposalForTeacher());
+    const id = (await getLeastSuitableAgentCourse()).data;
 
 }
 
