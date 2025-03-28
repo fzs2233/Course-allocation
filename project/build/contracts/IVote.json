@@ -268,7 +268,7 @@
   "sourceMap": "",
   "deployedSourceMap": "",
   "source": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.7;\r\n\r\ninterface IVote {\r\n    // 核心功能接口\r\n    function registerVoter(address _voter) external; // 注册投票者\r\n    function createChooseTeacherProposal(string memory _description, uint256 _voteforID, uint256[] memory _votedIds,uint256 _totalVote) external returns (uint256); // 创建提案\r\n    function createMachineVoteProposal(string memory _description, uint256 _voteforID, uint256[] memory _votedIds, uint256[] memory _votedCounts) external returns (uint256); // 创建提案\r\n    function createChooseCourseProposal(string memory _description, uint256 _voteforID, uint256[] memory _votedIds,uint256 _totalVote) external returns (uint256); // 创建提案\r\n    function voteChooseTeacher(address voter, uint256 _proposalId, uint256 _voteId) external; // 投票\r\n    function voteChooseCourse(address voter, uint256 _proposalId, uint256 _voteId) external; // 投票\r\n    function endVoteChooseTeacher(uint256 _proposalId) external view returns (uint256, uint256); // 结束投票\r\n    function endVoteChooseCourse(uint256 _proposalId) external view returns (uint256, uint256); // 结束投票\r\n    \r\n    // 查询接口\r\n    function getVotedIds(uint256 _proposalId) external view returns (uint256[] memory, uint256); // 获取某个提案被投票的选项的ids\r\n    function getVoteIdToCount(uint256 _proposalId, uint256 _voteId) external view returns (uint256); // 获取某个提案某个选项的票数\r\n}\r\n",
-  "sourcePath": "E:\\dao\\327\\Course-allocation\\project\\contracts\\VoteInterface.sol",
+  "sourcePath": "E:\\学习\\paper\\DAO\\git-DAO\\v1\\Course-allocation\\project\\contracts\\VoteInterface.sol",
   "ast": {
     "absolutePath": "project:/contracts/VoteInterface.sol",
     "exportedSymbols": {
@@ -1572,7 +1572,7 @@
   },
   "networks": {},
   "schemaVersion": "3.4.16",
-  "updatedAt": "2025-03-28T10:35:51.382Z",
+  "updatedAt": "2025-03-28T12:48:16.737Z",
   "devdoc": {
     "kind": "dev",
     "methods": {},

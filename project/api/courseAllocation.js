@@ -1122,34 +1122,34 @@ async function initializeData() {
     await contract.setTeacherValue(1, 800);
     await contract.setTeacherSuitabilityWeight(1,1);
     await contract.setAllTeacherCourseSuitability(1, [26,44,65,88,40,37,79,92,14,87]);
-    await contract.setAllTeacherCoursePreferences(1, [35,54,76,27,93,48,64,17,86,70]);
+    await contract.setAllTeacherCoursePreferences(1, [35,54,76,80,93,48,64,17,86,70]);
 
     await switchAcount(2);
     await registerTeacher("teacher_2", accounts[2]);
     await contract.setTeacherValue(2, 1000);
     await contract.setTeacherSuitabilityWeight(2,2);
-    await contract.setAllTeacherCourseSuitability(2, [51,32,53,74,85,26,67,48,55,43]);
+    await contract.setAllTeacherCourseSuitability(2, [51,32,53,34,85,26,37,48,55,43]);
     await contract.setAllTeacherCoursePreferences(2, [35,74,17,95,57,23,88,46,64,60]);
 
     await switchAcount(3);
     await registerTeacher("teacher_3", accounts[3]);
     await contract.setTeacherSuitabilityWeight(3,3);
     await contract.setTeacherValue(3, 1500);
-    await contract.setAllTeacherCourseSuitability(3, [32,31,54,43,68,27,74,72,58,90]);
+    await contract.setAllTeacherCourseSuitability(3, [32,31,54,43,68,27,44,72,58,30]);
     await contract.setAllTeacherCoursePreferences(3, [51,32,83,14,95,76,27,70,45,67]);
 
     await switchAcount(4);
     await registerTeacher("teacher_4", accounts[4]);
     await contract.setTeacherValue(4, 1200);
     await contract.setTeacherSuitabilityWeight(4,4);
-    await contract.setAllTeacherCourseSuitability(4, [43,24,35,56,67,18,79,80,61,33]);
+    await contract.setAllTeacherCourseSuitability(4, [43,24,35,36,67,18,39,80,61,33]);
     await contract.setAllTeacherCoursePreferences(4, [22,63,44,85,66,87,38,79,57,60]);
 
     await switchAcount(5);
     await registerTeacher("teacher_5", accounts[5]);
     await contract.setTeacherSuitabilityWeight(5,5);
     await contract.setTeacherValue(5, 1100);
-    await contract.setAllTeacherCourseSuitability(5, [22,43,44,35,66,57,58,79,55,83]);
+    await contract.setAllTeacherCourseSuitability(5, [22,43,44,35,36,37,31,32,33,34]);
     await contract.setAllTeacherCoursePreferences(5, [43,14,75,35,56,67,28,59,59,79]);
 
     // 注册智能体
@@ -1336,37 +1336,89 @@ async function preprocessConflictCourses() {
         const courseIds = (await contract.getCourseIds()).map(id => id.toNumber());
         let successCount = 0;
         let skippedCourses = 0;
+        let failedCourses = 0;
 
-        // 并行处理所有课程
-        await Promise.all(courseIds.map(async courseId => {
-            const [teachers, agents] = await Promise.all([
-                contract.getCoursesAssignedTeacher(courseId),
-                contract.getCoursesAssignedAgent(courseId)
-            ]);
+        // 串行处理所有课程
+        for (const courseId of courseIds) {
+            try {
+                const [teachers, agents] = await Promise.all([
+                    contract.getCoursesAssignedTeacher(courseId),
+                    contract.getCoursesAssignedAgent(courseId)
+                ]);
 
-            // 检查无冲突条件
-            if (teachers.length === 1 && agents.length === 0) {
-                const teacherId = teachers[0].toNumber();
-                const existingCourses = await contract.getTeacherReallyAssignedCourses(teacherId);
-                
-                // 检查课程数量限制
-                if (existingCourses.length < 2) {
-                    const tx = await contract.addTeacherReallyAssignedCourses(teacherId, courseId);
-                    await tx.wait();
-                    successCount++;
+                // 检查无冲突条件
+                if (teachers.length === 1 && agents.length === 0) {
+                    const teacherId = teachers[0].toNumber();
+                    const existingCourses = await contract.getTeacherReallyAssignedCourses(teacherId);
+                    console.log(`courseId: ${courseId} TeacherId: ${teacherId}`)
+                    // 检查课程数量限制
+                    if (existingCourses.length < 2) {
+                        const tx = await contract.addTeacherReallyAssignedCourses(teacherId, courseId);
+                        await tx.wait();
+                        successCount++;
+                    } else {
+                        // console.log(`移除课程 ${courseId} from ${teacherId}`)
+                        await removeTeacherCourse(teacherId, courseId);
+                        failedCourses++;
+                    }
                 } else {
                     skippedCourses++;
                 }
+            } catch (error) {
+                console.error(`处理课程 ${courseId} 时出错:`, error);
+                failedCourses++;
             }
-        }));
+        }
 
-        console.log(`预处理完成，成功分配 ${successCount} 个课程`);
+        console.log(`预处理完成，成功分配 ${successCount} 个课程，跳过 ${skippedCourses} 个课程，失败 ${failedCourses} 个课程`);
         return { code: 0, message: "预处理完成" };
     } catch (error) {
         console.error("处理失败:", error);
         return { code: -1, message: error.message };
     }
 }
+
+async function proposalForCoursesWithoutAssigned(){
+    let selectedCourseId = 0;
+    let isCreate = false;
+    let candidateTeacher = [];
+    const courseIds = (await contract.getCourseIds()).map(id => id.toNumber());
+    for(const courseId of courseIds){
+        const [teachers, agents] = await Promise.all([
+            contract.getCoursesAssignedTeacher(courseId),
+            contract.getCoursesAssignedAgent(courseId)
+        ]);
+        if(teachers.length === 0 && agents.length === 0){
+            selectedCourseId = courseId;
+            let teacherIds = await contract.getTeacherIds();
+            for(let teacherId of teacherIds){
+                let assignedCourse = await contract.getTeacherReallyAssignedCourses(teacherId);
+                if(assignedCourse.length < 2){
+                    candidateTeacher.push(teacherId);
+                }
+            }
+        }
+        break;
+    }
+    if(!isCreate) return{
+        code : 0,
+        message : "All Courses Assigned"
+    }
+    // 调用提案投票合约的创建提案功能
+    let proposalId = await voteContract.createChooseTeacherProposal("createProposal", selectedCourseId, candidateTeacher, 7);
+    // emit ProposalCreated(proposalId, selectedCourseId, topThreeTeachers);
+    let studentProposalId = await classContract.createProposal("createStudentsProposal", selectedCourseId, candidateTeacher);
+    // emit ProposalCreated(studentProposalId, selectedCourseId, topThreeTeachers);
+    console.log("Proposal created for course " + selectedCourseId);
+    console.log("Proposal created for topThreeTeachers: " , candidateTeacher);
+    return {
+        code: 0,
+        message: "Proposal created for not assigned course " + selectedCourseId,
+        proposalId: proposalId,
+        studentProposalId: studentProposalId
+    }
+}
+
 async function checkCourseConflicts() {
     const courseIds = await contract.getCourseIds();
     let conflictCourses = [];
@@ -1416,10 +1468,6 @@ async function main() {
     await printAssignments();//查看初始化后 教师的课程分配情况
 
     await switchAcount(3);
-    console.log(await transferCourse(10, 1, "teacher"));//转移课程id 目标老师id 目标老师类型
-    await printAssignments()
-
-    await switchAcount(3);
     console.log(await transferCourse(5, 2, "teacher"));
     await printAssignments()
 
@@ -1431,80 +1479,31 @@ async function main() {
     
     console.log(await checkCourseConflicts());
 
-
     const accounts = await web3.eth.getAccounts();
-
-
     console.log(await preprocessConflictCourses());
-    //冲突提案1
-    console.log(await createConflictProposal());        
-    for(let teacherId = 1; teacherId <=5; teacherId++) {
-        await switchAcount(teacherId);
-        const x = teacherId <= 3 ? 1 : 5; 
-        const teacher_vote = await teacherVote(accounts[teacherId], 1, x);
+
+    // 冲突提案
+    while(1){
+        let check = await checkCourseConflicts();
+        console.log(check);
+        if(check === "无课程冲突"){
+            break;
+        }
+        let proposal_result = await createConflictProposal();
+        console.log(`proposal Id: ${proposal_result.proposalId}`);  
+
+        let [candidateTeacher, courseId] = await voteContract.getVotedIds(proposal_result.proposalId);
+        candidateTeacher = candidateTeacher.map(id => id.toNumber());
+        const x = candidateTeacher[0]; 
+        for(let teacherId = 1; teacherId <=5; teacherId++) {
+            await switchAcount(teacherId);
+            const teacher_vote = await teacherVote(accounts[teacherId], proposal_result.proposalId, x);
+        }
+        console.log(await agentVote(accounts[6], proposal_result.proposalId));
+        console.log(await agentVote(accounts[7], proposal_result.proposalId));
+        console.log(await endConfictProposal(proposal_result.proposalId));
+        await printAssignments();
     }
-    let agent_1_vote = await agentVote(accounts[6], 1);//自动投票投给性价比最高的老师
-    console.log(agent_1_vote);
-    let agent_2_vote = await agentVote(accounts[7], 1);
-    console.log(agent_2_vote);
-    console.log(await endConfictProposal(1));
-    await printAssignments();
-    console.log(await checkCourseConflicts());
-
-  
-    //冲突提案2
-    console.log(await createConflictProposal());   
-    for(let teacherId = 1; teacherId <=5; teacherId++) {
-        await switchAcount(teacherId);
-        const x = teacherId <= 3 ? 2 : 4; 
-        const teacher_vote = await teacherVote(accounts[teacherId], 2, x);
-    }
-    console.log(await agentVote(accounts[6], 2));
-    console.log(await agentVote(accounts[7], 2));
-    console.log(await endConfictProposal(2));
-    await printAssignments();
-    console.log(await checkCourseConflicts());
-
-    //冲突提案3
-    console.log(await createConflictProposal());   
-    for(let teacherId = 1; teacherId <=5; teacherId++) {
-        await switchAcount(teacherId);
-        const teacher_vote = await teacherVote(accounts[teacherId], 3, 1);
-    }
-    console.log(await agentVote(accounts[6], 3));
-    console.log(await agentVote(accounts[7], 3));
-    console.log(await endConfictProposal(3));
-    await printAssignments();
-    console.log(await checkCourseConflicts());
-
-    //冲突提案4
-    console.log(await createConflictProposal());   
-    for(let teacherId = 1; teacherId <=5; teacherId++) {
-        await switchAcount(teacherId);
-        const teacher_vote = await teacherVote(accounts[teacherId], 4,4);
-    }
-    console.log(await agentVote(accounts[6], 4));
-    console.log(await agentVote(accounts[7], 4));
-    console.log(await endConfictProposal(4));
-    await printAssignments();
-    console.log(await checkCourseConflicts());
-
-    //冲突提案5
-    console.log(await createConflictProposal());   
-    for(let teacherId = 1; teacherId <=5; teacherId++) {
-        await switchAcount(teacherId);
-        const x = teacherId <= 3 ? 3 : 4; 
-        const teacher_vote = await teacherVote(accounts[teacherId], 5, x);
-    }
-    console.log(await agentVote(accounts[6], 5));
-    console.log(await agentVote(accounts[7], 5));
-    console.log(await endConfictProposal(5));
-    await printAssignments();
-    console.log(await checkCourseConflicts());
-
-    console.log(await checkAndCreateProposalForTeacher());
-    const id = (await getLeastSuitableAgentCourse()).data;
-
 }
 
 main();
