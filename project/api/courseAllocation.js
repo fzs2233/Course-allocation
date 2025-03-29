@@ -464,94 +464,94 @@ async function getLeastSuitableAgentCourse() {
     }
 }
 
-// 给没有课程的老师机器投票
-async function checkAndMachineVoteForTeacher(){
-    let teacherWithoutCourse = [];
-    // 遍历所有老师，找到没有课程的老师
-    let teacher;
-    let teacherIds = await contract.getTeacherIds();
-    teacherIds = teacherIds.map(id => id.toNumber());
-    for (let index = 0; index < teacherIds.length; index++) {
-        let teacherId = teacherIds[index];
-        teacher = await contract.teachers(teacherId);
-        let assignedCourses = await contract.getTeacherAssignedCourses(teacherId);
-        if (assignedCourses.length == 0) {
-            teacherWithoutCourse.push(teacherId);
-        }
-    }
+// // 给没有课程的老师机器投票
+// async function checkAndMachineVoteForTeacher(){
+//     let teacherWithoutCourse = [];
+//     // 遍历所有老师，找到没有课程的老师
+//     let teacher;
+//     let teacherIds = await contract.getTeacherIds();
+//     teacherIds = teacherIds.map(id => id.toNumber());
+//     for (let index = 0; index < teacherIds.length; index++) {
+//         let teacherId = teacherIds[index];
+//         teacher = await contract.teachers(teacherId);
+//         let assignedCourses = await contract.getTeacherAssignedCourses(teacherId);
+//         if (assignedCourses.length == 0) {
+//             teacherWithoutCourse.push(teacherId);
+//         }
+//     }
 
-    if (teacherWithoutCourse.length == 0) {
-        // 所有老师都有课程，结束
-        return {
-            code: 0,
-            message: "所有老师都有课程"
-        }
-    }
+//     if (teacherWithoutCourse.length == 0) {
+//         // 所有老师都有课程，结束
+//         return {
+//             code: 0,
+//             message: "所有老师都有课程"
+//         }
+//     }
 
-    // 获取智能体的课程作为被分配的课程
-    let result = await getLeastSuitableAgentCourse();
-    let candidateCourses = result.data;
+//     // 获取智能体的课程作为被分配的课程
+//     let result = await getLeastSuitableAgentCourse();
+//     let candidateCourses = result.data;
 
-    // 计算教师总权重和候选教师数量
-    let totalWeight = 0;
-    let classweights = await classContract.getClassWeight();
-    classweights = classweights.toNumber();
+//     // 计算教师总权重和候选教师数量
+//     let totalWeight = 0;
+//     let classweights = await classContract.getClassWeight();
+//     classweights = classweights.toNumber();
 
-    totalWeight = totalWeight + classweights;
+//     totalWeight = totalWeight + classweights;
 
-    for (let index = 0; index < teacherIds.length; index++) {
-        let teacherId = teacherIds[index];
-        teacher = await contract.teachers(teacherId);
-        totalWeight = totalWeight + teacher.suitabilityWeight.toNumber();
-    }
+//     for (let index = 0; index < teacherIds.length; index++) {
+//         let teacherId = teacherIds[index];
+//         teacher = await contract.teachers(teacherId);
+//         totalWeight = totalWeight + teacher.suitabilityWeight.toNumber();
+//     }
 
-    // 找到对课程评分最高的教师
-    // 找到对课程评分最高的教师
-    let highestScore = 0;
-    let selectedTeacherId = 0;
-    let maxCoursePreferences = 0;
-    let teacherCount = teacherIds.length;
-    const classCount = await contract.classCount();
-    for (let i = 0; i < teacherWithoutCourse.length; i++) {
-        teacher = await contract.teachers(teacherWithoutCourse[i]);
-        let assignedCourses = await contract.getTeacherAssignedCourses(teacherWithoutCourse[i]);
-        if (assignedCourses.length < 2) {
-            let teacherWeight = totalWeight - teacher.suitabilityWeight.toNumber();
-            let suit = await contract.getTeacherSuitability(teacherWithoutCourse[i], candidateCourses);
-            suit = suit.toNumber();
-            let preference = await contract.getPreference(teacherWithoutCourse[i], candidateCourses);
-            preference = preference.toNumber();
-            let score = teacherWeight * suit + (10 * (teacherCount + classCount - 1) - teacherWeight) * preference;
+//     // 找到对课程评分最高的教师
+//     // 找到对课程评分最高的教师
+//     let highestScore = 0;
+//     let selectedTeacherId = 0;
+//     let maxCoursePreferences = 0;
+//     let teacherCount = teacherIds.length;
+//     const classCount = await contract.classCount();
+//     for (let i = 0; i < teacherWithoutCourse.length; i++) {
+//         teacher = await contract.teachers(teacherWithoutCourse[i]);
+//         let assignedCourses = await contract.getTeacherAssignedCourses(teacherWithoutCourse[i]);
+//         if (assignedCourses.length < 2) {
+//             let teacherWeight = totalWeight - teacher.suitabilityWeight.toNumber();
+//             let suit = await contract.getTeacherSuitability(teacherWithoutCourse[i], candidateCourses);
+//             suit = suit.toNumber();
+//             let preference = await contract.getPreference(teacherWithoutCourse[i], candidateCourses);
+//             preference = preference.toNumber();
+//             let score = teacherWeight * suit + (10 * (teacherCount + classCount - 1) - teacherWeight) * preference;
             
-            if (score > highestScore) {
-                highestScore = score;
-                selectedTeacherId = teacherWithoutCourse[i];
-                maxCoursePreferences = preference;
-            } else if (score == highestScore) {
-                if (preference > maxCoursePreferences) {
-                    maxCoursePreferences = preference;
-                    selectedTeacherId = teacherWithoutCourse[i];
-                }
-            }
-        }
-    }
-    if (selectedTeacherId == 0) {
-        return {
-            code: -1,
-            message: "没有合适的老师"
-        }
-    }
+//             if (score > highestScore) {
+//                 highestScore = score;
+//                 selectedTeacherId = teacherWithoutCourse[i];
+//                 maxCoursePreferences = preference;
+//             } else if (score == highestScore) {
+//                 if (preference > maxCoursePreferences) {
+//                     maxCoursePreferences = preference;
+//                     selectedTeacherId = teacherWithoutCourse[i];
+//                 }
+//             }
+//         }
+//     }
+//     if (selectedTeacherId == 0) {
+//         return {
+//             code: -1,
+//             message: "没有合适的老师"
+//         }
+//     }
 
-    // emit CourseAssignedToTeacher(candidateCourses, selectedTeacherId);
-    let scores = await getTeachersScores(candidateCourses);
-    scores = scores.data;
-    let proposalId = voteContract.createMachineVoteProposal("MachineProposal", candidateCourses, teacherWithoutCourse, scores);
-    // emit MachineProposal(proposalId, candidateCourses, teacherWithoutCourse, getTeachersScores(candidateCourses));
-    // 创建提案并分配课程
-    console.log("selectedTeacherId: ", selectedTeacherId);
-    console.log("candidateCourses: ", candidateCourses);
-    await assignCourseToTeacherWithoutCourse(candidateCourses, selectedTeacherId);
-}
+//     // emit CourseAssignedToTeacher(candidateCourses, selectedTeacherId);
+//     let scores = await getTeachersScores(candidateCourses);
+//     scores = scores.data;
+//     let proposalId = voteContract.createMachineVoteProposal("MachineProposal", candidateCourses, teacherWithoutCourse, scores);
+//     // emit MachineProposal(proposalId, candidateCourses, teacherWithoutCourse, getTeachersScores(candidateCourses));
+//     // 创建提案并分配课程
+//     console.log("selectedTeacherId: ", selectedTeacherId);
+//     console.log("candidateCourses: ", candidateCourses);
+//     await assignCourseToTeacherWithoutCourse(candidateCourses, selectedTeacherId);
+// }
 
 // 给没有课程的老师创建投票提案
 async function checkAndCreateProposalForTeacher(){
@@ -1283,7 +1283,6 @@ async function runTestsForFirstFiveFunctions() {
     console.log(proposalWithoutCourse);
     return 0;
 }
-
 /**
  * 转移课程给性价比更高的目标
  * @param {number} courseId - 要转移的课程ID
@@ -1314,6 +1313,19 @@ async function transferCourse(courseId, targetId, targetType) {
         const isCurrentHolder = currentAssigned.includes(senderTeacherId) || currentAssigned.includes(senderAgentId);
         if (!isCurrentHolder) {
             throw new Error("只有当前课程分配者可以转移");
+        }
+
+        // 获取目标适合度
+        let targetSuitability;
+        if (targetType === "teacher") {
+            targetSuitability = (await contract.getTeacherSuitability(targetId, courseId)).toNumber();
+        } else {
+            targetSuitability = (await contract.getAgentSuitability(targetId, courseId)).toNumber();
+        }
+
+        // 检查目标适合度是否大于50
+        if (targetSuitability <= 50) {
+            throw new Error(`目标适合度需大于50（当前: ${targetSuitability})`);
         }
 
         // 获取当前分配者性价比
@@ -1361,7 +1373,8 @@ async function transferCourse(courseId, targetId, targetType) {
         return { 
             code: 0, 
             message: `课程 ${courseId} 已从 ${senderTeacherId || senderAgentId} 转移至 ${targetType} ${targetId}`,
-            performanceImprovement: (targetPerf - currentPerf).toFixed(2) 
+            performanceImprovement: (targetPerf - currentPerf).toFixed(2),
+            targetSuitability: targetSuitability
         };
 
     } catch (error) {
@@ -1459,7 +1472,7 @@ async function proposalForCoursesWithoutAssigned(){
     // emit ProposalCreated(studentProposalId, candidateCourse, teacherWithoutCourse);
     return {
         code: 0,
-        message: "成功为没有课程的老师创建提案",
+        message: "成功为没有老师的课程创建提案",
         proposalId: proposalId,
         selectedCourseId: selectedCourseId,
         candidateTeacher: candidateTeacher
