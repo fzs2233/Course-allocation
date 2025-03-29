@@ -111,10 +111,11 @@ async function printAssignments() { //查看目前的课程分配情况
             "分配对象": assignedTo.join(' | ')
         });
     }
-
+    
     // 打印表格
     console.log('\n目前课程的分配情况:');
     console.table(assignments);
+    return assignments;
 }
 
 
@@ -577,8 +578,20 @@ async function checkAndCreateProposalForTeacher(){
         };
     }
 
-    // 获取所有智能体的课程作为候选课程
-    let candidateCourse = await getLeastSuitableAgentCourse();
+    let candidateCourse = -1;
+    // 获取没有分配老师的课程作为候选课程
+    let courseIds = await contract.getCourseIds();
+    for(let courseId of courseIds){
+        let teachers = await contract.getCoursesAssignedTeacher(courseId);
+        if(teachers.length == 0) {
+            candidateCourse = courseId;
+            break;
+        }
+    }
+    if(candidateCourse == -1) {
+        candidateCourse = await getLeastSuitableAgentCourse();
+    }
+
     candidateCourse = candidateCourse.data;
     // 创建提案
     let proposalId = voteContract.createChooseTeacherProposal("Create proposals for teachers without courses", candidateCourse, teacherWithoutCourse, 7);
@@ -1184,8 +1197,6 @@ async function initializeData() {
     console.log("班级2学生注册完毕");
 
 }
-
-
 
 
 async function testConfictProposal(){
