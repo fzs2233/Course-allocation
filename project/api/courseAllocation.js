@@ -861,7 +861,7 @@ async function registerTeacher(name, addr) {
 
 // 注册班级
 async function registerClass(name, addr) {
-    let isregister = await contract.addressToClassId(addr);
+    let isregister = await contract.addressToClassId(addr);//新注册的话 返回值是0
     isregister = isregister.toNumber();
     if(isregister!=0){
         console.log("该班级已经注册")
@@ -1172,14 +1172,14 @@ async function initializeData() {
     await registerTeacher("teacher_2", accounts[2]);
     await contract.setTeacherValue(2, 1000);
     await contract.setTeacherSuitabilityWeight(2,2);
-    await contract.setAllTeacherCourseSuitability(2, [51,32,53,34,85,26,37,48,55,43]);
+    await contract.setAllTeacherCourseSuitability(2, [51,32,53,34,85,26,37,48,55,33]);
     await contract.setAllTeacherCoursePreferences(2, [35,74,17,95,57,23,88,46,64,60]);
 
     await switchAcount(3);
     await registerTeacher("teacher_3", accounts[3]);
     await contract.setTeacherSuitabilityWeight(3,3);
     await contract.setTeacherValue(3, 1500);
-    await contract.setAllTeacherCourseSuitability(3, [32,31,54,43,68,27,44,72,58,30]);
+    await contract.setAllTeacherCourseSuitability(3, [32,31,54,43,68,27,44,72,58,50]);
     await contract.setAllTeacherCoursePreferences(3, [51,32,83,14,95,76,27,70,45,67]);
 
     await switchAcount(4);
@@ -1433,50 +1433,80 @@ async function preprocessConflictCourses() {
     }
 }
 
-async function proposalForCoursesWithoutAssigned(){
+async function proposalForCoursesWithoutAssigned() {
     let selectedCourseId = 0;
     let isCreate = false;
     let candidateTeacher = [];
     const courseIds = (await contract.getCourseIds()).map(id => id.toNumber());
-    for(const courseId of courseIds){
+
+    // 寻找第一个未被分配的课程
+    for (const courseId of courseIds) {
         const [teachers, agents] = await Promise.all([
             contract.getCoursesAssignedTeacher(courseId),
             contract.getCoursesAssignedAgent(courseId)
         ]);
-        if(teachers.length === 0 && agents.length === 0){
+        if (teachers.length === 0 && agents.length === 0) {
             selectedCourseId = courseId;
-            let teacherIds = await contract.getTeacherIds();
-            for(let teacherId of teacherIds){
-                let assignedCourse = await contract.getTeacherReallyAssignedCourses(teacherId);
-                if(assignedCourse.length < 2){
-                    candidateTeacher.push(teacherId);
-                }
-            }
             isCreate = true;
             break;
         }
     }
-    if(!isCreate) return{
-        code : 0,
-        message : "All Courses Assigned"
+
+    if (!isCreate) return {
+        code: 0,
+        message: "All Courses Assigned"
+    };
+
+    // 获取所有教师并计算授课能力
+    const teacherIds = await contract.getTeacherIds();
+    let maxSuitability = -1;
+
+    // 第一轮遍历：找到最高适合度
+    for (const teacherId of teacherIds) {
+        const assignedCourses = await contract.getTeacherReallyAssignedCourses(teacherId);
+        if (assignedCourses.length < 2) {
+            const suitability = (await contract.getTeacherSuitability(teacherId, selectedCourseId)).toNumber();
+            if (suitability > maxSuitability) {
+                maxSuitability = suitability;
+            }
+        }
     }
+
+    // 第二轮遍历：筛选最高适合度的教师
+    for (const teacherId of teacherIds) {
+        const assignedCourses = await contract.getTeacherReallyAssignedCourses(teacherId);
+        if (assignedCourses.length < 2) {
+            const suitability = (await contract.getTeacherSuitability(teacherId, selectedCourseId)).toNumber();
+            if (suitability === maxSuitability && maxSuitability > 0) {
+                candidateTeacher.push(teacherId);
+            }
+        }
+    }
+
+    // 如果没有符合条件的教师
+    if (candidateTeacher.length === 0) return {
+        code: -1,
+        message: "No qualified teachers for this course"
+    };
 
     // 创建提案
-    let tx = await voteContract.createChooseTeacherProposal("Create proposals for course not assigned", selectedCourseId, candidateTeacher, 9); //7老师+2班级
+    const tx = await voteContract.createChooseTeacherProposal(
+        "Proposal for Unassigned Course",
+        selectedCourseId,
+        candidateTeacher,
+        9 // 7老师+2班级
+    );
     await classContract.createProposal("createProposal", selectedCourseId, candidateTeacher);
-    let receipt = await tx.wait();
-    const event = receipt.events.find(event => event.event === "ProposalCreated");
-    let { proposalId, description } = event.args;
-
-    // emit ProposalCreated(proposalId, candidateCourse, teacherWithoutCourse);
-    // emit ProposalCreated(studentProposalId, candidateCourse, teacherWithoutCourse);
+    const receipt = await tx.wait();
+    const event = receipt.events.find(e => e.event === "ProposalCreated");
+    
     return {
         code: 0,
-        message: "成功为没有老师的课程创建提案",
-        proposalId: proposalId,
+        message: "成功创建未分配课程提案",
+        proposalId: event.args.proposalId,
         selectedCourseId: selectedCourseId,
         candidateTeacher: candidateTeacher
-    }
+    };
 }
 
 async function checkCourseConflicts() {
@@ -1562,7 +1592,7 @@ async function main() {
         console.log(await agentVote(accounts[6], proposal_result.proposalId));
         console.log(await agentVote(accounts[7], proposal_result.proposalId));
         console.log(await endConfictProposal(proposal_result.proposalId));
-        await printAssignments();
+        //await printAssignments();
     }
 
     while(1){
