@@ -118,8 +118,6 @@ async function printAssignments() { //查看目前的课程分配情况
     return assignments;
 }
 
-
-
 /**
  * 获取指定教师的课程性价比数据（适合度/工资）
  * @param {number} targetTeacherId - 要查询的教师ID
@@ -1609,4 +1607,17 @@ async function main() {
 
 }
 
-main();
+// main();
+module.exports = {
+    initializeData,
+    init_TeacherCourses,
+    init_AgentCourses,
+    getTeacherCostPerformance,
+    getAgentCostPerformance,
+    printAssignments,
+    machineVoting,
+    transferCourse,
+    checkCourseConflicts,
+    preprocessConflictCourses,
+    createConflictProposal
+}
