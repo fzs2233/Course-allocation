@@ -45,6 +45,8 @@ contract IStudentVote is StudentVote {
     mapping(uint256 => Student) public students;
     mapping(address => uint256) public addressToClassId;
     mapping(address => uint256) public addressToStudentId;
+    uint256[] public classIds;
+    uint256[] public studentIds;
     uint256 public classCount;
     uint256 public studentCount;
     uint256 courseCount = 10;
@@ -75,6 +77,7 @@ contract IStudentVote is StudentVote {
         classes[classCount].id = classCount;
         classes[classCount].name = className;
         classes[classCount].weightForAutoVote = 10;
+        classIds.push(classCount);
     }
 
     // 添加学生到班级
@@ -87,6 +90,7 @@ contract IStudentVote is StudentVote {
         students[studentCount].classId = classId;
         students[studentCount].isSetSuitability = false;
         classes[classId].studentsId.push(studentCount);
+        studentIds.push(studentCount);
     }
 
     // 注册学生
@@ -100,6 +104,7 @@ contract IStudentVote is StudentVote {
         students[studentCount].classId = classId;
         students[studentCount].isSetSuitability = false;
         classes[classId].studentsId.push(studentCount);
+        studentIds.push(studentCount);
     }
 
     // 创建提案
@@ -240,5 +245,13 @@ contract IStudentVote is StudentVote {
                 totalCourseScore[j] = totalCourseScore[j] / studentCount;
         }
         return totalCourseScore;
+    }
+
+    function getClassIds() public view returns(uint256[] memory) {
+        return classIds;
+    }
+
+    function getStudentIds() public view returns(uint256[] memory) {
+        return studentIds;
     }
 }

@@ -297,7 +297,7 @@ async function handleConflictResolution() {
 console.log('=== 课程分配管理系统 ===');
 
 async function begin(){
-    // await initializeData();
+    await initializeData();
     mainMenu();
 }
 begin();
