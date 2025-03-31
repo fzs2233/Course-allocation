@@ -69,11 +69,11 @@ contract IStudentVote is StudentVote {
     }
 
     // 添加班级
-    function addClass(string memory className) public {
+    function addClass(string memory className, address classAddress) public {
         classCount++;
         require(classes[classCount].id == 0, "Class already exists");
-        addressToClassId[msg.sender] = classCount;
-        classes[classCount].classAddress = msg.sender;
+        addressToClassId[classAddress] = classCount;
+        classes[classCount].classAddress = classAddress;
         classes[classCount].id = classCount;
         classes[classCount].name = className;
         classes[classCount].weightForAutoVote = 10;
@@ -94,11 +94,11 @@ contract IStudentVote is StudentVote {
     }
 
     // 注册学生
-    function registerStudent(uint256 classId, string memory _name) public{
+    function registerStudent(uint256 classId, string memory _name, address studentAddress) public{
         require(classes[classId].id != 0, "Class does not exist");
         studentCount++;
-        addressToStudentId[msg.sender] = studentCount;
-        students[studentCount].studentAddress = msg.sender;
+        addressToStudentId[studentAddress] = studentCount;
+        students[studentCount].studentAddress = studentAddress;
         students[studentCount].id = studentCount;
         students[studentCount].name = _name;
         students[studentCount].classId = classId;
@@ -152,8 +152,7 @@ contract IStudentVote is StudentVote {
         classes[classId].proposals[proposalId].voteCount++;
     }
 
-    function studentVote(uint256 proposalId, uint256 optionId) public {
-        uint256 studentId = addressToStudentId[msg.sender];
+    function studentVote(uint256 studentId, uint256 proposalId, uint256 optionId) public {
         uint256 classId = students[studentId].classId;
         require(classes[classId].id != 0, "Class does not exist");
         require(classes[classId].proposals[proposalId].id != 0, "Proposal does not exist");
@@ -254,4 +253,9 @@ contract IStudentVote is StudentVote {
     function getStudentIds() public view returns(uint256[] memory) {
         return studentIds;
     }
+
+    function getProposalInfo(uint256 classId, uint256 proposalId) public view returns(uint256[] memory, uint256) {
+        return (classes[classId].proposals[proposalId].votedIds, classes[classId].proposals[proposalId].voteforID);
+    } 
+    
 }

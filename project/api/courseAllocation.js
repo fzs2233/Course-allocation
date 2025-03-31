@@ -63,14 +63,24 @@ async function init_AgentCourses() {
         const course = await contract.courses(courseId);
         if (!course.isAgentSuitable) continue; // 只处理智能体专属课程
 
+        let max_Cost_effectivenes = 0;
+        let selectAgent = 0;
         for (const agentId of agentIds) {
             const suitability = (await contract.getAgentSuitability(agentId, courseId)).toNumber();
-
+            let agent = await contract.agents(agentId);
+            let value = agent.value;
+            value = value.toNumber();
             if (suitability >= 50) { 
-                await contract.addAgentAssignedCourses(agentId, courseId);
-                await contract.addCourseAssignedAgentId(courseId, agentId);
-                allocationResults.push({ agentId, courseId });
+                if( (suitability / value) > max_Cost_effectivenes){
+                    max_Cost_effectivenes = suitability / value;
+                    selectAgent = agentId;
+                }
             }
+        }
+        if(selectAgent > 0){
+            await contract.addAgentAssignedCourses(selectAgent, courseId);
+            await contract.addCourseAssignedAgentId(courseId, selectAgent);
+            allocationResults.push({ selectAgent, courseId });
         }
     }
     return allocationResults;
@@ -235,9 +245,6 @@ async function getAgentCostPerformance(targetAgentId) { //获取某个智能体�
         return { code, message: error.message };
     }
 }
-
-
-
 
 // 创建课程提案 手动投票的
 async function createProposalForCourse() {
@@ -601,7 +608,7 @@ async function checkAndCreateProposalForTeacher(){
     let receipt = await tx.wait();
     const event = receipt.events.find(event => event.event === "ProposalCreated");
     let { proposalId, description } = event.args;
-
+    proposalId = proposalId.toNumber();
     // emit ProposalCreated(proposalId, candidateCourse, teacherWithoutCourse);
     // emit ProposalCreated(studentProposalId, candidateCourse, teacherWithoutCourse);
     return {
@@ -875,7 +882,7 @@ async function registerClass(name, addr) {
     await contract.setClassCount(classCount);
     await contract.setClassId(addr, classCount);
     await voteContract.registerVoter(addr);
-    await classContract.addClass(name);
+    await classContract.addClass(name, addr);
     return {
         code: 0,
         message: "Class Registered successfully",
@@ -1457,7 +1464,7 @@ async function proposalForCoursesWithoutAssigned(){
         code : 0,
         message : "All Courses Assigned"
     }
-
+    candidateTeacher = candidateTeacher.map(id => id.toNumber());
     // 创建提案
     let tx = await voteContract.createChooseTeacherProposal("Create proposals for course not assigned", selectedCourseId, candidateTeacher, 9); //7老师+2班级
     await classContract.createProposal("createProposal", selectedCourseId, candidateTeacher);
@@ -1489,9 +1496,8 @@ async function checkCourseConflicts() {
 
         // 冲突条件：教师或智能体被分配超过1人
         const hasTeacherConflict = teachers.length > 1;
-        const hasAgentConflict = agents.length > 1;
         const hasMixedConflict = teachers.length > 0 && agents.length > 0;
-        if (hasTeacherConflict || hasAgentConflict || hasMixedConflict) {
+        if (hasTeacherConflict || hasMixedConflict) {
             conflictCourses.push({
                 courseId,
                 teacherCount: teachers.length,
@@ -1504,7 +1510,7 @@ async function checkCourseConflicts() {
 
     // 生成详细冲突报告
     return conflictCourses.map(conflict => 
-        `课程 ${conflict.courseId} 冲突：${conflict.teacherCount}位教师 + ${conflict.agentCount}位智能体`
+        `课程 ${conflict.courseId} 冲突：${conflict.teacherCount}位教师`
     ).join('\n');
 }
 
@@ -1526,12 +1532,6 @@ async function main() {
 
     await switchAcount(3);
     console.log(await transferCourse(5, 2, "teacher"));
-    await printAssignments()
-
-    await switchAcount(6);
-    console.log(await transferCourse(3, 2, "agent"));
-    await switchAcount(7);
-    console.log(await transferCourse(2, 1, "agent"));
     await printAssignments()
     
     console.log(await checkCourseConflicts());
@@ -1607,8 +1607,11 @@ async function main() {
 
 }
 
-// main();
+main();
 module.exports = {
+    registerTeacher,
+    registerAgent,
+    registerClass,
     initializeData,
     init_TeacherCourses,
     init_AgentCourses,
