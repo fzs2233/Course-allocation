@@ -3,6 +3,7 @@ const fs = require("fs");
 require('dotenv').config({ path: './interact/.env' });
 const Web3 = require("web3");
 const web3 = new Web3("http://127.0.0.1:7545");
+const inquirer = require('inquirer');
 
 // 读取 JSON 文件
 const contractData = JSON.parse(fs.readFileSync("./build/contracts/ICourseAllocation.json", "utf8"));
@@ -22,58 +23,11 @@ const provider = new ethers.providers.JsonRpcProvider("http://127.0.0.1:7545");
 
 // 当前登录的账户
 let currentSigner = provider.getSigner(0);
+let currentName = "account_0";
 // 创建合约实例
 let contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
 let voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
 let classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
-
-// 注册班级
-async function registerClass(name, addr) {
-    let isregister = await contract.addressToClassId(addr);//新注册的话 返回值是0
-    isregister = isregister.toNumber();
-    if(isregister!=0){
-        console.log("该班级已经注册")
-        return {
-            code: -1,
-            message: "Class Already Registered",
-        };
-    }
-    let classCount = await contract.classCount();
-    classCount = classCount.toNumber();
-    classCount = classCount + 1;
-    // console.log(classCount);
-    await contract.setClassCount(classCount);
-    await contract.setClassId(addr, classCount);
-    await voteContract.registerVoter(addr);
-    await classContract.addClass(name, addr);
-    return {
-        code: 0,
-        message: "Class Registered successfully",
-        courseId: classCount
-    };
-}
-
-// 注册学生
-async function registerStudent(classId, name, addr) {
-    let isregister = await classContract.addressToStudentId(addr);//新注册的话 返回值是0
-    isregister = isregister.toNumber();
-    if(isregister!=0){
-        console.log("该学生已经注册")
-        return {
-            code: -1,
-            message: "Student Already Registered",
-        };
-    }
-    let studentCount = await classContract.studentCount();
-    studentCount = studentCount.toNumber();
-    studentCount = studentCount + 1;
-    classContract.registerStudent(classId, name, addr);
-    return {
-        code: 0,
-        message: "student Registered successfully",
-        courseId: studentCount
-    };
-}
 
 // 批量添加学生
 async function addStudents(classAddr, numOfStudents){
@@ -119,9 +73,8 @@ async function endClassProposal(classAddr, proposalId){
         message: `Class ${classId} proposal ${proposalId} has been finished and voted teacher ${winningTeacher} successfully`,
     }
 }
+
 module.exports = {
-    registerClass,
-    registerStudent,
     addStudents,
     studentVote,
     endClassProposal

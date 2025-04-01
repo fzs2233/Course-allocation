@@ -31,135 +31,100 @@ let classContract = new ethers.Contract(classContractAddress, classABI, currentS
 
 
 // [保留原有的合约初始化代码...]
-const  {
-    initializeData,
+const {
     init_TeacherCourses,
     init_AgentCourses,
     getTeacherCostPerformance,
     getAgentCostPerformance,
     printAssignments,
-    machineVoting,
     transferCourse,
     checkCourseConflicts,
     preprocessConflictCourses,
-    createConflictProposal
+    createConflictProposal,
+    teacherVote,
+    agentVote
 } = require("../api/courseAllocation.js");
+
+const {
+    addStudents,
+    studentVote,
+    endClassProposal
+} = require("../api/studentClass.js");
+
+const {
+    initializeData,
+    switchUser,
+    register
+} = require("../api/register.js");
 
 /* 交互菜单系统 */
 async function mainMenu() {
-  const choices = [
-    { name: '切换用户', value: 'switchUser'},
-    { name: '初始化课程分配', value: 'initAllocation' },
-    { name: '查看课程分配情况', value: 'viewAssignments' },
-    { name: '创建课程提案', value: 'createProposal' },
-    { name: '执行机器投票', value: 'machineVote' },
-    { name: '查询教师性价比', value: 'teacherCost' },
-    { name: '转移课程所有权', value: 'transferCourse' },
-    { name: '处理课程冲突', value: 'resolveConflict' },
-    { name: '退出', value: 'exit' }
-  ];
+    const choices = [
+      { name: '一键初始化数据', value: 'initializeData'},
+      { name: '切换用户', value: 'switchUser'},
+      { name: '注册教师/智能体/班级/学生', value: 'register'},
+      { name: '初始化课程分配', value: 'initAllocation' },
+      { name: '查看课程分配情况', value: 'viewAssignments' },
+      { name: '查看课程冲突情况', value: 'checkCourseConflicts' },
+      { name: '冲突提案前的预处理', value: 'preprocessConflictCourses' },
+      { name: '创建冲突提案', value: 'createConflictProposal' },
+      { name: '查询教师性价比', value: 'teacherCost' },
+      { name: '转移课程所有权', value: 'transferCourse' },
+      { name: '退出', value: 'exit' }
+    ];
 
-  const { action } = await inquirer.prompt([
-    {
-      type: 'list',
-      name: 'action',
-      message: `[${currentName}] 请您选择操作:`,
-      choices
-    }
-  ]);
-  console.log(action);
-  switch (action) {
-    case'switchUser':
-      await switchUser();
-      break;
-    case 'initAllocation':
-      await handleInitAllocation();
-      break;
-    case 'viewAssignments':
-      await printAssignments();
-      break;
-    case 'createProposal':
-      await handleCreateProposal();
-      break;
-    case 'machineVote':
-      await machineVoting();
-      break;
-    case 'teacherCost':
-      await handleCostPerformance();
-      break;
-    case 'transferCourse':
-      await handleTransferCourse();
-      break;
-    case 'resolveConflict':
-      await handleConflictResolution();
-      break;
-    case 'exit':
-      process.exit();
-  }
+    const { action } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'action',
+        message: `[${currentName}] 请您选择操作:`,
+        choices
+      }
+    ]);
 
-  mainMenu(); // 循环显示菜单
-}
-
-async function switchUser(){
-    const { userType, userName } = await inquirer.prompt([
-        {
-          type: 'list',
-          name: 'userType',
-          message: '您的身份类型:',
-          choices: [
-            { name: '教师', value: 'Teacher' },
-            { name: '智能体', value: 'Agent' },
-            { name: '班级', value: 'Class' },
-            { name: '学生', value: 'Student' },
-          ]
-        },
-        {
-          type: 'string',
-          name: 'userName',
-          message: '输入您的姓名:',
-        }
-      ]);
-
-    let teacherIds = await contract.getTeacherIds();
-    let agentIds = await contract.getAgentIds();
-    let classIds = await classContract.getClassIds();
-    let studentIds = await classContract.getStudentIds();
-    teacherIds = teacherIds.map( id => id.toNumber() );
-    agentIds = agentIds.map( id => id.toNumber() );
-    classIds = classIds.map( id => id.toNumber() );
-    studentIds = studentIds.map( id => id.toNumber() );
-
-    // 按身份类型进行验证
-    if (userType === 'Teacher') {
-        await loginWithIdentity('Teacher', teacherIds, userName, '切换为教师');
-    } else if (userType === 'Agent') {
-        await loginWithIdentity('Agent', agentIds, userName, '切换为智能体');
-    } else if (userType === 'Class') {
-        await loginWithIdentity('Class', classIds, userName, '切换为班级');
-    } else if (userType === 'Student') {
-        await loginWithIdentity('Student', studentIds, userName, '切换为学生');
-    } else {
-        console.log('未知身份类型');
+    switch (action) {
+      case'initializeData':
+          await initializeData();
+          break;
+      case'switchUser':
+          // console.log(contract)
+          let userResult = await switchUser();
+          if(userResult.code === 0){
+              [currentSigner, contract, voteContract, classContract, currentName] = userResult.data;
+              console.log(currentName)
+          }
+          break;
+      case'register':
+          currentName = await register();
+          break;
+      case 'initAllocation':
+          await handleInitAllocation();
+          break;
+      case 'viewAssignments':
+          await printAssignments();
+          break;
+      case 'checkCourseConflicts':
+          console.log(await checkCourseConflicts());
+          break;
+      case 'preprocessConflictCourses':
+          await preprocessConflictCourses();
+          break;
+      case 'createConflictProposal':
+          console.log(await createConflictProposal());
+          break;
+      case 'teacherCost':
+          await handleCostPerformance();
+          break;
+      case 'transferCourse':
+          await handleTransferCourse();
+          break;
+      case 'exit':
+          process.exit();
     }
 
+    mainMenu(); // 循环显示菜单
 }
 
-// 登录通用函数
-async function loginWithIdentity(identityType, ids, userName, message) {
-    for (const id of ids) {
-        const user = await contract[identityType.toLowerCase() + 's'](id);
-        if (user.name === userName) {
-            currentSigner = provider.getSigner(id);
-            contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
-            voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
-            classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
-            currentName = user.name;
-            console.log(`${message} ${user.name} 成功`);
-            return true;
-        }
-    }
-    return false;
-}
 
 /* 处理初始化分配 */
 async function handleInitAllocation() {
@@ -267,37 +232,9 @@ async function handleTransferCourse() {
     }
 }
 
-/* 处理冲突解决 */
-async function handleConflictResolution() {
-    const { action } = await inquirer.prompt([
-        {
-        type: 'list',
-        name: 'action',
-        message: '选择冲突处理方式:',
-        choices: [
-            { name: '自动检测并处理冲突', value: 'auto' },
-            { name: '手动创建冲突提案', value: 'manual' }
-        ]
-        }
-    ]);
-
-    if (action === 'auto') {
-        const conflicts = await checkCourseConflicts();
-        console.log(conflicts);
-        if (conflicts !== '无课程冲突') {
-        await preprocessConflictCourses();
-        }
-    } else {
-        const result = await createConflictProposal();
-        console.log(`已创建冲突提案 ID: ${result.proposalId}`);
-    }
-}
-
 // 启动交互
 console.log('=== 课程分配管理系统 ===');
-
 async function begin(){
-    await initializeData();
-    mainMenu();
+  mainMenu();
 }
 begin();
