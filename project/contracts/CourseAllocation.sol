@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-contract ICourseAllocation {
+contract CourseAllocation {
     // 教师结构体
     struct Teacher {
         uint256 id;
@@ -200,7 +200,9 @@ contract ICourseAllocation {
             i < teachers[teacherId].reallyAssignedCourses.length;
             i++
         ) {
-            if (teachers[teacherId].reallyAssignedCourses[i] == _assignedCourses) {
+            if (
+                teachers[teacherId].reallyAssignedCourses[i] == _assignedCourses
+            ) {
                 found = true;
                 indexToRemove = i;
                 break;
@@ -212,7 +214,9 @@ contract ICourseAllocation {
             // 将要移除的课程位置的元素替换为数组中最后一个元素
             teachers[teacherId].reallyAssignedCourses[indexToRemove] = teachers[
                 teacherId
-            ].reallyAssignedCourses[teachers[teacherId].reallyAssignedCourses.length - 1];
+            ].reallyAssignedCourses[
+                    teachers[teacherId].reallyAssignedCourses.length - 1
+                ];
             // 移除数组中的最后一个元素
             teachers[teacherId].reallyAssignedCourses.pop();
         } else {
@@ -649,5 +653,18 @@ contract ICourseAllocation {
 
     function getClassIds() public view returns (uint256[] memory) {
         return classIds;
+    }
+
+    function setCourseProperties(
+        uint256 courseId,
+        uint256 importance,
+        bool isAgentSuitable
+    ) public {
+        courses[courseId].importance = importance;
+        courses[courseId].isAgentSuitable = isAgentSuitable;
+    }
+
+    function getCourseCount() public view returns (uint256) {
+        return courseCount;
     }
 }
