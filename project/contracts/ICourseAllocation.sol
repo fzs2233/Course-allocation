@@ -26,6 +26,13 @@ contract ICourseAllocation {
         mapping(uint256 => uint256) courseSuitabilities;
     }
 
+    // 督导
+    struct Supervisor {
+        uint256 id;
+        address addr;
+        mapping(uint256 => uint256) courseScores;
+    }
+
     // 课程结构体
     struct Course {
         uint256 id;
@@ -35,6 +42,18 @@ contract ICourseAllocation {
         uint256[] assignedAgentId;
         bool isAgentSuitable;
     }
+    struct CourseScore {
+        uint256 id; // 和课程一样的id
+        uint256 totalScore;
+        uint256[] classScores;
+        mapping(uint256 => uint256) giveScoreClassIdExists;
+        uint256 selfScore;
+        uint256[] supervisorScores;
+        mapping(uint256 => uint256) giveScoreSupervisorIdExists;
+    }
+
+    // 所有教师的总偏好
+    uint256 public totalWeight;
 
     // 教师映射：地址 => 教师ID
     mapping(address => uint256) public addressToTeacherId;
@@ -45,14 +64,23 @@ contract ICourseAllocation {
     // 班级映射：地址 => 班级ID
     mapping(address => uint256) public addressToClassId;
 
+    // 督导映射：地址 => 督导ID
+    mapping(address => uint256) public addressToSupervisorId;
+
     // 教师映射：ID => 教师结构体
     mapping(uint256 => Teacher) public teachers;
 
     // 智能体映射：ID => 智能体结构体
     mapping(uint256 => Agent) public agents;
 
+    // 督导映射：ID => 督导结构体
+    mapping(uint256 => Supervisor) public supervisors;
+
     // 课程映射：ID => 课程结构体
     mapping(uint256 => Course) public courses;
+
+    // 课程分数映射：ID => 课程分数结构体
+    mapping(uint256 => CourseScore) public courseScores;
 
     // 教师ID计数器
     uint256 public teacherCount;
@@ -66,6 +94,9 @@ contract ICourseAllocation {
     // 课程ID计数器
     uint256 public courseCount;
 
+    // 督导ID计数器
+    uint256 public supervisorCount;
+
     // 老师ID存储数组
     uint256[] public teacherIds;
 
@@ -77,6 +108,9 @@ contract ICourseAllocation {
 
     // 班级ID存储数组
     uint256[] public classIds;
+
+    // 督导ID存储数组
+    uint256[] public supervisorIds;
 
     // 事件
     // event CourseImportanceSet(uint256 indexed courseId, uint256 importance);
@@ -227,7 +261,9 @@ contract ICourseAllocation {
         uint256 teacherId,
         uint256 _suitabilityWeight
     ) public onlyTeacher {
+        totalWeight -= teachers[teacherId].suitabilityWeight;
         teachers[teacherId].suitabilityWeight = _suitabilityWeight;
+        totalWeight += teachers[teacherId].suitabilityWeight;
     }
 
     // 设置教师换课币数量
@@ -658,5 +694,48 @@ contract ICourseAllocation {
 
     function getClassIds() public view returns (uint256[] memory) {
         return classIds;
+    }
+
+    function addCourseClassScores(uint256 courseId, uint256 classId, uint256 score) public {
+        require(courseScores[courseId].giveScoreClassIdExists[classId] == 0, unicode"该班级已经投票");
+        courseScores[courseId].giveScoreClassIdExists[classId] = score;
+        courseScores[courseId].classScores.push(score); 
+    }
+
+    function getCourseClassScores(uint256 courseId) public view returns (uint256[] memory) {
+        return courseScores[courseId].classScores;
+    }
+
+    function setCourseSelfScore(uint256 courseId, uint256 score) public {
+        courseScores[courseId].selfScore = score;
+    }
+
+    function setCourseTotalScore(uint256 courseId, uint256 score) public {
+        courseScores[courseId].totalScore = score;
+    }
+
+    function addCourseSupervisorScores(uint256 courseId, uint256 supervisorId,uint256 score) public {
+        require(courseScores[courseId].giveScoreSupervisorIdExists[supervisorId] == 0, unicode"该督导已经投票");  
+        courseScores[courseId].giveScoreSupervisorIdExists[supervisorId] = score;
+        courseScores[courseId].supervisorScores.push(score);
+    }
+
+    function getCourseSupervisorScores(uint256 courseId) public view returns (uint256[] memory) {
+        return courseScores[courseId].supervisorScores;
+    }
+
+    function addSupervisorId(uint256 supervisorId) public {
+        supervisorIds.push(supervisorId);
+        supervisorCount++;
+    }
+
+    function setSupervisorsId(address supervisor, uint256 supervisorId) public {
+        addressToSupervisorId[supervisor] = supervisorId;
+        supervisors[supervisorId].id = supervisorId;
+        supervisors[supervisorId].addr = supervisor;
+    }
+
+    function setSupervisorsCourseScore(uint256 supervisorId, uint256 courseId, uint256 score) public {
+        supervisors[supervisorId].courseScores[courseId] = score; 
     }
 }
