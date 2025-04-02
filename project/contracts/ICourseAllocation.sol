@@ -10,6 +10,7 @@ contract ICourseAllocation {
         uint256[] assignedCourses;
         uint256[] reallyAssignedCourses;
         uint256 suitabilityWeight;
+        uint256 transferCourseCoins;
         uint256 value;
         mapping(uint256 => uint256) courseSuitabilities;
         mapping(uint256 => uint256) coursePreferences;
@@ -23,6 +24,13 @@ contract ICourseAllocation {
         uint256 value;
         uint256[] assignedCourses;
         mapping(uint256 => uint256) courseSuitabilities;
+    }
+
+    // 督导
+    struct Supervisor {
+        uint256 id;
+        address addr;
+        mapping(uint256 => uint256) courseScores;
     }
 
     // 课程结构体
@@ -53,11 +61,17 @@ contract ICourseAllocation {
     // 班级映射：地址 => 班级ID
     mapping(address => uint256) public addressToClassId;
 
+    // 督导映射：地址 => 督导ID
+    mapping(address => uint256) public addressToSupervisorId;
+
     // 教师映射：ID => 教师结构体
     mapping(uint256 => Teacher) public teachers;
 
     // 智能体映射：ID => 智能体结构体
     mapping(uint256 => Agent) public agents;
+
+    // 督导映射：ID => 督导结构体
+    mapping(uint256 => Supervisor) public supervisors;
 
     // 课程映射：ID => 课程结构体
     mapping(uint256 => Course) public courses;
@@ -77,6 +91,9 @@ contract ICourseAllocation {
     // 课程ID计数器
     uint256 public courseCount;
 
+    // 督导ID计数器
+    uint256 public supervisorCount;
+
     // 老师ID存储数组
     uint256[] public teacherIds;
 
@@ -88,6 +105,9 @@ contract ICourseAllocation {
 
     // 班级ID存储数组
     uint256[] public classIds;
+
+    // 督导ID存储数组
+    uint256[] public supervisorIds;
 
     // 事件
     // event CourseImportanceSet(uint256 indexed courseId, uint256 importance);
@@ -239,6 +259,14 @@ contract ICourseAllocation {
         uint256 _suitabilityWeight
     ) public onlyTeacher {
         teachers[teacherId].suitabilityWeight = _suitabilityWeight;
+    }
+
+    // 设置教师换课币数量
+    function setTeacherTransferCourseCoins(
+        uint256 teacherId,
+        uint256 _transferCourseCoins
+    ) public onlyTeacher {
+        teachers[teacherId].transferCourseCoins = _transferCourseCoins;
     }
 
     // 设置教师工资
@@ -689,5 +717,20 @@ contract ICourseAllocation {
 
     function getCourseSupervisorScores(uint256 courseId) public view returns (uint256[] memory) {
         return courseScores[courseId].supervisorScores;
+    }
+
+    function addSupervisorId(uint256 supervisorId) public {
+        supervisorIds.push(supervisorId);
+        supervisorCount++;
+    }
+
+    function setSupervisorsId(address supervisor, uint256 supervisorId) public {
+        addressToSupervisorId[supervisor] = supervisorId;
+        supervisors[supervisorId].id = supervisorId;
+        supervisors[supervisorId].addr = supervisor;
+    }
+
+    function setSupervisorsCourseScore(uint256 supervisorId, uint256 courseId, uint256 score) public {
+        supervisors[supervisorId].courseScores[courseId] = score; 
     }
 }

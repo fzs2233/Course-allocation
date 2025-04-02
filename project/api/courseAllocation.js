@@ -26,7 +26,7 @@ let currentSigner = provider.getSigner(0);
 let contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
 let voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
 let classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
-
+let currentName = "account_0";
 
 
 // 自动为老师分配课程（适合度≥50且意愿≥60）并更新结构体
@@ -595,10 +595,11 @@ async function createConflictProposal() {
     }
 
     let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateId, 9);//7老师+2班级
+    await classContract.createProposal("createProposal", selectedCourseId, candidateId);
     let receipt = await tx.wait();
     const event = receipt.events.find(event => event.event === "ProposalCreated");
     let { proposalId, description } = event.args;
-
+    proposalId = proposalId.toNumber();
     return {
         code: 0,
         message: `Create Conflict Proposal successfully, Proposal Id: ${proposalId}`,
@@ -610,7 +611,7 @@ async function createConflictProposal() {
 
 // 教师投票
 async function teacherVote(teacherAddress, proposalId, voteForId){
-    voteContract.voteChooseTeacher(teacherAddress, proposalId, voteForId);
+    await voteContract.voteChooseTeacher(teacherAddress, proposalId, voteForId);
     let teacherId = await contract.addressToTeacherId(teacherAddress);
     return {
         code: 0,
@@ -660,7 +661,7 @@ async function endConfictProposal(proposalId){
     for(let teacherId of allTeacher){
         if(teacherId != winningTeacherId){
             let remove_result = await removeTeacherCourse(teacherId, courseId);
-            console.log(remove_result);
+            // console.log(remove_result);
         }
     }
     await contract.addTeacherReallyAssignedCourses(winningTeacherId, courseId);
@@ -668,90 +669,6 @@ async function endConfictProposal(proposalId){
         code: 0,
         message: `End Conflict Proposal successfully, Winning Teacher Id: ${winningTeacherId}, Course Id: ${courseId}`,
     }
-}
-
-async function initializeData() {
-    const accounts = await web3.eth.getAccounts();
-    // 初始化课程
-    console.log("Initializing courses...");
-    await initializeCourse("c1", 3, true);
-    await initializeCourse("c2", 7, true);
-    await initializeCourse("c3", 1, true);
-    await initializeCourse("c4", 9, false);
-    await initializeCourse("c5", 5, false);
-    await initializeCourse("c6", 2, false);
-    await initializeCourse("c7", 8, false);
-    await initializeCourse("c8", 4, false);
-    await initializeCourse("c9", 6, false);
-    await initializeCourse("c10", 10, false);
-    // 注册教师
-    console.log("Registering teachers...");
-    await switchAcount(1);
-    await registerTeacher("teacher_1", accounts[1]);
-    await contract.setTeacherValue(1, 800);
-    await contract.setTeacherSuitabilityWeight(1,1);
-    await contract.setAllTeacherCourseSuitability(1, [26,44,65,88,40,37,79,92,14,87]);
-    await contract.setAllTeacherCoursePreferences(1, [35,54,76,80,93,48,64,17,86,70]);
-
-    await switchAcount(2);
-    await registerTeacher("teacher_2", accounts[2]);
-    await contract.setTeacherValue(2, 1000);
-    await contract.setTeacherSuitabilityWeight(2,2);
-    await contract.setAllTeacherCourseSuitability(2, [51,32,53,34,85,26,37,48,55,43]);
-    await contract.setAllTeacherCoursePreferences(2, [35,74,17,95,57,23,88,46,64,60]);
-
-    await switchAcount(3);
-    await registerTeacher("teacher_3", accounts[3]);
-    await contract.setTeacherSuitabilityWeight(3,3);
-    await contract.setTeacherValue(3, 1500);
-    await contract.setAllTeacherCourseSuitability(3, [32,31,54,43,68,27,44,72,58,30]);
-    await contract.setAllTeacherCoursePreferences(3, [51,32,83,14,95,76,27,70,45,67]);
-
-    await switchAcount(4);
-    await registerTeacher("teacher_4", accounts[4]);
-    await contract.setTeacherValue(4, 1200);
-    await contract.setTeacherSuitabilityWeight(4,4);
-    await contract.setAllTeacherCourseSuitability(4, [43,24,35,36,67,18,39,80,61,33]);
-    await contract.setAllTeacherCoursePreferences(4, [22,63,44,85,66,87,38,79,57,60]);
-
-    await switchAcount(5);
-    await registerTeacher("teacher_5", accounts[5]);
-    await contract.setTeacherSuitabilityWeight(5,5);
-    await contract.setTeacherValue(5, 1100);
-    await contract.setAllTeacherCourseSuitability(5, [22,43,44,35,36,37,31,32,33,34]);
-    await contract.setAllTeacherCoursePreferences(5, [43,14,75,35,56,67,28,59,59,79]);
-
-    // 注册智能体
-    console.log("Registering agents...");
-    await switchAcount(6);
-    await registerAgent("Agent_1", accounts[6]);
-    await contract.setAllAgentCourseSuitability(1, [85,94,68,27,48,34,37,42,46,14]);
-    await contract.setAgentValue(1,1000);
-
-    await switchAcount(7);
-    await registerAgent("Agent_2", accounts[7]);
-    await contract.setAllAgentCourseSuitability(2, [43,86,90,47,24,36,32,45,16,34]);
-    await contract.setAgentValue(2,1200);
-
-    // 注册班级
-    console.log("Registering classes...");
-    await switchAcount(8);
-    await registerClass("Class_1", accounts[8]);
-    for (let i = 1; i <= 25; i++) {
-        const studentName = `Student_${i}`; // 学生姓名
-        await classContract.addStudentToClass(studentName);
-    }
-    console.log("班级1学生注册完毕");
-
-
-    await switchAcount(9);
-    await registerClass("Class_2", accounts[9]);
-    for (let i = 26; i <= 50; i++) {
-        const studentName = `Student_${i}`; // 学生姓名
-        await classContract.addStudentToClass(studentName);
-    }
-    console.log("班级2学生注册完毕");
-
 }
 
 /**
@@ -763,27 +680,36 @@ async function initializeData() {
  */
 async function transferCourse(courseId, targetId, targetType) {
     try {
-        // 参数校验
-        if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(courseId)) {
-            throw new Error("课程ID必须为1-10的整数");
-        }
-        if (!["teacher", "agent"].includes(targetType)) {
-            throw new Error("目标类型必须是teacher或agent");
+
+        if (targetType != "teacher") {
+            return{
+                code: -1,
+                message: `目标类型 ${targetType} 必须是老师`,
+            }
         }
 
         // 获取当前分配者信息
         const currentTeachers = await contract.getCoursesAssignedTeacher(courseId);
-        const currentAgents = await contract.getCoursesAssignedAgent(courseId);
-        const currentAssigned = [...currentTeachers, ...currentAgents].map(id => id.toNumber());
-        
+        const currentAssigned = [currentTeachers].map(id => id.toNumber());
         const currentAddress = await currentSigner.getAddress();
 
         // 验证调用者是当前分配者
         const senderTeacherId = (await contract.addressToTeacherId(currentAddress)).toNumber();
-        const senderAgentId = (await contract.addressToAgentId(currentAddress)).toNumber();
-        const isCurrentHolder = currentAssigned.includes(senderTeacherId) || currentAssigned.includes(senderAgentId);
+        const isCurrentHolder = currentAssigned.includes(senderTeacherId);
+        let coins = (await contract.teachers(senderTeacherId)).transferCourseCoins;
+        coins = coins.toNumber();
+        if (coins < 1) {
+            return{
+                code: -1,
+                message: `当前转移课程币的数量为 ${coins}, 无法实现转移课程`
+            }
+        }
+
         if (!isCurrentHolder) {
-            throw new Error("只有当前课程分配者可以转移");
+            return{
+                code: -1,
+                message: "只有当前课程拥有者才可以转移课程"
+            }
         }
 
         // 获取目标适合度
@@ -796,7 +722,10 @@ async function transferCourse(courseId, targetId, targetType) {
 
         // 检查目标适合度是否大于50
         if (targetSuitability <= 50) {
-            throw new Error(`目标适合度需大于50（当前: ${targetSuitability})`);
+            return{
+                code: -1,
+                message: "目标老师适合程度必须大于50"
+            }
         }
 
         // 获取当前分配者性价比
@@ -825,7 +754,10 @@ async function transferCourse(courseId, targetId, targetType) {
 
         // 验证性价比提升
         if (targetPerf <= currentPerf) {
-            throw new Error(`目标性价比需大于当前值（当前: ${currentPerf.toFixed(2)}, 目标: ${targetPerf.toFixed(2)}）`);
+            return{
+                code: -1,
+                message: `目标性价比需大于当前值（当前: ${currentPerf.toFixed(2)}, 目标: ${targetPerf.toFixed(2)}）`
+            }
         }
 
         // 执行转移
@@ -837,10 +769,17 @@ async function transferCourse(courseId, targetId, targetType) {
 
         if (targetType === "teacher") {
             await AssignedTeacherCourse(targetId, courseId);
-        } else {
-            await AssignedAgentCourse(targetId, courseId);
         }
 
+        // 将给课的人的币数量-2，获得课的人币数量+1
+        let senderCoins = (await contract.teachers(senderTeacherId)).transferCourseCoins;
+        senderCoins = senderCoins.toNumber() -2;
+        await contract.setTeacherTransferCourseCoins(senderTeacherId, senderCoins);
+        let targetCoins = (await contract.teachers(targetId)).transferCourseCoins;
+        targetCoins = targetCoins.toNumber() + 1;
+        await contract.setTeacherTransferCourseCoins(senderTeacherId, targetCoins);
+
+        // 返回转移情况
         return { 
             code: 0, 
             message: `课程 ${courseId} 已从 ${senderTeacherId || senderAgentId} 转移至 ${targetType} ${targetId}`,
@@ -981,8 +920,16 @@ async function checkCourseConflicts() {
     ).join('\n');
 }
 
+async function switchCurrentSigner(newCurrentSigner, newContract, newVoteContract, newClassContract, newCurrentName){
+    currentSigner = newCurrentSigner;
+    contract = newContract;
+    voteContract = newVoteContract;
+    classContract = newClassContract;
+    currentName = newCurrentName;
+}
+
 module.exports = {
-    initializeData,
+    switchCurrentSigner,
     init_TeacherCourses,
     init_AgentCourses,
     getTeacherCostPerformance,
@@ -992,6 +939,10 @@ module.exports = {
     checkCourseConflicts, // 查看课程冲突情况
     preprocessConflictCourses, // 冲突提案前的预处理
     createConflictProposal, // 创建冲突提案
+    endConfictProposal,
     checkAndCreateProposalForTeacher, // 给没有课程的老师投票选择课程
     proposalForCoursesWithoutAssigned, // 为没有被分配的课程创建提案
+    endProposalAndAssignCourseforWithoutteacher, // 为没有老师的课程分配老师
+    teacherVote,
+    agentVote
 }
