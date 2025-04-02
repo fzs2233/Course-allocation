@@ -24,6 +24,7 @@ const provider = new ethers.providers.JsonRpcProvider("http://127.0.0.1:7545");
 // 当前登录的账户
 let currentSigner = provider.getSigner(0);
 let currentName = "account_0";
+let currentType = "account";
 // 创建合约实例
 let contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
 let voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
@@ -33,6 +34,7 @@ let classContract = new ethers.Contract(classContractAddress, classABI, currentS
 // [保留原有的合约初始化代码...]
 const {
     init_TeacherCourses,
+    switchCurrentSigner,
     init_AgentCourses,
     getTeacherCostPerformance,
     getAgentCostPerformance,
@@ -41,14 +43,18 @@ const {
     checkCourseConflicts,
     preprocessConflictCourses,
     createConflictProposal,
+    checkAndCreateProposalForTeacher, // 给没有课程的老师投票选择课程
+    proposalForCoursesWithoutAssigned, // 为没有被分配的课程创建提案
+    endConfictProposal,
+    endProposalAndAssignCourseforWithoutteacher,
     teacherVote,
     agentVote
 } = require("../api/courseAllocation.js");
 
 const {
-    addStudents,
+    switchCurrentSigner_studentClass,
     studentVote,
-    endClassProposal
+    endClassProposal_interact
 } = require("../api/studentClass.js");
 
 const {
@@ -66,10 +72,14 @@ async function mainMenu() {
       { name: '初始化课程分配', value: 'initAllocation' },
       { name: '查看课程分配情况', value: 'viewAssignments' },
       { name: '查看课程冲突情况', value: 'checkCourseConflicts' },
+      { name: '转移课程所有权', value: 'transferCourse' },
       { name: '冲突提案前的预处理', value: 'preprocessConflictCourses' },
       { name: '创建冲突提案', value: 'createConflictProposal' },
+      { name: '为没有课程的老师创建提案', value: 'checkAndCreateProposalForTeacher' },
+      { name: '为没有老师的课程创建提案', value: 'proposalForCoursesWithoutAssigned' },
+      { name: '为提案投票', value: 'voteForProposal' },
+      { name: '结束提案投票', value: 'endProposal' },
       { name: '查询教师性价比', value: 'teacherCost' },
-      { name: '转移课程所有权', value: 'transferCourse' },
       { name: '退出', value: 'exit' }
     ];
 
@@ -90,12 +100,14 @@ async function mainMenu() {
           // console.log(contract)
           let userResult = await switchUser();
           if(userResult.code === 0){
-              [currentSigner, contract, voteContract, classContract, currentName] = userResult.data;
+              [currentType, currentSigner, contract, voteContract, classContract, currentName] = userResult.data;
+              await switchCurrentSigner(currentSigner, contract, voteContract, classContract, currentName);
+              await switchCurrentSigner_studentClass(currentSigner, contract, voteContract, classContract, currentName);
               console.log(currentName)
           }
           break;
       case'register':
-          currentName = await register();
+          [currentName, currentType] = await register();
           break;
       case 'initAllocation':
           await handleInitAllocation();
@@ -111,6 +123,18 @@ async function mainMenu() {
           break;
       case 'createConflictProposal':
           console.log(await createConflictProposal());
+          break;
+      case 'checkAndCreateProposalForTeacher':
+          console.log(await checkAndCreateProposalForTeacher());
+          break;
+      case 'proposalForCoursesWithoutAssigned':
+          console.log(await proposalForCoursesWithoutAssigned());
+          break;
+      case 'voteForProposal':
+          await voteForProposal();
+          break;
+      case 'endProposal':
+          await endProposal();
           break;
       case 'teacherCost':
           await handleCostPerformance();
@@ -229,6 +253,72 @@ async function handleTransferCourse() {
         }
     } catch (error) {
         console.error('转移失败:', error.message);
+    }
+}
+
+async function voteForProposal(){
+    const {proposalId} = await inquirer.prompt([
+        {
+        type: 'number',
+        name: 'proposalId',
+        message: '输入您要投票的提案ID:',
+        }
+    ]);
+    let [optionIds, voteForId] = await voteContract.getVotedIds(proposalId);
+    optionIds = optionIds.map(id => id.toNumber());
+    voteForId = voteForId.toNumber(); 
+
+    if(currentType === 'Teacher' || currentType === 'Student'){
+        const {choice} = await inquirer.prompt([
+            {
+            type: 'list',
+            name: 'choice',
+            message: '请选择您要投票的教师ID:',
+            choices: optionIds
+            }
+        ]);
+        let currentAddress = await currentSigner.getAddress();
+        if(currentType === 'Teacher'){
+            console.log(await teacherVote(currentAddress, proposalId, choice));
+        }else{
+            console.log(await studentVote(currentAddress, proposalId, choice));
+        }
+    }else if(currentType === 'Agent'){
+      console.log(`检测您为智能体，已为您选择性价比最高的教师进行投票`)
+      await agentVote();
+    }else if(currentType === 'Class'){
+      console.log(`班级不允许投票`)
+    }
+
+}
+
+async function endProposal(){
+    const {proposalType} = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'proposalType',
+        message: '请输入您要结束的提案类型:',
+        choices: [
+            {name: "结束冲突提案", value: 'endConfilct'},
+            {name: "结束为没课老师分配课程的提案", value: 'endWithoutCourse'},
+            {name: "结束为没有老师的课程分配老师的提案", value: 'endWithoutTeacher'},
+            {name: "结束班级提案", value: 'endClass'},
+        ]
+      }
+    ]);
+    const { proposalId } = await inquirer.prompt([
+        {
+        type: 'number',
+        name: 'proposalId',
+        message: '请输入要结束的提案Id: ',
+        }
+    ]);
+    if(proposalType === 'endConfilct'){
+        console.log(await endConfictProposal(proposalId));  // 结束冲突提案
+    }else if(proposalType === 'endClass'){
+        await endClassProposal_interact(proposalId); 
+    }else{
+        await endProposalAndAssignCourseforWithoutteacher(proposalId);
     }
 }
 

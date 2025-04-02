@@ -10,6 +10,7 @@ contract ICourseAllocation {
         uint256[] assignedCourses;
         uint256[] reallyAssignedCourses;
         uint256 suitabilityWeight;
+        uint256 transferCourseCoins;
         uint256 value;
         mapping(uint256 => uint256) courseSuitabilities;
         mapping(uint256 => uint256) coursePreferences;
@@ -227,6 +228,14 @@ contract ICourseAllocation {
         uint256 _suitabilityWeight
     ) public onlyTeacher {
         teachers[teacherId].suitabilityWeight = _suitabilityWeight;
+    }
+
+    // 设置教师换课币数量
+    function setTeacherTransferCourseCoins(
+        uint256 teacherId,
+        uint256 _transferCourseCoins
+    ) public onlyTeacher {
+        teachers[teacherId].transferCourseCoins = _transferCourseCoins;
     }
 
     // 设置教师工资

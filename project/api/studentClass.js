@@ -45,11 +45,18 @@ async function addStudents(classAddr, numOfStudents){
 }
 
 // 学生投票
-async function studentVote(studentId, proposalId, optionId){
-    let classId = await classContract.students(studentId).classId();
+async function studentVote(studentAddress, proposalId, optionId){
+    console.log(studentAddress)
+    let studentId = await classContract.addressToStudentId(studentAddress);
+    console.log(studentId);
+    let student = await classContract.students(studentId);
+    let classId = student.classId;
     classId = classId.toNumber();
     let [optionIds, voteForId] = await classContract.getProposalInfo(classId, proposalId);
-    if(!optionIds.include(optionId)){
+    // console.log(classId, proposalId)
+    optionIds = optionIds.map(id => id.toNumber());
+    // console.log(optionIds)
+    if(!optionIds.includes(optionId)){
         console.log("该选项不在该提案中")
         return {
             code: -1,
@@ -74,8 +81,22 @@ async function endClassProposal(classAddr, proposalId){
     }
 }
 
+async function endClassProposal_interact(proposalId){
+    let currentClassAddress = await currentSigner.getAddress();
+    console.log(await endClassProposal(currentClassAddress, proposalId));
+}
+
+async function switchCurrentSigner_studentClass(newCurrentSigner, newContract, newVoteContract, newClassContract, newCurrentName){
+    currentSigner = newCurrentSigner;
+    contract = newContract;
+    voteContract = newVoteContract;
+    classContract = newClassContract;
+    currentName = newCurrentName;
+}
+
 module.exports = {
+    switchCurrentSigner_studentClass,
     addStudents,
     studentVote,
-    endClassProposal
+    endClassProposal_interact
 }

@@ -12,7 +12,7 @@ interface StudentVote {
 
 contract IStudentVote is StudentVote {
     struct Student {
-        address studentAddress;
+        address addr;
         uint256 id;
         string name;
         uint256 classId;
@@ -21,7 +21,7 @@ contract IStudentVote is StudentVote {
     }
 
     struct Class {
-        address classAddress;
+        address addr;
         uint256 id;
         string name;
         mapping(uint256 => Proposal) proposals;
@@ -73,7 +73,7 @@ contract IStudentVote is StudentVote {
         classCount++;
         require(classes[classCount].id == 0, "Class already exists");
         addressToClassId[classAddress] = classCount;
-        classes[classCount].classAddress = classAddress;
+        classes[classCount].addr = classAddress;
         classes[classCount].id = classCount;
         classes[classCount].name = className;
         classes[classCount].weightForAutoVote = 10;
@@ -98,7 +98,7 @@ contract IStudentVote is StudentVote {
         require(classes[classId].id != 0, "Class does not exist");
         studentCount++;
         addressToStudentId[studentAddress] = studentCount;
-        students[studentCount].studentAddress = studentAddress;
+        students[studentCount].addr = studentAddress;
         students[studentCount].id = studentCount;
         students[studentCount].name = _name;
         students[studentCount].classId = classId;
@@ -257,5 +257,4 @@ contract IStudentVote is StudentVote {
     function getProposalInfo(uint256 classId, uint256 proposalId) public view returns(uint256[] memory, uint256) {
         return (classes[classId].proposals[proposalId].votedIds, classes[classId].proposals[proposalId].voteforID);
     } 
-    
 }

@@ -189,7 +189,7 @@ async function register(){
         await registerClass(Name, addr);
     }
     currentName = Name;
-    return Name;
+    return [Name, registerType];
 }
 
 async function switchUser(){
@@ -245,7 +245,7 @@ async function switchUser(){
         [currentSigner, contract, voteContract, classContract, currentName] = [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]
         return{
             code: 0,
-            data: [currentSigner, contract, voteContract, classContract, currentName]
+            data: [userType, currentSigner, contract, voteContract, classContract, currentName]
         }
     } else if (userType === 'Agent') {
         let agentIds = await contract.getAgentIds();
@@ -261,7 +261,7 @@ async function switchUser(){
         [currentSigner, contract, voteContract, classContract, currentName] = [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]
         return{
             code: 0,
-            data: [currentSigner, contract, voteContract, classContract, currentName]
+            data: [userType, currentSigner, contract, voteContract, classContract, currentName]
         }
     } else if (userType === 'Class') {
         let classIds = await classContract.getClassIds();
@@ -277,7 +277,7 @@ async function switchUser(){
         [currentSigner, contract, voteContract, classContract, currentName] = [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]
         return{
             code: 0,
-            data: [currentSigner, contract, voteContract, classContract, currentName]
+            data: [userType, currentSigner, contract, voteContract, classContract, currentName]
         }
     } else if (userType === 'Student') {
         let studentIds = await classContract.getStudentIds();
@@ -293,7 +293,7 @@ async function switchUser(){
         [currentSigner, contract, voteContract, classContract, currentName] = [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]
         return{
             code: 0,
-            data: [currentSigner, contract, voteContract, classContract, currentName]
+            data: [userType, currentSigner, contract, voteContract, classContract, currentName]
         }
     } else {
         currentSigner = provider.getSigner(userId);
@@ -301,16 +301,28 @@ async function switchUser(){
         voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
         classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
         currentName = `account_${userId}`
-        return [currentSigner, contract, voteContract, classContract, currentName]
+        return{
+            code: 0,
+            data: [userType, currentSigner, contract, voteContract, classContract, currentName]
+        }
     }
 }
 
 // 登录通用函数
 async function loginWithIdentity(identityType, ids, userName, message) {
     for (const id of ids) {
-        const user = await contract[identityType.toLowerCase() + 's'](id);
+        let user = identityType;
+        if(identityType != 'Student' && identityType != 'Class'){
+            user = await contract[identityType.toLowerCase() + 's'](id);
+        }else if(identityType == 'Student' ){
+            user = await classContract[identityType.toLowerCase() + 's'](id);
+        }else{
+            user = await classContract[identityType.toLowerCase() + 'es'](id);
+        }
+        
         if (user.name === userName) {
-            currentSigner = provider.getSigner(id);
+            let currentAddress = user.addr;
+            currentSigner = provider.getSigner(currentAddress);
             contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
             voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
             classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
@@ -377,33 +389,48 @@ async function initializeData() {
     // 注册智能体
     console.log("Registering agents...");
     await switchAcount(6);
-    await registerAgent("Agent_1", accounts[6]);
+    await registerAgent("agent_1", accounts[6]);
     await contract.setAllAgentCourseSuitability(1, [85,94,68,27,48,34,37,42,46,14]);
     await contract.setAgentValue(1,1000);
 
     await switchAcount(7);
-    await registerAgent("Agent_2", accounts[7]);
+    await registerAgent("agent_2", accounts[7]);
     await contract.setAllAgentCourseSuitability(2, [43,86,90,47,24,36,32,45,16,34]);
     await contract.setAgentValue(2,1200);
 
     // 注册班级
     console.log("Registering classes...");
     await switchAcount(8);
-    await registerClass("Class_1", accounts[8]);
-    for (let i = 1; i <= 25; i++) {
-        const studentName = `Student_${i}`; // 学生姓名
-        await classContract.addStudentToClass(studentName);
-    }
-    console.log("班级1学生注册完毕");
+    await registerClass("class_1", accounts[8]);
+    console.log("班级1注册完毕");
 
+    await switchAcount(10);
+    await registerStudent(1, "student_1", accounts[10]);
+    console.log("student_1 (class_1) 注册完毕");
+
+    await switchAcount(11);
+    await registerStudent(1, "student_2", accounts[11]);
+    console.log("student_2 (class_1) 注册完毕");
+    
+    await switchAcount(12);
+    await registerStudent(1, "student_3", accounts[12]);
+    console.log("student_3 (class_1) 注册完毕");
 
     await switchAcount(9);
-    await registerClass("Class_2", accounts[9]);
-    for (let i = 26; i <= 50; i++) {
-        const studentName = `Student_${i}`; // 学生姓名
-        await classContract.addStudentToClass(studentName);
-    }
-    console.log("班级2学生注册完毕");
+    await registerClass("class_2", accounts[9]);
+    console.log("班级2注册完毕");
+
+    await switchAcount(13);
+    await registerStudent(2, "student_4", accounts[13]);
+    console.log("student_4 (class_2) 注册完毕");
+
+    await switchAcount(14);
+    await registerStudent(2, "student_5", accounts[14]);
+    console.log("student_5 (class_2) 注册完毕");
+    
+    await switchAcount(15);
+    await registerStudent(2, "student_6", accounts[15]);
+    console.log("student_6 (class_2) 注册完毕");
 
 }
 
@@ -416,7 +443,7 @@ async function switchAcount(Index){
 
 module.exports = {
     initializeData,
+    switchUser,
     initializeCourse,
     register,
-    switchUser
 }
