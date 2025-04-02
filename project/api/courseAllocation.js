@@ -348,6 +348,11 @@ async function checkAndCreateProposalForTeacher(){
 }
 
 // 学生评分 (allreadfinished, To test functional)
+/**
+ * 根据学生平均成绩更改教师或智能体的课程适合度
+ * @param {number[]} courseAverageScore - 课程平均成绩数组
+ * @returns {Promise<{code: number, message: string}>} - 返回操作结果的对象，包含状态码和消息
+ */
 async function changeSuitabilitybyStudent(courseAverageScore) {
     let courses = await contract.getCourseIds();
     courses = courses.map(id => id.toNumber());
@@ -355,6 +360,7 @@ async function changeSuitabilitybyStudent(courseAverageScore) {
     for(let courseId of courses){
         let assignedTeacher = await contract.getCoursesAssignedTeacher(courseId);
         let assignedAgent = await contract.getCoursesAssignedAgent(courseId);
+        // 检查课程是否只分配给了一个教师或智能体
         if(assignedTeacher.length + assignedAgent.length != 1){
             return{
                 code: -1,
@@ -363,9 +369,11 @@ async function changeSuitabilitybyStudent(courseAverageScore) {
         }
         if(assignedTeacher.length != 0){
             let teacherId = assignedTeacher[0];
+            // 根据学生平均成绩更新教师的课程适合度
             await contract.setTeacherCourseSuitability(teacherId, courseId, courseAverageScore[Index]);
         }else{
             let agentId = assignedAgent[0];
+            // 根据学生平均成绩更新智能体的课程适合度
             await contract.setAgentCourseSuitability(agentId, courseId, courseAverageScore[Index]);
         }
         Index++;
