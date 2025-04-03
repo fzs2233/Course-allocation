@@ -12,5 +12,5 @@ module.exports = async function (deployer) {
   await deployer.deploy(IStudentVote);
 
   // 2. 最后部署 TeacherVote 并传入参数
-  await deployer.deploy(TeacherVote, courseAlloc.address); // ✅ 传入 CourseAllocation 地址
+  await deployer.deploy(TeacherVote, courseAlloc.address); 
 };
