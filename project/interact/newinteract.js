@@ -224,15 +224,6 @@ async function handleTransferCourse() {
         validate: input => input >= 1 && input <= 10 || '请输入1-10的课程ID'
         },
         {
-        type: 'list',
-        name: 'targetType',
-        message: '转移目标类型:',
-        choices: [
-            { name: '教师', value: 'teacher' },
-            { name: '智能体', value: 'agent' }
-        ]
-        },
-        {
         type: 'number',
         name: 'targetId',
         message: '输入目标对象ID:',

@@ -354,6 +354,7 @@ async function initializeData() {
     await switchAcount(1);
     await registerTeacher("teacher_1", accounts[1]);
     await contract.setTeacherValue(1, 800);
+    await contract.setTeacherTransferCourseCoins(1, 6);
     await contract.setTeacherSuitabilityWeight(1,1);
     await contract.setAllTeacherCourseSuitability(1, [26,44,65,88,40,37,79,92,14,87]);
     await contract.setAllTeacherCoursePreferences(1, [35,54,76,80,93,48,64,17,86,70]);
@@ -361,28 +362,32 @@ async function initializeData() {
     await switchAcount(2);
     await registerTeacher("teacher_2", accounts[2]);
     await contract.setTeacherValue(2, 1000);
+    await contract.setTeacherTransferCourseCoins(2, 6);
     await contract.setTeacherSuitabilityWeight(2,2);
     await contract.setAllTeacherCourseSuitability(2, [51,32,53,34,85,26,37,48,55,43]);
     await contract.setAllTeacherCoursePreferences(2, [35,74,17,95,57,23,88,46,64,60]);
 
     await switchAcount(3);
     await registerTeacher("teacher_3", accounts[3]);
-    await contract.setTeacherSuitabilityWeight(3,3);
     await contract.setTeacherValue(3, 1500);
+    await contract.setTeacherTransferCourseCoins(3, 6);
+    await contract.setTeacherSuitabilityWeight(3,3);
     await contract.setAllTeacherCourseSuitability(3, [32,31,54,43,68,27,44,72,58,30]);
     await contract.setAllTeacherCoursePreferences(3, [51,32,83,14,95,76,27,70,45,67]);
 
     await switchAcount(4);
     await registerTeacher("teacher_4", accounts[4]);
     await contract.setTeacherValue(4, 1200);
+    await contract.setTeacherTransferCourseCoins(4, 6);
     await contract.setTeacherSuitabilityWeight(4,4);
     await contract.setAllTeacherCourseSuitability(4, [43,24,35,36,67,18,39,80,61,33]);
     await contract.setAllTeacherCoursePreferences(4, [22,63,44,85,66,87,38,79,57,60]);
 
     await switchAcount(5);
     await registerTeacher("teacher_5", accounts[5]);
-    await contract.setTeacherSuitabilityWeight(5,5);
     await contract.setTeacherValue(5, 1100);
+    await contract.setTeacherTransferCourseCoins(5, 6);
+    await contract.setTeacherSuitabilityWeight(5,5);
     await contract.setAllTeacherCourseSuitability(5, [22,43,44,35,36,37,31,32,33,34]);
     await contract.setAllTeacherCoursePreferences(5, [43,14,75,35,56,67,28,59,59,79]);
 
