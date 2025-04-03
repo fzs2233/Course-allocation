@@ -63,11 +63,6 @@ contract IStudentVote is StudentVote {
         return classWeights;
     }
 
-    function getStudentofClass() public view returns(uint256[] memory) {
-        uint256 classId = addressToClassId[msg.sender];
-        return classes[classId].studentsId;
-    }
-
     // 添加班级
     function addClass(string memory className, address classAddress) public {
         classCount++;
@@ -193,7 +188,7 @@ contract IStudentVote is StudentVote {
         }
     }
 
-    function getStudent() public view returns(uint256[] memory) {
+    function getStudents() public view returns(uint256[] memory) {
         uint classId = addressToClassId[msg.sender];
         return classes[classId].studentsId;
     }
@@ -213,6 +208,7 @@ contract IStudentVote is StudentVote {
     function studentSetCourseSuitability(uint256[] memory _suitabilities) public {
         uint256 studentId = addressToStudentId[msg.sender]; 
         require(studentId <= studentCount, "Student does not exist");
+        require(studentId != 0, "Student does not exist");
          // 检查评分数组长度是否匹配
         require(_suitabilities.length == courseCount, "Suitability array length mismatch");
         Student storage student = students[studentId];
@@ -220,6 +216,12 @@ contract IStudentVote is StudentVote {
         for(uint256 i = 0; i < _suitabilities.length; i++){
             student.courseSuitability[i] =  _suitabilities[i] ;
         }
+    }
+
+    // 查看学生对某一个课程的评分
+    function getStudentCourseSuitability(uint256 studentId, uint256 courseId) public view returns(uint256) {
+        Student storage student = students[studentId];
+        return student.courseSuitability[courseId];
     }
 
     // 查看学生对课程的评分

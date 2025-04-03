@@ -46,10 +46,10 @@ contract ICourseAllocation {
         uint256 id; // 和课程一样的id
         uint256 totalScore;
         uint256[] classScores;
-        mapping(uint256 => bool) giveScoreClassIdExists;
+        mapping(uint256 => uint256) giveScoreClassIdExists;
         uint256 selfScore;
         uint256[] supervisorScores;
-        mapping(uint256 => bool) giveScoreSupervisorIdExists;
+        mapping(uint256 => uint256) giveScoreSupervisorIdExists;
     }
 
     // 教师映射：地址 => 教师ID
@@ -692,8 +692,8 @@ contract ICourseAllocation {
     }
 
     function addCourseClassScores(uint256 courseId, uint256 classId, uint256 score) public {
-        require(courseScores[courseId].giveScoreClassIdExists[classId] == false, unicode"该班级已经投票");
-        courseScores[courseId].giveScoreClassIdExists[classId] = true;
+        require(courseScores[courseId].giveScoreClassIdExists[classId] == 0, unicode"该班级已经投票");
+        courseScores[courseId].giveScoreClassIdExists[classId] = score;
         courseScores[courseId].classScores.push(score); 
     }
 
@@ -710,8 +710,8 @@ contract ICourseAllocation {
     }
 
     function addCourseSupervisorScores(uint256 courseId, uint256 supervisorId,uint256 score) public {
-        require(courseScores[courseId].giveScoreSupervisorIdExists[supervisorId] == false, unicode"该督导已经投票");  
-        courseScores[courseId].giveScoreSupervisorIdExists[supervisorId] = true;
+        require(courseScores[courseId].giveScoreSupervisorIdExists[supervisorId] == 0, unicode"该督导已经投票");  
+        courseScores[courseId].giveScoreSupervisorIdExists[supervisorId] = score;
         courseScores[courseId].supervisorScores.push(score);
     }
 
