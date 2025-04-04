@@ -7,27 +7,34 @@ import "./CourseAllocation.sol";
 contract TeacherVote is Vote {
     CourseAllocation public courseAllocation;
 
-    constructor(address _courseAllocationAddress) {
-        courseAllocation = CourseAllocation(_courseAllocationAddress);
-    }
+    // 新增本地选项存储
+    mapping(uint256 => uint256[]) private _proposalOptions;
 
-    // 课程评分提案结构
-    struct CourseRatingProposal {
+    struct ProposalBase {
         uint256 courseId;
         uint256 totalRating;
         uint256 raterCount;
-        uint256 suitabilityProposalId; // 关键修改：存储关联的投票提案ID
+        uint256 suitabilityProposalId;
         bool executed;
-        mapping(uint256 => uint256) teacherRatings;
-        bool finalSuitability;
+        uint256 agreeCount;
+        uint256 disagreeCount;
     }
 
-    mapping(uint256 => CourseRatingProposal) public proposals;
+    struct TeacherRating {
+        uint256 rating;
+        bool hasRated;
+    }
+
+    mapping(uint256 => ProposalBase) public proposals;
+    mapping(uint256 => mapping(uint256 => TeacherRating)) public teacherRatings;
+    mapping(uint256 => mapping(address => bool)) public suitabilityVotes;
+
     uint256 public proposalCount;
 
-    event NewRatingProposal(
+    event NewCombinedProposal(
         uint256 indexed proposalId,
-        uint256 indexed courseId
+        uint256 indexed courseId,
+        uint256 suitabilityProposalId
     );
     event ProposalExecuted(
         uint256 indexed proposalId,
@@ -43,92 +50,137 @@ contract TeacherVote is Vote {
         _;
     }
 
-    // 创建新课程评分提案
-    function createRatingProposal(
+    constructor(address _courseAllocationAddress) Vote() {
+        courseAllocation = CourseAllocation(_courseAllocationAddress);
+    }
+
+    function setCourseAllocation(address _addr) external {
+        courseAllocation = CourseAllocation(_addr);
+    }
+
+    function createCombinedProposal(
         uint256 courseId
     ) external onlyTeacher returns (uint256) {
-        require(
-            courseAllocation.addressToTeacherId(msg.sender) != 0,
-            "Invalid teacher"
-        );
-
-        // 创建二元选择投票提案
+        // 定义投票选项值
         uint256[] memory options = new uint256[](2);
-        options[0] = 1; // 反对
-        options[1] = 2; // 赞成
+        options[0] = 1; // 反对选项值
+        options[1] = 2; // 赞成选项值
 
+        // 调用父合约创建提案
         uint256 suitabilityProposalId = createChooseTeacherProposal(
-            string(abi.encodePacked("Agent Suitability for Course ", courseId)),
+            string(abi.encodePacked("Course ", courseId)),
             courseId,
             options,
-            type(uint256).max // 需要全体教师投票
+            type(uint256).max
         );
 
-        proposalCount++;
-        CourseRatingProposal storage p = proposals[proposalCount];
-        p.courseId = courseId;
-        p.suitabilityProposalId = suitabilityProposalId; // 存储关联的投票提案ID
+        // 存储选项到本地映射
+        _proposalOptions[suitabilityProposalId] = options;
 
-        emit NewRatingProposal(proposalCount, courseId);
+        // 初始化合并提案
+        proposalCount++;
+        proposals[proposalCount] = ProposalBase({
+            courseId: courseId,
+            totalRating: 0,
+            raterCount: 0,
+            suitabilityProposalId: suitabilityProposalId,
+            executed: false,
+            agreeCount: 0,
+            disagreeCount: 0
+        });
+
+        emit NewCombinedProposal(
+            proposalCount,
+            courseId,
+            suitabilityProposalId
+        );
         return proposalCount;
     }
 
-    // 新增：教师投票接口
-    function voteForSuitability(
-        uint256 suitabilityProposalId,
-        uint256 optionId
-    ) external onlyTeacher {
-        require(optionId == 1 || optionId == 2, "Invalid option");
-        super.voteChooseTeacher(msg.sender, suitabilityProposalId, optionId);
-    }
-
-    // 提交评分
-    function submitRating(
+    function submitCombinedVote(
         uint256 proposalId,
-        uint256 rating
+        uint256 rating,
+        uint256 suitabilityOptionIndex
     ) external onlyTeacher {
-        CourseRatingProposal storage p = proposals[proposalId];
+        ProposalBase storage p = proposals[proposalId];
         require(p.courseId != 0, "Invalid proposal");
-        require(rating >= 1 && rating <= 10, "Rating 1-10 only");
+        require(!p.executed, "Proposal executed");
 
+        // 验证教师身份
         uint256 teacherId = courseAllocation.addressToTeacherId(msg.sender);
-        require(p.teacherRatings[teacherId] == 0, "Already rated");
+        require(teacherId != 0, "Unregistered teacher");
 
-        p.teacherRatings[teacherId] = rating;
+        // 处理评分逻辑
+        require(rating >= 1 && rating <= 10, "Invalid rating (1-10)");
+        TeacherRating storage tr = teacherRatings[proposalId][teacherId];
+        require(!tr.hasRated, "Already rated");
+
+        tr.rating = rating;
+        tr.hasRated = true;
         p.totalRating += rating;
         p.raterCount++;
+
+        // 处理投票逻辑
+        require(suitabilityOptionIndex < 2, "Invalid option index (0-1)");
+        require(!suitabilityVotes[proposalId][msg.sender], "Already voted");
+
+        if (suitabilityOptionIndex == 1) {
+            p.agreeCount++;
+        } else {
+            p.disagreeCount++;
+        }
+        suitabilityVotes[proposalId][msg.sender] = true;
+
+        // 从本地存储获取选项值
+        uint256 optionValue = _proposalOptions[p.suitabilityProposalId][
+            suitabilityOptionIndex
+        ];
+
+        // 调用父合约投票
+        super.voteChooseTeacher(
+            msg.sender,
+            p.suitabilityProposalId,
+            optionValue
+        );
     }
 
-    // 执行提案
-    function executeProposal(uint256 ratingProposalId) external {
-        CourseRatingProposal storage p = proposals[ratingProposalId];
+    function executeProposal(uint256 proposalId) external {
+        ProposalBase storage p = proposals[proposalId];
+        require(p.courseId != 0, "Invalid proposal");
         require(!p.executed, "Already executed");
         require(p.raterCount > 0, "No ratings submitted");
 
-        // 获取投票结果
-        (uint256 voteResult, ) = endVoteChooseTeacher(p.suitabilityProposalId);
-        p.finalSuitability = (voteResult == 2);
+        // 计算平均评分
+        uint256 avgRating = p.totalRating / p.raterCount;
 
-        // 更新课程属性
-        courseAllocation.setCourseProperties(
-            p.courseId,
-            p.totalRating / p.raterCount,
-            p.finalSuitability
+        // 获取投票结果
+        (uint256 winningOption, ) = endVoteChooseTeacher(
+            p.suitabilityProposalId
         );
+        bool isSuitable = (winningOption == 2); // 假设2是赞成选项值
+
+        // 更新课程状态
+        courseAllocation.setCourseProperties(p.courseId, avgRating, isSuitable);
 
         p.executed = true;
-        emit ProposalExecuted(
-            ratingProposalId,
-            p.totalRating / p.raterCount,
-            p.finalSuitability
-        );
+        emit ProposalExecuted(proposalId, avgRating, isSuitable);
     }
 
-    // 获取评分
+    function getVoteDetails(
+        uint256 proposalId
+    )
+        external
+        view
+        returns (uint256 agree, uint256 disagree, uint256 totalRatings)
+    {
+        ProposalBase memory p = proposals[proposalId];
+        return (p.agreeCount, p.disagreeCount, p.raterCount);
+    }
+
     function getTeacherRating(
         uint256 proposalId,
         uint256 teacherId
     ) public view returns (uint256) {
-        return proposals[proposalId].teacherRatings[teacherId];
+        return teacherRatings[proposalId][teacherId].rating;
     }
 }
