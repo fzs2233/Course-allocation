@@ -151,6 +151,30 @@ async function registerStudent(classId, name, addr) {
     };
 }
 
+// 注册督导
+async function registerSupervisor(name, addr) {
+    let isregister = await contract.addressToSupervisorId(addr);
+    if(isregister!=0){
+        console.log("该督导已经注册")
+        return {
+            code: -1,
+            message: "该督导已经注册",
+        };
+    }
+    let supervisorCount = await contract.supervisorCount();
+    supervisorCount = Number(supervisorCount);
+    supervisorCount++;
+    await contract.addSupervisorId(supervisorCount);
+    await contract.setSupervisorId(addr, supervisorCount);
+    await contract.setSupervisorName(supervisorCount, name);
+    await voteContract.registerVoter(addr);
+    return {
+        code: 0,
+        message: "督导注册成功",
+        courseId: supervisorCount
+    };
+}
+
 async function register(){
     const { registerType, Name } = await inquirer.prompt([
         {
@@ -162,6 +186,7 @@ async function register(){
             { name: '智能体', value: 'Agent' },
             { name: '班级', value: 'Class' },
             { name: '学生', value: 'Student' },
+            { name: '督导', value: 'Supervisor' },
           ]
         },
         {
@@ -187,6 +212,8 @@ async function register(){
         await registerAgent(Name, addr);
     }else if(registerType === 'Class'){
         await registerClass(Name, addr);
+    }else if(registerType === 'Supervisor'){
+        await registerSupervisor(Name, addr);
     }
     currentName = Name;
     return [Name, registerType];
@@ -204,6 +231,7 @@ async function switchUser(){
             { name: '智能体', value: 'Agent' },
             { name: '班级', value: 'Class' },
             { name: '学生', value: 'Student' },
+            { name: '督导', value: 'Supervisor' },
             { name: '未注册', value: 'NoRegister' },
           ]
         }
@@ -295,6 +323,17 @@ async function switchUser(){
             code: 0,
             data: [userType, currentSigner, contract, voteContract, classContract, currentName]
         }
+    } else if(userType === 'Supervisor'){
+        let supervisorIds = await contract.getSupervisorIds();
+        supervisorIds = supervisorIds.map( id => Number(id) );
+        const [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]  = await loginWithIdentity('Supervisor', supervisorIds, userName, '切换为督导');
+        if(!nowCurrentSigner){
+            console.log('不存在这个督导')
+            return {
+                code:-1,
+                message: "不存在这个督导"
+            } 
+        }
     } else {
         currentSigner = provider.getSigner(userId);
         contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
@@ -354,7 +393,6 @@ async function initializeData() {
     await switchAcount(1);
     await registerTeacher("teacher_1", accounts[1]);
     await contract.setTeacherValue(1, 800);
-    await contract.setTeacherTransferCourseCoins(1, 6);
     await contract.setTeacherSuitabilityWeight(1,1);
     await contract.setAllTeacherCourseSuitability(1, [26,44,65,88,40,37,79,92,14,87]);
     await contract.setAllTeacherCoursePreferences(1, [35,54,76,80,93,48,64,17,86,70]);
@@ -362,32 +400,28 @@ async function initializeData() {
     await switchAcount(2);
     await registerTeacher("teacher_2", accounts[2]);
     await contract.setTeacherValue(2, 1000);
-    await contract.setTeacherTransferCourseCoins(2, 6);
     await contract.setTeacherSuitabilityWeight(2,2);
     await contract.setAllTeacherCourseSuitability(2, [51,32,53,34,85,26,37,48,55,43]);
     await contract.setAllTeacherCoursePreferences(2, [35,74,17,95,57,23,88,46,64,60]);
 
     await switchAcount(3);
     await registerTeacher("teacher_3", accounts[3]);
-    await contract.setTeacherValue(3, 1500);
-    await contract.setTeacherTransferCourseCoins(3, 6);
     await contract.setTeacherSuitabilityWeight(3,3);
+    await contract.setTeacherValue(3, 1500);
     await contract.setAllTeacherCourseSuitability(3, [32,31,54,43,68,27,44,72,58,30]);
     await contract.setAllTeacherCoursePreferences(3, [51,32,83,14,95,76,27,70,45,67]);
 
     await switchAcount(4);
     await registerTeacher("teacher_4", accounts[4]);
     await contract.setTeacherValue(4, 1200);
-    await contract.setTeacherTransferCourseCoins(4, 6);
     await contract.setTeacherSuitabilityWeight(4,4);
     await contract.setAllTeacherCourseSuitability(4, [43,24,35,36,67,18,39,80,61,33]);
     await contract.setAllTeacherCoursePreferences(4, [22,63,44,85,66,87,38,79,57,60]);
 
     await switchAcount(5);
     await registerTeacher("teacher_5", accounts[5]);
-    await contract.setTeacherValue(5, 1100);
-    await contract.setTeacherTransferCourseCoins(5, 6);
     await contract.setTeacherSuitabilityWeight(5,5);
+    await contract.setTeacherValue(5, 1100);
     await contract.setAllTeacherCourseSuitability(5, [22,43,44,35,36,37,31,32,33,34]);
     await contract.setAllTeacherCoursePreferences(5, [43,14,75,35,56,67,28,59,59,79]);
 
@@ -436,7 +470,15 @@ async function initializeData() {
     await switchAcount(15);
     await registerStudent(2, "student_6", accounts[15]);
     console.log("student_6 (class_2) 注册完毕");
+    
+    console.log("Registering supervisors...");
+    await switchAcount(16);
+    await registerSupervisor("supervisor_1", accounts[16]);
+    console.log("supervisor_1 注册完毕");
 
+    await switchAcount(17);
+    await registerSupervisor("supervisor_2", accounts[17]);
+    console.log("supervisor_2 注册完毕");
 }
 
 async function switchAcount(Index){
