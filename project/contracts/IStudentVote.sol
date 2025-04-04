@@ -41,6 +41,7 @@ contract IStudentVote is StudentVote {
         uint256 voteCount;
     }
 
+    uint256 public totalClassWeight;
     mapping(uint256 => Class) public classes;
     mapping(uint256 => Student) public students;
     mapping(address => uint256) public addressToClassId;

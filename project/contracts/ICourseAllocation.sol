@@ -29,6 +29,7 @@ contract ICourseAllocation {
     // 督导
     struct Supervisor {
         uint256 id;
+        string name;
         address addr;
         mapping(uint256 => uint256) courseScores;
     }
@@ -51,6 +52,9 @@ contract ICourseAllocation {
         uint256[] supervisorScores;
         mapping(uint256 => uint256) giveScoreSupervisorIdExists;
     }
+
+    // 所有教师的总偏好
+    uint256 public totalWeight;
 
     // 教师映射：地址 => 教师ID
     mapping(address => uint256) public addressToTeacherId;
@@ -258,7 +262,9 @@ contract ICourseAllocation {
         uint256 teacherId,
         uint256 _suitabilityWeight
     ) public onlyTeacher {
+        totalWeight -= teachers[teacherId].suitabilityWeight;
         teachers[teacherId].suitabilityWeight = _suitabilityWeight;
+        totalWeight += teachers[teacherId].suitabilityWeight;
     }
 
     // 设置教师换课币数量
@@ -724,10 +730,18 @@ contract ICourseAllocation {
         supervisorCount++;
     }
 
-    function setSupervisorsId(address supervisor, uint256 supervisorId) public {
+    function getSupervisorIds() public view returns (uint256[] memory) {
+        return supervisorIds;
+    }
+
+    function setSupervisorId(address supervisor, uint256 supervisorId) public {
         addressToSupervisorId[supervisor] = supervisorId;
         supervisors[supervisorId].id = supervisorId;
         supervisors[supervisorId].addr = supervisor;
+    }
+
+    function setSupervisorName(uint256 supervisorId, string calldata _name) public {
+        supervisors[supervisorId].name = _name;
     }
 
     function setSupervisorsCourseScore(uint256 supervisorId, uint256 courseId, uint256 score) public {

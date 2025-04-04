@@ -151,6 +151,30 @@ async function registerStudent(classId, name, addr) {
     };
 }
 
+// 注册督导
+async function registerSupervisor(name, addr) {
+    let isregister = await contract.addressToSupervisorId(addr);
+    if(isregister!=0){
+        console.log("该督导已经注册")
+        return {
+            code: -1,
+            message: "该督导已经注册",
+        };
+    }
+    let supervisorCount = await contract.supervisorCount();
+    supervisorCount = Number(supervisorCount);
+    supervisorCount++;
+    await contract.addSupervisorId(supervisorCount);
+    await contract.setSupervisorId(addr, supervisorCount);
+    await contract.setSupervisorName(supervisorCount, name);
+    await voteContract.registerVoter(addr);
+    return {
+        code: 0,
+        message: "督导注册成功",
+        courseId: supervisorCount
+    };
+}
+
 async function register(){
     const { registerType, Name } = await inquirer.prompt([
         {
@@ -162,6 +186,7 @@ async function register(){
             { name: '智能体', value: 'Agent' },
             { name: '班级', value: 'Class' },
             { name: '学生', value: 'Student' },
+            { name: '督导', value: 'Supervisor' },
           ]
         },
         {
@@ -187,6 +212,8 @@ async function register(){
         await registerAgent(Name, addr);
     }else if(registerType === 'Class'){
         await registerClass(Name, addr);
+    }else if(registerType === 'Supervisor'){
+        await registerSupervisor(Name, addr);
     }
     currentName = Name;
     return [Name, registerType];
@@ -204,6 +231,7 @@ async function switchUser(){
             { name: '智能体', value: 'Agent' },
             { name: '班级', value: 'Class' },
             { name: '学生', value: 'Student' },
+            { name: '督导', value: 'Supervisor' },
             { name: '未注册', value: 'NoRegister' },
           ]
         }
@@ -294,6 +322,17 @@ async function switchUser(){
         return{
             code: 0,
             data: [userType, currentSigner, contract, voteContract, classContract, currentName]
+        }
+    } else if(userType === 'Supervisor'){
+        let supervisorIds = await contract.getSupervisorIds();
+        supervisorIds = supervisorIds.map( id => Number(id) );
+        const [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]  = await loginWithIdentity('Supervisor', supervisorIds, userName, '切换为督导');
+        if(!nowCurrentSigner){
+            console.log('不存在这个督导')
+            return {
+                code:-1,
+                message: "不存在这个督导"
+            } 
         }
     } else {
         currentSigner = provider.getSigner(userId);
@@ -431,7 +470,15 @@ async function initializeData() {
     await switchAcount(15);
     await registerStudent(2, "student_6", accounts[15]);
     console.log("student_6 (class_2) 注册完毕");
+    
+    console.log("Registering supervisors...");
+    await switchAcount(16);
+    await registerSupervisor("supervisor_1", accounts[16]);
+    console.log("supervisor_1 注册完毕");
 
+    await switchAcount(17);
+    await registerSupervisor("supervisor_2", accounts[17]);
+    console.log("supervisor_2 注册完毕");
 }
 
 async function switchAcount(Index){

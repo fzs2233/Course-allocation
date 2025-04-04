@@ -734,10 +734,6 @@ async function transferCourse(courseId, targetId, targetType) {
             const suitability = await contract.getTeacherSuitability(senderTeacherId, courseId);
             const salary = (await contract.teachers(senderTeacherId)).value;
             currentPerf = suitability.toNumber() / salary.toNumber();
-        } else {
-            const suitability = await contract.getAgentSuitability(senderAgentId, courseId);
-            const salary = (await contract.agents(senderAgentId)).value;
-            currentPerf = suitability.toNumber() / salary.toNumber();
         }
 
         // 获取目标性价比
@@ -745,10 +741,6 @@ async function transferCourse(courseId, targetId, targetType) {
         if (targetType === "teacher") {
             const suitability = await contract.getTeacherSuitability(targetId, courseId);
             const salary = (await contract.teachers(targetId)).value;
-            targetPerf = suitability.toNumber() / salary.toNumber();
-        } else {
-            const suitability = await contract.getAgentSuitability(targetId, courseId);
-            const salary = (await contract.agents(targetId)).value;
             targetPerf = suitability.toNumber() / salary.toNumber();
         }
 
@@ -796,6 +788,7 @@ async function transferCourse(courseId, targetId, targetType) {
         };
     }
 }
+
 async function preprocessConflictCourses() {
     try {
         const courseIds = (await contract.getCourseIds()).map(id => id.toNumber());
@@ -814,18 +807,51 @@ async function preprocessConflictCourses() {
                 // 检查无冲突条件
                 if (teachers.length === 1 && agents.length === 0) {
                     const teacherId = teachers[0].toNumber();
-                    const existingCourses = await contract.getTeacherReallyAssignedCourses(teacherId);
+                    let existingCourses = await contract.getTeacherReallyAssignedCourses(teacherId);
                     console.log(`courseId: ${courseId} TeacherId: ${teacherId}`)
                     // 检查课程数量限制
                     if (existingCourses.length < 2) {
                         const tx = await contract.addTeacherReallyAssignedCourses(teacherId, courseId);
                         await tx.wait();
-                        successCount++;
+                        
                     } else {
-                        // console.log(`移除课程 ${courseId} from ${teacherId}`)
-                        await removeTeacherCourse(teacherId, courseId);
-                        failedCourses++;
+                        await contract.removeTeacherAssignedCourses(teacherId, courseId);
+                        await contract.removeCourseAssignedTeacherId(courseId, teacherId);
+                        // 获取当前课程的 score
+                        let currentScore = (await getCompareScore(teacherId, courseId, "Cost-effectiveness")).data;
+                        existingCourses = existingCourses.map(id => id.toNumber());
+
+                        // 获取所有现有课程的 score 并存储
+                        const coursesWithScores = [];
+                        for (const existCourseId of existingCourses) {
+                            let courseScore = (await getCompareScore(teacherId, existCourseId, "Cost-effectiveness")).data;
+                            coursesWithScores.push({
+                                courseId: existCourseId,
+                                score: courseScore
+                            });
+                            await contract.removeTeacherAssignedCourses(teacherId, existCourseId);
+                            await contract.removeTeacherReallyAssignedCourses(teacherId, existCourseId);
+                            await contract.removeCourseAssignedTeacherId(existCourseId, teacherId);
+                        }
+
+                        // 添加当前课程到列表中
+                        coursesWithScores.push({
+                            courseId: courseId,
+                            score: currentScore
+                        });
+
+                        // 按照 score 降序排序
+                        coursesWithScores.sort((a, b) => b.score - a.score);
+
+                        // 选出最大的两个 courseId
+                        const topTwoCourses = coursesWithScores.slice(0, 2).map(item => item.courseId);
+                        for(let courseId of topTwoCourses){
+                            await contract.addTeacherAssignedCourses(teacherId, courseId);
+                            await contract.addTeacherReallyAssignedCourses(teacherId, courseId);
+                            await contract.addCourseAssignedTeacherId(courseId, teacherId);
+                        }
                     }
+                    successCount++;
                 } else {
                     skippedCourses++;
                 }
@@ -840,6 +866,37 @@ async function preprocessConflictCourses() {
     } catch (error) {
         console.error("处理失败:", error);
         return { code: -1, message: error.message };
+    }
+}
+
+// 设定比较的分数
+async function getCompareScore(teacherId, courseId, scoreType){
+    let teacher = await contract.teachers(teacherId);
+    let course = await contract.courses(courseId);
+    if(scoreType === "Cost-effectiveness"){
+        let salary = teacher.value;
+        salary = salary.toNumber();
+        let suitability = await contract.getTeacherSuitability(teacherId, courseId);
+        let CostEffectiveness = salary/suitability;
+        return {
+            code: 0,
+            message: "Cost-effectiveness",
+            data: CostEffectiveness
+        }
+    }else if(scoreType === "Suitability&Preference"){
+        let totalTeacherWeight = await contract.totalTeacherWeight();
+        totalTeacherWeight = totalTeacherWeight.toNumber();
+        let totalClassWeight = await classContract.getClassWeight();
+        let totalWeight = totalTeacherWeight + totalClassWeight.toNumber();
+        let currentWeight = totalWeight - (teacher.suitabilityWeight).toNumber();
+        let courseSuitability = await contract.getTeacherSuitability(teacherId, courseId);
+        let coursePreference = await contract.getPreference(teacherId, courseId);
+        let teacherScore = currentWeight * courseSuitability + (10 * (teacherCount + classCount -1) - currentWeight) * coursePreference;
+        return {
+            code: 0,
+            message: "Suitability&Preference",
+            data: teacherScore
+        }
     }
 }
 

@@ -68,7 +68,7 @@ async function mainMenu() {
     const choices = [
       { name: '一键初始化数据', value: 'initializeData'},
       { name: '切换用户', value: 'switchUser'},
-      { name: '注册教师/智能体/班级/学生', value: 'register'},
+      { name: '注册教师/智能体/班级/学生/督导', value: 'register'},
       { name: '初始化课程分配', value: 'initAllocation' },
       { name: '查看课程分配情况', value: 'viewAssignments' },
       { name: '查看课程冲突情况', value: 'checkCourseConflicts' },
