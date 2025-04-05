@@ -30648,12 +30648,12 @@
     "5777": {
       "events": {},
       "links": {},
-      "address": "0x67C4dA4258A9ff5069dD8D4A48454B12d9DA1b2A",
-      "transactionHash": "0x647fd4daa4bb659d1224498485759eff0a9bef21b5d6a11a576254ab14229536"
+      "address": "0xdb8F27C22E2488731990d4E52AA585884F853aB8",
+      "transactionHash": "0xbef9719d3e08f34eb63fbddc93399fa163e30c98bf3c45de3833ec2682fba8c7"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2025-04-04T09:21:20.556Z",
+  "updatedAt": "2025-04-05T03:29:34.707Z",
   "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",

@@ -292,10 +292,6 @@ for (let v of voteData) {
     console.log("· 投票统计：", `赞成票=${numAgree}, 反对票=${numDisagree}, 总投票人数=${totalVoters}`);
     console.log("· 是否通过智能体适用性（isAgentSuitable）：", courseInfo.isAgentSuitable ? "通过" : "未通过");
 
-    // 也可以在这里加入更多断言逻辑，比如判断 importance 是否接近平均值、赞成票是否大于反对票等等
-    // if (numAgree <= numDisagree) {
-    //   throw new Error("测试失败：赞成票应当大于反对票");
-    // }
 
     console.log("\n=== TeacherVote 测试完毕 ===");
 

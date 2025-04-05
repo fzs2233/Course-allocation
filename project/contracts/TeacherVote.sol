@@ -8,7 +8,7 @@ contract TeacherVote is Vote {
     CourseAllocation public courseAllocation;
 
     // 新增本地选项存储
-    mapping(uint256 => uint256[]) private _proposalOptions;
+    mapping(uint256 => uint256[]) private _proposalOptions; //存储每个提案的投票选项
 
     struct ProposalBase {
         uint256 courseId;
@@ -160,7 +160,8 @@ contract TeacherVote is Vote {
         bool isSuitable = (winningOption == 2); // 假设2是赞成选项值
 
         // 更新课程状态
-        courseAllocation.setCourseProperties(p.courseId, avgRating, isSuitable);
+        courseAllocation.setCourseImportance(p.courseId, avgRating);
+        courseAllocation.setCourseIsAgentSuitable(p.courseId, isSuitable);
 
         p.executed = true;
         emit ProposalExecuted(proposalId, avgRating, isSuitable);

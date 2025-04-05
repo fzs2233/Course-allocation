@@ -655,15 +655,6 @@ contract CourseAllocation {
         return classIds;
     }
 
-    function setCourseProperties(
-        uint256 courseId,
-        uint256 importance,
-        bool isAgentSuitable
-    ) public {
-        courses[courseId].importance = importance;
-        courses[courseId].isAgentSuitable = isAgentSuitable;
-    }
-
     function getCourseCount() public view returns (uint256) {
         return courseCount;
     }
