@@ -187,121 +187,120 @@ async function initializeData() {
   // console.log("班级2学生注册完毕");
 
 }
+const inquirer = require("inquirer");
 
 async function testTeacherVote() {
   try {
-    console.log("\n=== 开始新版 TeacherVote 测试 ===");
+    console.log("\n=== 🌟 启动 TeacherVote 测试（使用 inquirer 交互）===\n");
 
-    // 1. 获取账户信息（这里以 Ganache / 本地节点为例）
     const accounts = await web3.eth.getAccounts();
-    // 切换到教师1（在你的合约中，已注册为教师）
+
+    // 创建合并提案（由教师1执行）
     await switchAcount(1);
     await teacherVoteContract.setCourseAllocation(contractAddress);
-    // 2. 创建新的合并提案（示例：courseId = 1）
-    console.log("测试1：创建合并提案...");
+    console.log("📌 创建课程提案中...");
     const txCreate = await teacherVoteContract.createCombinedProposal(1, GAS_CONFIG);
     const receiptCreate = await txCreate.wait();
-
-    // 从事件中解析出 proposalId
     const eventCreate = receiptCreate.events.find(e => e.event === "NewCombinedProposal");
     const proposalId = eventCreate.args.proposalId;
-    console.log(`创建合并提案成功，proposalId = ${proposalId}`);
+    console.log(`✅ 提案创建成功，proposalId = ${proposalId}\n`);
 
-    // 3. 教师依次对该提案进行评分 + 投票
-    console.log("\n测试2：教师提交合并操作（评分 + 投票）...");
-    // 假设有 5 名教师，分别准备了他们的评分和投票意向
-    const voteData = [
-      { teacherIndex: 1, teacherId: 1, rating: 8, voteOption: 1 }, // 1 表示赞成
-      { teacherIndex: 2, teacherId: 2, rating: 7, voteOption: 0 }, // 0 表示反对
-      { teacherIndex: 3, teacherId: 3, rating: 9, voteOption: 1 },
-      { teacherIndex: 4, teacherId: 4, rating: 6, voteOption: 1 },
-      { teacherIndex: 5, teacherId: 5, rating: 8, voteOption: 0 },
-    ];
+    const voteData = [];
 
-    // 修改 testTeacherVote 函数中投票提交部分代码
-for (let v of voteData) {
-  try {
-    await switchAcount(v.teacherIndex);
-    const currentAddress = await currentSigner.getAddress();
-    const teacherIdCheck = await contract.addressToTeacherId(currentAddress);
-    console.log(`教师${v.teacherIndex} 的地址 ${currentAddress} 在主合约中查到 teacherId = ${teacherIdCheck.toString()}`);
+    for (let i = 1; i <= 5; i++) {
+      await switchAcount(i);
+      const address = await currentSigner.getAddress();
+      const teacherId = (await contract.addressToTeacherId(address)).toNumber();
 
-    if (teacherIdCheck.toNumber() !== v.teacherId) {
-      throw new Error(`教师ID校验失败！期望${v.teacherId}，实际${teacherIdCheck.toNumber()}`);
+      console.log(`👤 教师 ${teacherId} 请填写评分与投票选项：`);
+
+      const answers = await inquirer.prompt([
+        {
+          type: "input",
+          name: "rating",
+          message: "请输入评分（1~10）:",
+          validate: val => {
+            const n = parseInt(val);
+            return n >= 1 && n <= 10 ? true : "请输入 1 ~ 10 之间的数字";
+          },
+          filter: Number,
+        },
+        {
+          type: "list",
+          name: "voteOption",
+          message: "请选择投票选项:",
+          choices: [
+            { name: "反对", value: 0 },
+            { name: "赞成", value: 1 }
+          ],
+        }
+      ]);
+
+      voteData.push({
+        teacherIndex: i,
+        teacherId,
+        rating: answers.rating,
+        voteOption: answers.voteOption
+      });
+
+      console.log("✅ 数据已保存。\n");
     }
 
-    console.log(`教师ID=${v.teacherId} 正在为提案 ${proposalId} 提交评分=${v.rating}，投票选项=${v.voteOption}`);
-
-    try {
-      await teacherVoteContract.callStatic.submitCombinedVote(
-        proposalId,
-        v.rating,
-        v.voteOption,
-        GAS_CONFIG
-      );
-    } catch (callErr) {
-      const reason = callErr.reason || (callErr.error && callErr.error.message) || callErr.message;
-      console.error(`❌ 教师${v.teacherIndex} 模拟调用失败！revert 原因:`, reason);
-      continue;  // 继续执行下一个投票
-    }
-
-    const txVote = await teacherVoteContract.submitCombinedVote(
-      proposalId,
-      v.rating,
-      v.voteOption,
-      GAS_CONFIG
-    );
-    await txVote.wait();
-    console.log(`✅ 教师${v.teacherIndex} 提交成功！`);
-
-  } catch (error) {
-    const reason = error.reason || (error.error && error.error.message) || error.message;
-    console.error(`❌ 教师${v.teacherIndex} 提交失败:`, reason);
-
-    if (error.data) {
+    // 开始提交投票与评分
+    console.log("📩 提交所有教师的评分与投票...\n");
+    for (let v of voteData) {
       try {
-        const decodedError = teacherVoteContract.interface.parseError(error.data);
-        console.error("🔍 合约错误详情:", decodedError.name, decodedError.args);
-      } catch (decodeErr) {
-        console.error("⚠️ 无法解码合约错误信息:", decodeErr.message);
+        await switchAcount(v.teacherIndex);
+
+        await teacherVoteContract.callStatic.submitCombinedVote(
+          proposalId,
+          v.rating,
+          v.voteOption,
+          GAS_CONFIG
+        );
+
+        const txVote = await teacherVoteContract.submitCombinedVote(
+          proposalId,
+          v.rating,
+          v.voteOption,
+          GAS_CONFIG
+        );
+        await txVote.wait();
+
+        console.log(`✅ 教师 ${v.teacherId} 提交成功`);
+      } catch (error) {
+        const reason = error.reason || (error.error && error.error.message) || error.message;
+        console.error(`❌ 教师 ${v.teacherId} 提交失败:`, reason);
       }
     }
-  }
-}
 
-
-    // 4. 执行提案
-    console.log("\n测试3：执行提案...");
-    // 切换回教师1（或拥有执行权限的账户）
+    // 执行提案
+    console.log("\n⚙️ 执行提案...");
     await switchAcount(1);
     const txExec = await teacherVoteContract.executeProposal(proposalId, GAS_CONFIG);
     await txExec.wait();
-    console.log(`提案 ${proposalId} 执行成功！`);
+    console.log(`✅ 提案 ${proposalId} 执行成功！`);
 
-    // 5. 验证执行结果
-    console.log("\n测试4：验证执行结果...");
+    // 验证执行结果
+    console.log("\n📊 提案执行结果：");
     const courseInfo = await contract.courses(1);
     const [numAgree, numDisagree, totalVoters] = await teacherVoteContract.getVoteDetails(proposalId);
-
-    // 计算理论平均评分
     const ratings = voteData.map(v => v.rating);
-    const averageRating = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+    const avgRating = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
 
-    console.log("· 理论平均重要性（ratings 平均值）：", averageRating);
-    console.log("· 合约中存储的课程重要性（importance）：", courseInfo.importance.toString());
-    console.log("· 投票统计：", `赞成票=${numAgree}, 反对票=${numDisagree}, 总投票人数=${totalVoters}`);
-    console.log("· 是否通过智能体适用性（isAgentSuitable）：", courseInfo.isAgentSuitable ? "通过" : "未通过");
+    console.log("· 理论平均评分：", avgRating.toFixed(2));
+    console.log("· 合约中记录的重要性：", courseInfo.importance.toString());
+    console.log(`· 投票结果：赞成 = ${numAgree}，反对 = ${numDisagree}，投票人数 = ${totalVoters}`);
+    console.log("· 是否通过：", courseInfo.isAgentSuitable ? "✅ 通过" : "❌ 未通过");
 
-
-    console.log("\n=== TeacherVote 测试完毕 ===");
+    console.log("\n🎉 TeacherVote 测试完成！");
 
   } catch (error) {
-    console.error("testTeacherVote() 测试出现异常:", error.reason || error.message);
-    if (error.data) {
-      console.error("错误详情:", error.data);
-    }
+    console.error("❌ 测试发生错误:", error.reason || error.message);
+    if (error.data) console.error("错误详情:", error.data);
   }
 }
+
 
 
 async function main() {
