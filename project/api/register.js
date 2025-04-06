@@ -276,10 +276,7 @@ async function switchUser(){
             }
         }
         [currentSigner, contract, voteContract, classContract, currentName] = [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]
-        return{
-            code: 0,
-            data: [userType, currentSigner, contract, voteContract, classContract, currentName]
-        }
+
     } else if (userType === 'Agent') {
         let agentIds = await contract.getAgentIds();
         agentIds = agentIds.map( id => id.toNumber() );
@@ -292,10 +289,7 @@ async function switchUser(){
             }
         }
         [currentSigner, contract, voteContract, classContract, currentName] = [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]
-        return{
-            code: 0,
-            data: [userType, currentSigner, contract, voteContract, classContract, currentName]
-        }
+
     } else if (userType === 'Class') {
         let classIds = await classContract.getClassIds();
         classIds = classIds.map( id => id.toNumber() );
@@ -308,10 +302,7 @@ async function switchUser(){
             }
         }
         [currentSigner, contract, voteContract, classContract, currentName] = [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]
-        return{
-            code: 0,
-            data: [userType, currentSigner, contract, voteContract, classContract, currentName]
-        }
+
     } else if (userType === 'Student') {
         let studentIds = await classContract.getStudentIds();
         studentIds = studentIds.map( id => id.toNumber() );
@@ -324,10 +315,7 @@ async function switchUser(){
             }
         }
         [currentSigner, contract, voteContract, classContract, currentName] = [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]
-        return{
-            code: 0,
-            data: [userType, currentSigner, contract, voteContract, classContract, currentName]
-        }
+
     } else if(userType === 'Supervisor'){
         let supervisorIds = await contract.getSupervisorIds();
         supervisorIds = supervisorIds.map( id => Number(id) );
@@ -345,10 +333,12 @@ async function switchUser(){
         voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
         classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
         currentName = `account_${userId}`
-        return{
-            code: 0,
-            data: [userType, currentSigner, contract, voteContract, classContract, currentName]
-        }
+    }
+    let currentAddress = await currentSigner.getAddress();
+    return{
+        code: 0,
+        currentAddress: currentAddress,
+        currentName: currentName
     }
 }
 

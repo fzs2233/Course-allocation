@@ -39,7 +39,7 @@ let teacherVoteContract = new ethers.Contract(teacherVoteAddress, teacherVoteABI
 // [保留原有的合约初始化代码...]
 const {
     init_TeacherCourses,
-    switchCurrentSigner,
+    switchCurrentSigner_courseAllocation,
     init_AgentCourses,
     getTeacherCostPerformance,
     getAgentCostPerformance,
@@ -72,7 +72,7 @@ const {
   createProposal,
   init_teacherVote,
   executeProposal,
-  switchAccount
+  switchCurrentSigner_test1
 } = require("../api/test1.js");
 
 /* 交互菜单系统 */
@@ -81,7 +81,7 @@ async function mainMenu() {
       { name: '一键初始化数据', value: 'initializeData'},
       { name: '切换用户', value: 'switchUser'},
       { name: '注册教师/智能体/班级/学生', value: 'register'}, 
-      { name: '📌 创建课程提案（教师）', value: 'createTeacherProposal' },
+      { name: '📌 创建为课程提案（教师）', value: 'createTeacherProposal' },
       { name: '🗳️ 教师评分并投票', value: 'init_teacherVote' },
       { name: '✅ 执行教师提案', value: 'executeTeacherProposal' },
       { name: '初始化课程分配', value: 'initAllocation' },
@@ -115,15 +115,14 @@ async function mainMenu() {
           // console.log(contract)
           let userResult = await switchUser();
           if(userResult.code === 0){
-              [currentType, currentSigner, contract, voteContract, classContract, currentName] = userResult.data;
-              await switchCurrentSigner(currentSigner, contract, voteContract, classContract, currentName);
-              await switchCurrentSigner_studentClass(currentSigner, contract, voteContract, classContract, currentName);
-              const accountIndex = parseInt(currentName.split('_')[1]); // 从 account_2 提取 2
-              if (!isNaN(accountIndex)) {
-                  await switchAccount(accountIndex); // 调用 test1.js 的 switchAccount(index)
-              }
-              console.log(currentName)
+              currentName = userResult.currentName;
+              let currentAddress = userResult.currentAddress;
+              await switchCurrentSigner_newinteract(currentAddress, currentName);
+              await switchCurrentSigner_studentClass(currentAddress, currentName);
+              await switchCurrentSigner_courseAllocation(currentAddress, currentName);
+              await switchCurrentSigner_test1(currentAddress);
           }
+
           break;
       case'register':
           [currentName, currentType] = await register();
@@ -341,6 +340,14 @@ async function endProposal(){
     }
 }
 
+async function switchCurrentSigner_newinteract(newAddress, newCurrentName){
+    currentSigner = provider.getSigner(newAddress);
+    currentName = newCurrentName;
+    contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
+    voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
+    classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    teacherVoteContract = new ethers.Contract(teacherVoteAddress, teacherVoteABI, currentSigner);
+}
 // 启动交互
 console.log('=== 课程分配管理系统 ===');
 async function begin(){

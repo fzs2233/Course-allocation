@@ -31,9 +31,8 @@ let contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
 let teacherVoteContract = new ethers.Contract(teacherVoteAddress, teacherVoteABI, currentSigner);
 
 // Switch account
-async function switchAccount(index) {
-    currentSigner = provider.getSigner(index);
-    contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
+async function switchCurrentSigner_test1(newAddress){
+    currentSigner = provider.getSigner(newAddress);
     teacherVoteContract = new ethers.Contract(teacherVoteAddress, teacherVoteABI, currentSigner);
 }
 
@@ -121,5 +120,5 @@ module.exports = {
     createProposal,
     init_teacherVote,
     executeProposal,
-    switchAccount
+    switchCurrentSigner_test1
 };

@@ -86,11 +86,11 @@ async function endClassProposal_interact(proposalId){
     console.log(await endClassProposal(currentClassAddress, proposalId));
 }
 
-async function switchCurrentSigner_studentClass(newCurrentSigner, newContract, newVoteContract, newClassContract, newCurrentName){
-    currentSigner = newCurrentSigner;
-    contract = newContract;
-    voteContract = newVoteContract;
-    classContract = newClassContract;
+async function switchCurrentSigner_studentClass(newAddress, newCurrentName){
+    currentSigner = provider.getSigner(newAddress);
+    contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
+    voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
+    classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
     currentName = newCurrentName;
 }
 
