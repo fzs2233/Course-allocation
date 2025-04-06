@@ -236,7 +236,9 @@ contract ICourseAllocation {
             i < teachers[teacherId].reallyAssignedCourses.length;
             i++
         ) {
-            if (teachers[teacherId].reallyAssignedCourses[i] == _assignedCourses) {
+            if (
+                teachers[teacherId].reallyAssignedCourses[i] == _assignedCourses
+            ) {
                 found = true;
                 indexToRemove = i;
                 break;
@@ -248,7 +250,9 @@ contract ICourseAllocation {
             // 将要移除的课程位置的元素替换为数组中最后一个元素
             teachers[teacherId].reallyAssignedCourses[indexToRemove] = teachers[
                 teacherId
-            ].reallyAssignedCourses[teachers[teacherId].reallyAssignedCourses.length - 1];
+            ].reallyAssignedCourses[
+                    teachers[teacherId].reallyAssignedCourses.length - 1
+                ];
             // 移除数组中的最后一个元素
             teachers[teacherId].reallyAssignedCourses.pop();
         } else {
@@ -699,10 +703,17 @@ contract ICourseAllocation {
         return classIds;
     }
 
-    function addCourseClassScores(uint256 courseId, uint256 classId, uint256 score) public {
-        require(courseScores[courseId].giveScoreClassIdExists[classId] == 0, unicode"该班级已经打分");
+    function addCourseClassScores(
+        uint256 courseId,
+        uint256 classId,
+        uint256 score
+    ) public {
+        require(
+            courseScores[courseId].giveScoreClassIdExists[classId] == 0,
+            unicode"该班级已经投票"
+        );
         courseScores[courseId].giveScoreClassIdExists[classId] = score;
-        courseScores[courseId].classScores.push(score); 
+        courseScores[courseId].classScores.push(score);
     }
 
     // 清空班级分数
@@ -725,13 +736,25 @@ contract ICourseAllocation {
         courseScores[courseId].totalScore = score;
     }
 
-    function addCourseSupervisorScores(uint256 courseId, uint256 supervisorId,uint256 score) public {
-        require(courseScores[courseId].giveScoreSupervisorIdExists[supervisorId] == 0, unicode"该督导已经投票");  
-        courseScores[courseId].giveScoreSupervisorIdExists[supervisorId] = score;
+    function addCourseSupervisorScores(
+        uint256 courseId,
+        uint256 supervisorId,
+        uint256 score
+    ) public {
+        require(
+            courseScores[courseId].giveScoreSupervisorIdExists[supervisorId] ==
+                0,
+            unicode"该督导已经投票"
+        );
+        courseScores[courseId].giveScoreSupervisorIdExists[
+            supervisorId
+        ] = score;
         courseScores[courseId].supervisorScores.push(score);
     }
 
-    function getCourseSupervisorScores(uint256 courseId) public view returns (uint256[] memory) {
+    function getCourseSupervisorScores(
+        uint256 courseId
+    ) public view returns (uint256[] memory) {
         return courseScores[courseId].supervisorScores;
     }
 
@@ -750,11 +773,18 @@ contract ICourseAllocation {
         supervisors[supervisorId].addr = supervisor;
     }
 
-    function setSupervisorName(uint256 supervisorId, string calldata _name) public {
+    function setSupervisorName(
+        uint256 supervisorId,
+        string calldata _name
+    ) public {
         supervisors[supervisorId].name = _name;
     }
 
-    function setSupervisorsCourseScore(uint256 supervisorId, uint256 courseId, uint256 score) public {
-        supervisors[supervisorId].courseScores[courseId] = score; 
+    function setSupervisorsCourseScore(
+        uint256 supervisorId,
+        uint256 courseId,
+        uint256 score
+    ) public {
+        supervisors[supervisorId].courseScores[courseId] = score;
     }
 }

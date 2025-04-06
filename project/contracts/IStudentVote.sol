@@ -2,11 +2,27 @@
 pragma solidity ^0.8.7;
 
 interface StudentVote {
-    function createProposal(string memory _description, uint256 _voteforID, uint256[] memory _votedIds) external returns (uint256);
-    function vote(uint256 studentId, uint256 proposalId, uint256 optionId) external;
-    function getProposalResults(address classAddress, uint256 proposalId) external view returns (uint256, uint256);
+    function createProposal(
+        string memory _description,
+        uint256 _voteforID,
+        uint256[] memory _votedIds
+    ) external returns (uint256);
+
+    function vote(
+        uint256 studentId,
+        uint256 proposalId,
+        uint256 optionId
+    ) external;
+
+    function getProposalResults(
+        address classAddress,
+        uint256 proposalId
+    ) external view returns (uint256, uint256);
+
     function getAverageSuitability(uint256[] memory courseIds) external view returns (uint256[] memory);
+
     function getClassNum() external view returns (uint256);
+
     function getClassWeight() external view returns (uint256);
 }
 
@@ -51,13 +67,13 @@ contract IStudentVote is StudentVote {
     uint256 public studentCount;
     uint256 courseCount = 10;
 
-    function getClassNum() public view override returns(uint256) {
+    function getClassNum() public view override returns (uint256) {
         return classCount;
     }
 
-    function getClassWeight() public view override returns(uint256) {
+    function getClassWeight() public view override returns (uint256) {
         uint256 classWeights;
-        for(uint256 i = 0; i < classCount; i++){
+        for (uint256 i = 0; i < classCount; i++) {
             classWeights += classes[i].weightForAutoVote;
         }
         return classWeights;
@@ -89,7 +105,11 @@ contract IStudentVote is StudentVote {
     }
 
     // 注册学生
-    function registerStudent(uint256 classId, string memory _name, address studentAddress) public{
+    function registerStudent(
+        uint256 classId,
+        string memory _name,
+        address studentAddress
+    ) public {
         require(classes[classId].id != 0, "Class does not exist");
         studentCount++;
         addressToStudentId[studentAddress] = studentCount;
@@ -103,7 +123,11 @@ contract IStudentVote is StudentVote {
     }
 
     // 创建提案
-    function createProposal(string memory _description, uint256 _voteforID, uint256[] memory _votedIds) public override returns (uint256) {
+    function createProposal(
+        string memory _description,
+        uint256 _voteforID,
+        uint256[] memory _votedIds
+    ) public override returns (uint256) {
         uint256 newProposalID = 0;
         for (uint256 i = 1; i <= classCount; i++) {
             Class storage cls = classes[i];
@@ -114,7 +138,7 @@ contract IStudentVote is StudentVote {
             cls.proposals[proposalId].description = _description;
 
             for (uint256 j = 0; j < _votedIds.length; j++) {
-                if(_votedIds[j] != 0){
+                if (_votedIds[j] != 0) {
                     cls.proposals[proposalId].votedIds.push(_votedIds[j]);
                 }
             }
@@ -126,16 +150,35 @@ contract IStudentVote is StudentVote {
     }
 
     // 投票
-    function vote(uint256 studentId, uint256 proposalId, uint256 optionId) public override {
+    function vote(
+        uint256 studentId,
+        uint256 proposalId,
+        uint256 optionId
+    ) public override {
         uint256 classId = addressToClassId[msg.sender];
         require(classes[classId].id != 0, "Class does not exist");
-        require(classes[classId].proposals[proposalId].id != 0, "Proposal does not exist");
-        require(classes[classId].proposals[proposalId].votedIds.length > 0, "Proposal has no options");
-        require(!classes[classId].proposals[proposalId].ifVote[studentId], "You have already voted");
+        require(
+            classes[classId].proposals[proposalId].id != 0,
+            "Proposal does not exist"
+        );
+        require(
+            classes[classId].proposals[proposalId].votedIds.length > 0,
+            "Proposal has no options"
+        );
+        require(
+            !classes[classId].proposals[proposalId].ifVote[studentId],
+            "You have already voted"
+        );
 
         bool optionExists = false;
-        for (uint256 i = 0; i < classes[classId].proposals[proposalId].votedIds.length; i++) {
-            if (classes[classId].proposals[proposalId].votedIds[i] == optionId) {
+        for (
+            uint256 i = 0;
+            i < classes[classId].proposals[proposalId].votedIds.length;
+            i++
+        ) {
+            if (
+                classes[classId].proposals[proposalId].votedIds[i] == optionId
+            ) {
                 optionExists = true;
                 break;
             }
@@ -147,16 +190,35 @@ contract IStudentVote is StudentVote {
         classes[classId].proposals[proposalId].voteCount++;
     }
 
-    function studentVote(uint256 studentId, uint256 proposalId, uint256 optionId) public {
+    function studentVote(
+        uint256 studentId,
+        uint256 proposalId,
+        uint256 optionId
+    ) public {
         uint256 classId = students[studentId].classId;
         require(classes[classId].id != 0, "Class does not exist");
-        require(classes[classId].proposals[proposalId].id != 0, "Proposal does not exist");
-        require(classes[classId].proposals[proposalId].votedIds.length > 0, "Proposal has no options");
-        require(!classes[classId].proposals[proposalId].ifVote[studentId], "You have already voted");
+        require(
+            classes[classId].proposals[proposalId].id != 0,
+            "Proposal does not exist"
+        );
+        require(
+            classes[classId].proposals[proposalId].votedIds.length > 0,
+            "Proposal has no options"
+        );
+        require(
+            !classes[classId].proposals[proposalId].ifVote[studentId],
+            "You have already voted"
+        );
 
         bool optionExists = false;
-        for (uint256 i = 0; i < classes[classId].proposals[proposalId].votedIds.length; i++) {
-            if (classes[classId].proposals[proposalId].votedIds[i] == optionId) {
+        for (
+            uint256 i = 0;
+            i < classes[classId].proposals[proposalId].votedIds.length;
+            i++
+        ) {
+            if (
+                classes[classId].proposals[proposalId].votedIds[i] == optionId
+            ) {
                 optionExists = true;
                 break;
             }
@@ -169,10 +231,21 @@ contract IStudentVote is StudentVote {
     }
 
     // 获取提案结果
-    function getProposalResults(address classAddress, uint256 proposalId) public view override returns (uint256 winningOptionId, uint256 voteforID) {
+    function getProposalResults(
+        address classAddress,
+        uint256 proposalId
+    )
+        public
+        view
+        override
+        returns (uint256 winningOptionId, uint256 voteforID)
+    {
         uint256 classId = addressToClassId[classAddress];
         require(classes[classId].id != 0, "Class does not exist");
-        require(classes[classId].proposals[proposalId].id != 0, "Proposal does not exist");
+        require(
+            classes[classId].proposals[proposalId].id != 0,
+            "Proposal does not exist"
+        );
 
         Proposal storage proposal = classes[classId].proposals[proposalId];
         voteforID = proposal.voteforID;
@@ -196,8 +269,11 @@ contract IStudentVote is StudentVote {
     // 学生评分
     function setCourseSuitability(uint256 studentId, uint256[] memory _suitabilities, uint256[] memory courseIds) public {
         require(studentId <= studentCount, "Student does not exist");
-         // 检查评分数组长度是否匹配
-        require(_suitabilities.length == courseCount, "Suitability array length mismatch");
+        // 检查评分数组长度是否匹配
+        require(
+            _suitabilities.length == courseCount,
+            "Suitability array length mismatch"
+        );
         Student storage student = students[studentId];
         student.isSetSuitability = true;
         for(uint256 i = 0; i < _suitabilities.length; i++){
@@ -227,27 +303,33 @@ contract IStudentVote is StudentVote {
     // 查看学生评分的平均分
     function getAverageSuitability(uint256[] memory courseIds) public view override returns(uint256[] memory) {
         uint256[] memory totalCourseScore = new uint256[](courseCount);
-        for(uint256 i = 1; i <= studentCount; i++){
+        for (uint256 i = 1; i <= studentCount; i++) {
             Student storage student = students[i];
             for(uint256 j = 0; j < courseCount; j++){
                 totalCourseScore[j] += student.courseSuitability[courseIds[j]];
             }
         }
-        for(uint256 j = 0; j < courseCount; j++){
-                totalCourseScore[j] = totalCourseScore[j] / studentCount;
+        for (uint256 j = 0; j < courseCount; j++) {
+            totalCourseScore[j] = totalCourseScore[j] / studentCount;
         }
         return totalCourseScore;
     }
 
-    function getClassIds() public view returns(uint256[] memory) {
+    function getClassIds() public view returns (uint256[] memory) {
         return classIds;
     }
 
-    function getStudentIds() public view returns(uint256[] memory) {
+    function getStudentIds() public view returns (uint256[] memory) {
         return studentIds;
     }
 
-    function getProposalInfo(uint256 classId, uint256 proposalId) public view returns(uint256[] memory, uint256) {
-        return (classes[classId].proposals[proposalId].votedIds, classes[classId].proposals[proposalId].voteforID);
-    } 
+    function getProposalInfo(
+        uint256 classId,
+        uint256 proposalId
+    ) public view returns (uint256[] memory, uint256) {
+        return (
+            classes[classId].proposals[proposalId].votedIds,
+            classes[classId].proposals[proposalId].voteforID
+        );
+    }
 }

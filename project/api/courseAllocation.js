@@ -739,16 +739,11 @@ async function transferCourse(courseId, targetId) {
         // 获取当前分配者性价比
         let currentPerf;
         if (senderTeacherId !== 0) {
-            const suitability = await contract.getTeacherSuitability(senderTeacherId, courseId);
-            const salary = (await contract.teachers(senderTeacherId)).value;
-            currentPerf = suitability.toNumber() / salary.toNumber();
+            currentPerf = await getCompareScore(senderTeacherId, courseId, "Cost-effectiveness").data;
         }
 
         // 获取目标性价比
-        let targetPerf;
-        const suitability = await contract.getTeacherSuitability(targetId, courseId);
-        const salary = (await contract.teachers(targetId)).value;
-        targetPerf = suitability.toNumber() / salary.toNumber();
+        let targetPerf = await getCompareScore(targetId, courseId, "Cost-effectiveness").data;
 
 
         // 验证性价比提升
@@ -906,7 +901,6 @@ async function preprocessConflictCourses() {
 // 设定比较的分数
 async function getCompareScore(teacherId, courseId, scoreType){
     let teacher = await contract.teachers(teacherId);
-    let course = await contract.courses(courseId);
     if(scoreType === "Cost-effectiveness"){
         let salary = teacher.value;
         salary = salary.toNumber();
@@ -1012,16 +1006,15 @@ async function checkCourseConflicts() {
     ).join('\n');
 }
 
-async function switchCurrentSigner(newCurrentSigner, newContract, newVoteContract, newClassContract, newCurrentName){
-    currentSigner = newCurrentSigner;
-    contract = newContract;
-    voteContract = newVoteContract;
-    classContract = newClassContract;
+async function switchCurrentSigner_courseAllocation(newAddress, newCurrentName){
+    currentSigner = provider.getSigner(newAddress);
+    contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
+    voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
+    classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
     currentName = newCurrentName;
 }
-
 module.exports = {
-    switchCurrentSigner,
+    switchCurrentSigner_courseAllocation,
     init_TeacherCourses,
     init_AgentCourses,
     getTeacherCostPerformance,

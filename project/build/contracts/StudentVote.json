@@ -195,7 +195,7 @@
                   "id": 1817,
                   "mutability": "mutable",
                   "name": "_description",
-                  "nameLocation": "127:12:1",
+                  "nameLocation": "137:12:1",
                   "nodeType": "VariableDeclaration",
                   "scope": 1827,
                   "src": "113:26:1",
@@ -209,7 +209,7 @@
                     "id": 1816,
                     "name": "string",
                     "nodeType": "ElementaryTypeName",
-                    "src": "113:6:1",
+                    "src": "123:6:1",
                     "typeDescriptions": {
                       "typeIdentifier": "t_string_storage_ptr",
                       "typeString": "string"
@@ -222,7 +222,7 @@
                   "id": 1819,
                   "mutability": "mutable",
                   "name": "_voteforID",
-                  "nameLocation": "149:10:1",
+                  "nameLocation": "168:10:1",
                   "nodeType": "VariableDeclaration",
                   "scope": 1827,
                   "src": "141:18:1",
@@ -236,7 +236,7 @@
                     "id": 1818,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "141:7:1",
+                    "src": "160:7:1",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -249,7 +249,7 @@
                   "id": 1822,
                   "mutability": "mutable",
                   "name": "_votedIds",
-                  "nameLocation": "178:9:1",
+                  "nameLocation": "206:9:1",
                   "nodeType": "VariableDeclaration",
                   "scope": 1827,
                   "src": "161:26:1",
@@ -264,7 +264,7 @@
                       "id": 1820,
                       "name": "uint256",
                       "nodeType": "ElementaryTypeName",
-                      "src": "161:7:1",
+                      "src": "189:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
                         "typeString": "uint256"
@@ -272,7 +272,7 @@
                     },
                     "id": 1821,
                     "nodeType": "ArrayTypeName",
-                    "src": "161:9:1",
+                    "src": "189:9:1",
                     "typeDescriptions": {
                       "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
                       "typeString": "uint256[]"
@@ -281,7 +281,7 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "112:76:1"
+              "src": "112:110:1"
             },
             "returnParameters": {
               "id": 1826,
@@ -306,7 +306,7 @@
                     "id": 1824,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "207:7:1",
+                    "src": "241:7:1",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -315,7 +315,7 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "206:9:1"
+              "src": "240:9:1"
             },
             "scope": 1867,
             "src": "89:127:1",
@@ -330,7 +330,7 @@
             "kind": "function",
             "modifiers": [],
             "name": "vote",
-            "nameLocation": "231:4:1",
+            "nameLocation": "267:4:1",
             "nodeType": "FunctionDefinition",
             "parameters": {
               "id": 1834,
@@ -749,8 +749,8 @@
                   "constant": false,
                   "id": 1864,
                   "mutability": "mutable",
-                  "name": "",
-                  "nameLocation": "-1:-1:-1",
+                  "name": "studentId",
+                  "nameLocation": "290:9:1",
                   "nodeType": "VariableDeclaration",
                   "scope": 1866,
                   "src": "641:7:1",
@@ -929,7 +929,7 @@
               },
               {
                 "constant": false,
-                "id": 1879,
+                "id": 1911,
                 "mutability": "mutable",
                 "name": "isSetSuitability",
                 "nameLocation": "824:16:1",
@@ -956,7 +956,7 @@
               },
               {
                 "constant": false,
-                "id": 1883,
+                "id": 1915,
                 "mutability": "mutable",
                 "name": "courseSuitability",
                 "nameLocation": "879:17:1",
@@ -970,9 +970,9 @@
                   "typeString": "mapping(uint256 => uint256)"
                 },
                 "typeName": {
-                  "id": 1882,
+                  "id": 1914,
                   "keyType": {
-                    "id": 1880,
+                    "id": 1912,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "859:7:1",
@@ -988,7 +988,7 @@
                     "typeString": "mapping(uint256 => uint256)"
                   },
                   "valueType": {
-                    "id": 1881,
+                    "id": 1913,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "870:7:1",
