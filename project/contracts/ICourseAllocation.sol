@@ -469,6 +469,7 @@ contract ICourseAllocation {
     function setCourseId(uint256 courseId) public {
         courses[courseId].id = courseId;
         courseIds.push(courseId);
+        courseCount++;
     }
 
     // 移除课程
@@ -480,6 +481,7 @@ contract ICourseAllocation {
                 courseIds[i] = courseIds[courseIds.length - 1];
                 // 移除数组中的最后一个元素
                 courseIds.pop();
+                courseCount--;
                 break;
             }
         }
@@ -698,9 +700,17 @@ contract ICourseAllocation {
     }
 
     function addCourseClassScores(uint256 courseId, uint256 classId, uint256 score) public {
-        require(courseScores[courseId].giveScoreClassIdExists[classId] == 0, unicode"该班级已经投票");
+        require(courseScores[courseId].giveScoreClassIdExists[classId] == 0, unicode"该班级已经打分");
         courseScores[courseId].giveScoreClassIdExists[classId] = score;
         courseScores[courseId].classScores.push(score); 
+    }
+
+    // 清空班级分数
+    function removeCourseClassScores(uint256 courseId, uint256[] memory classIds_) public {
+        for (uint256 i = 0; i < classIds_.length; i++) {
+            courseScores[courseId].giveScoreClassIdExists[classIds_[i]] = 0;
+        }
+        delete courseScores[courseId].classScores;
     }
 
     function getCourseClassScores(uint256 courseId) public view returns (uint256[] memory) {

@@ -331,6 +331,14 @@ async function checkAndCreateProposalForTeacher(){
         candidateCourse = candidateCourse.data;
     }
 
+    if(teacherWithoutCourse.length == 1 && candidateCourse != -1) {
+        // 只有一个没有课程的老师，直接分配
+        console.log(await assignCourseToTeacherWithoutCourse(candidateCourse, teacherWithoutCourse[0]));
+        return {
+            code: 0,
+            message: `课程 ${candidateCourse} 已经分配给了老师 ${teacherWithoutCourse[0]}, 现在所有老师都有课程了`
+        }
+    }
     
     // 创建提案
     let tx = await voteContract.createChooseTeacherProposal("Create proposals for teachers without courses", candidateCourse, teacherWithoutCourse, 9); //7老师+2班级
@@ -990,6 +998,7 @@ async function checkCourseConflicts() {
             conflictCourses.push({
                 courseId,
                 teacherCount: teachers.length,
+                teacherIds: teachers.map(id => Number(id)),
                 agentCount: agents.length
             });
         }
@@ -999,7 +1008,7 @@ async function checkCourseConflicts() {
 
     // 生成详细冲突报告
     return conflictCourses.map(conflict => 
-        `课程 ${conflict.courseId} 冲突：${conflict.teacherCount}位教师`
+        `课程 ${conflict.courseId} 冲突：${conflict.teacherCount}位教师,分别是 ${conflict.teacherIds.join(', ')}`
     ).join('\n');
 }
 

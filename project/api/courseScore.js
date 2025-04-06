@@ -51,7 +51,7 @@ const {
 const {
     switchCurrentSigner_studentClass,
     studentVote,
-    endClassProposal_interact
+    endClassProposal_interact,
 } = require("../api/studentClass.js");
 
 const {
@@ -63,12 +63,19 @@ const {
 
 // 老师自评,一次把自己所有课程的分数都填好
 async function giveScoreByMyself(teacherAddress, scores) {
-    if(scores>scoreMax || scores<0) {
-        return {
-            code: -1,
-            message: "分数超出范围"
+    for (let i = 0; i < scores.length; i++) {
+        if(scores[i]>scoreMax || scores[i]<0) {
+            return {
+                code: -1,
+                message: "有分数超出范围",
+                data: {
+                    scoreIndex: i,
+                    score: scores[i]
+                }
+            }
         }
     }
+    
     let teacherId = await contract.addressToTeacherId(teacherAddress);
     let reallyAssignedCourses = await contract.getTeacherReallyAssignedCourses(teacherId);
     if(reallyAssignedCourses.length != scores.length) {
@@ -83,23 +90,61 @@ async function giveScoreByMyself(teacherAddress, scores) {
     }
     return {
         code: 0,
-        message: "自评成功"
+        message: "老师自评成功"
+    };
+}
+
+// 智能体自评,一次把自己所有课程的分数都填好
+async function giveScoreByAgentSelf(AgentAddress, scores) {
+    for (let i = 0; i < scores.length; i++) {
+        if(scores[i]>scoreMax || scores[i]<0) {
+            return {
+                code: -1,
+                message: "有分数超出范围",
+                data: {
+                    scoreIndex: i,
+                    score: scores[i]
+                }
+            }
+        }
+    }
+    let agentId = await contract.addressToAgentId(AgentAddress);
+    let reallyAssignedCourses = await contract.getAgentAssignedCourses(agentId);
+    if(reallyAssignedCourses.length != scores.length) {
+        console.log("输入的分数数量与分配的课程数量不匹配");
+        return {
+            code: -1,
+            message: "输入的分数数量与分配的课程数量不匹配"
+        };
+    }
+    for (let i = 0; i < reallyAssignedCourses.length; i++) {
+        await contract.setCourseSelfScore(reallyAssignedCourses[i], scores[i]);
+    }
+    return {
+        code: 0,
+        message: "智能体自评成功"
     };
 }
 
 // 学生打分 一次给所有课程评分
-async function giveScoreStudent(scores) {
-    await classContract.studentSetCourseSuitability(scores)
+async function giveScoreStudent(scores, courseIds) {
+    await classContract.studentSetCourseSuitability(scores, courseIds)
 }
 
 // 等这个班级全部打分完毕后调用，学生打分总结到班级(在那个分数结构体中)
 async function giveScoreStudentToClass(classAddress, courseId) {
+    
     let classId = await classContract.addressToClassId(classAddress);
+    classId = Number(classId); // 转换为数字类型，因为返回的是BigNumber类型
+    
     let studentIds = await classContract.getStudents();
+    studentIds = studentIds.map(id => Number(id));
+    
     // 遍历studentIds，找到classId对应的学生评分，将其加入到classContract的classScores中
     let thisStudentScore;
     let totalScore = 0;
     let studentScores = [];
+    // console.log("学生：",studentIds);
     for (let i = 0; i < studentIds.length; i++) {
         thisStudentScore = await classContract.getStudentCourseSuitability(studentIds[i], courseId);
         studentScores.push(thisStudentScore);
@@ -108,13 +153,18 @@ async function giveScoreStudentToClass(classAddress, courseId) {
     // 去除前35%和后35%的数
     let number = studentScores.length * 0.35; // 去掉35%的数before和after
     let before = Math.floor(number); // 向下取整
-    studentScores = studentScores.slice(before, classScores.length - before);
+    // console.log("去掉前35%和后35%的个数：",before);
+    // console.log("学生分数前：",studentScores);
+    studentScores = studentScores.slice(before, studentScores.length - before);
+    // console.log("学生分数后：",studentScores);
     // 计算平均值
     for (let i = 0; i < studentScores.length; i++) {
         totalScore += studentScores[i];  
     }
-    totalScore /= studentIds.length;
-    giveScoreByClass(courseId, classId, totalScore);
+
+    totalScore /= studentScores.length || 1; // 防止除以0;
+    console.log(`长度为:${studentScores.length} 课程Id:${courseId} 班级Id:${classId} 平均分数:${totalScore}`);
+    await giveScoreByClass(courseId, classId, totalScore);
 }
 
 // 班级评价
@@ -122,28 +172,29 @@ async function giveScoreByClass(courseId, classId, score) {
     if(score>scoreMax || score<0) {
         return {
             code: -1,
-            message: "分数超出范围"
+            message: "分数超出范围0-100",
+            data: score
         }
     }
-    let courseId = await contract.addressToClassId(courseAddress);
     await contract.addCourseClassScores(courseId, classId, score);
     return {
         code: 0,
-        message: "班级评价成功"
+        message: "班级评价成功",
+        data: score
     };
 }
 
 // 督导评价,给某一门课程评分
-async function giveScoreBySupervisor(supervisorAddress, courseId, scores) {
-    if(scores>scoreMax || scores<0) {
+async function giveScoreBySupervisor(supervisorAddress, courseId, score) {
+    if(score>scoreMax || score<0) {
         return {
             code: -1,
             message: "分数超出范围"
         }
     }
     let supervisorId = await contract.addressToSupervisorId(supervisorAddress);
-    await contract.setSupervisorsCourseScore(supervisorId, courseId, scores);// 设置督导评价分数
-    await contract.addCourseSupervisorScores(courseId, supervisorId, scores);// 设置课程的督导评分
+    await contract.setSupervisorsCourseScore(supervisorId, courseId, score);// 设置督导评价分数
+    await contract.addCourseSupervisorScores(courseId, supervisorId, score);// 设置课程的督导评分
     return {
         code: 0,
         message: "督导评价成功" 
@@ -154,12 +205,17 @@ async function giveScoreBySupervisor(supervisorAddress, courseId, scores) {
 async function calculateCourseTotalScore(courseId) {
     // 看当前课程的老师是不是教师而不是智能体
     let AssignedTeacher = await contract.getCoursesAssignedTeacher(courseId);
+    let AssignedAgent;
+    let type = "Teacher";
     if (AssignedTeacher.length != 1) {
-        console.log("当前课程的老师不是教师");
-        return {
-            code: -1,
-            message: "当前课程的老师不是教师"
-        };
+        AssignedAgent = await contract.getCoursesAssignedAgent(courseId);
+        if (AssignedAgent.length!= 1) {
+            return {
+                code: -1,
+                message: `课程${courseId}没有分配老师或智能体`
+            } 
+        }
+        type = "Agent";
     }
     let courseScores = await contract.courseScores(courseId);
     let classScores = await contract.getCourseClassScores(courseId);  // 一个数组
@@ -167,33 +223,264 @@ async function calculateCourseTotalScore(courseId) {
     let selfScore = courseScores.selfScore;
     // 计算班级的平均分数
     let classScoreAvg = 0;
-    // 计算分数的平均值
+    let classCount = 0;
+    // 计算分数的平均值, 把评分为0的去掉
     for (let i = 0; i < classScores.length; i++) {
-        classScoreAvg += classScores[i]; 
+        if(classScores[i] > 0) {
+            classScoreAvg += Number(classScores[i]);
+            classCount++;
+        }
     }
-    classScoreAvg /= classScores.length;
+    classScoreAvg /= classCount !== 0 ? classCount : 1;
+    
     // 计算督导的平均分数
     let supervisorScoreAvg = 0;
     for (let i = 0; i < supervisorScores.length; i++) {
-        supervisorScoreAvg += supervisorScores[i];
+        supervisorScoreAvg += Number(supervisorScores[i]);
     }
-    supervisorScoreAvg /= supervisorScores.length;
+    supervisorScoreAvg /= supervisorScores.length !== 0 ? supervisorScores.length : 1;
     // 计算总加权后分数
     let totalScore = selfScore * 0.3 + classScoreAvg * 0.3 + supervisorScoreAvg * 0.4;
-
+    let typeId = 0;
+    let suitAfter = 0;
     // 通过分数改变适合程度
-    let teacherId = AssignedTeacher[0];
-    let suitOriginal = await contract.getTeacherSuitability(teacherId, courseId);
-    let suitAfter = suitOriginal * 0.5 + totalScore * 0.5; // 范围0-100
-    await contract.setTeacherCourseSuitability(teacherId, courseId, suitAfter);
-    
+    if (type == "Teacher") {
+        let teacherId = AssignedTeacher[0];
+        let suitOriginal = await contract.getTeacherSuitability(teacherId, courseId);
+        suitAfter = suitOriginal * 0.5 + totalScore * 0.5; // 范围0-100
+        suitAfter = Math.round(suitAfter);
+        await contract.setCourseTotalScore(courseId, totalScore);
+        await contract.setTeacherCourseSuitability(teacherId, courseId, suitAfter);
+        typeId = teacherId;
+    }else {
+        let agentId = AssignedAgent[0];
+        let suitOriginal = await contract.getAgentSuitability(agentId, courseId);
+        suitAfter = suitOriginal * 0.5 + totalScore * 0.5; // 范围0-100
+        suitAfter = Math.round(suitAfter);
+        await contract.setCourseTotalScore(courseId, totalScore);
+        await contract.setAgentCourseSuitability(agentId, courseId, suitAfter);
+        typeId = agentId;
+    }
+    console.log(`classScoreAvg:${classScoreAvg}, supervisorScoreAvg:${supervisorScoreAvg}, selfScore:${selfScore}, totalScore:${totalScore}, suitAfter:${suitAfter}`)
     return {
         code: 0,
-        message: "计算课程总分数成功",
-        data: totalScore
+        message: `课程Id:${courseId}  ${type}Id:${typeId}  适合程度:${suitAfter}`,
+        data: suitAfter
     };
 }
 
-async function main() {
-    await initializeData(); 
+async function switchCurrentSigner_courseScore(newCurrentSigner, newContract, newVoteContract, newClassContract, newCurrentName){
+    currentSigner = newCurrentSigner;
+    contract = newContract;
+    voteContract = newVoteContract;
+    classContract = newClassContract;
+    currentName = newCurrentName;
 }
+
+async function main() {
+    // await initializeData(); 
+    // // 自动分配课程
+    // await init_TeacherCourses(); // 初始化课程分配
+    // await init_AgentCourses(); // 初始化智能体课程分配
+    // await printAssignments(); // 打印课程分配情况
+    // console.log(await checkCourseConflicts()); // 检查课程冲突情况
+    // await preprocessConflictCourses(); // 冲突预处理
+    // // 打印目前冲突情况
+    // console.log(await checkCourseConflicts());
+    // await printAssignments(); 
+    // console.log(await createConflictProposal()); // 创建冲突提案
+    // await Promise.all([
+    //     studentVote("0xA6Ac36B7629D23F39Faf603615371Ca58631b191", 1, 3), // 学生投票
+    //     studentVote("0xaf6f381cD2fC9aA2f5335Fe3b295fb726464eACC", 1, 3), // 学生投票
+    //     studentVote("0xfDc0C25E65C9A64b44475A9d4510921dc39566E9", 1, 4), // 学生投票
+
+    //     studentVote("0xe635D18E73B1D86A5Faf1d0E0b57126821EacE52", 1, 3), // 学生投票
+    //     studentVote("0xA3857CBf7BF664cF80543EB6Ce1e6689c161C80A", 1, 4), // 学生投票
+    //     studentVote("0xbB4e364BfDF39C6f33286E3b0A4b46a288831A3C", 1, 4), // 学生投票
+
+    //     teacherVote("0xE859517A7D96Ff9C74E498312f2C31f3CB29b496", 1, 3), // 教师投票
+    //     teacherVote("0xE692805941ae5b683B50727157CC384d2DABDE26", 1, 4), // 教师投票
+    //     teacherVote("0x5d48aE60f80Ca87590124002ED83A22735139BC1", 1, 3), // 教师投票
+    //     teacherVote("0x7887407A409c921AFC315714c068aA4A14B8F303", 1, 4), // 教师投票
+    //     teacherVote("0x46141B13870144d78c0fE44E08B2B530D1ef1671", 1, 3), // 教师投票
+
+    //     agentVote("0x961F688D3a00BD64C12c2cbb34119D329df7A789", 1), // 智能体投票
+    //     agentVote("0x9dcCf23262B81C636648d6A759eEA0A9FdA420cC", 1), // 智能体投票
+
+    //     teacherVote("0xbD76a0aEc7f46D10AAE6d1664D4ccD27408F06F3", 1, 3), // 班级投票
+    //     teacherVote("0xf65699E3cB26F132843649BB11fCA45Af95CC199", 1, 4), // 班级投票
+    // ]);
+    // let currentAddress = "0xbD76a0aEc7f46D10AAE6d1664D4ccD27408F06F3";
+    // currentSigner = provider.getSigner(currentAddress);
+    // contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
+    // voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
+    // classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    // switchCurrentSigner_studentClass(currentSigner, contract, voteContract, classContract, currentAddress);
+    // console.log(await endClassProposal_interact(1));
+
+    // currentAddress = "0xf65699E3cB26F132843649BB11fCA45Af95CC199";
+    // currentSigner = provider.getSigner(currentAddress);
+    // contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
+    // voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
+    // classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    // switchCurrentSigner_studentClass(currentSigner, contract, voteContract, classContract, currentAddress);
+    // console.log(await endClassProposal_interact(1));
+
+    // console.log(await endConfictProposal(1));  // 结束冲突提案
+    // await printAssignments(); // 打印课程分配情况
+
+    // console.log(await createConflictProposal()); // 创建冲突提案
+
+    // await Promise.all([
+        // studentVote("0xA6Ac36B7629D23F39Faf603615371Ca58631b191", 2, 3), // 学生投票
+        // studentVote("0xaf6f381cD2fC9aA2f5335Fe3b295fb726464eACC", 2, 3), // 学生投票
+        // studentVote("0xfDc0C25E65C9A64b44475A9d4510921dc39566E9", 2, 4), // 学生投票
+
+        // studentVote("0xe635D18E73B1D86A5Faf1d0E0b57126821EacE52", 2, 3), // 学生投票
+        // studentVote("0xA3857CBf7BF664cF80543EB6Ce1e6689c161C80A", 2, 4), // 学生投票
+        // studentVote("0xbB4e364BfDF39C6f33286E3b0A4b46a288831A3C", 2, 4), // 学生投票
+
+        // teacherVote("0xE859517A7D96Ff9C74E498312f2C31f3CB29b496", 2, 3), // 教师投票
+        // teacherVote("0xE692805941ae5b683B50727157CC384d2DABDE26", 2, 4), // 教师投票
+        // teacherVote("0x5d48aE60f80Ca87590124002ED83A22735139BC1", 2, 3), // 教师投票
+        // teacherVote("0x7887407A409c921AFC315714c068aA4A14B8F303", 2, 4), // 教师投票
+        // teacherVote("0x46141B13870144d78c0fE44E08B2B530D1ef1671", 2, 3), // 教师投票
+
+        // agentVote("0x961F688D3a00BD64C12c2cbb34119D329df7A789", 2), // 智能体投票
+        // agentVote("0x9dcCf23262B81C636648d6A759eEA0A9FdA420cC", 2), // 智能体投票
+
+        // teacherVote("0xbD76a0aEc7f46D10AAE6d1664D4ccD27408F06F3", 2, 3), // 班级投票
+        // teacherVote("0xf65699E3cB26F132843649BB11fCA45Af95CC199", 2, 4), // 班级投票
+    // ]);
+    // currentAddress = "0xbD76a0aEc7f46D10AAE6d1664D4ccD27408F06F3";
+    // currentSigner = provider.getSigner(currentAddress);
+    // contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
+    // voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
+    // classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    // await switchCurrentSigner_studentClass(currentSigner, contract, voteContract, classContract, currentAddress);
+    // console.log(await endClassProposal_interact(2));
+
+    // currentAddress = "0xf65699E3cB26F132843649BB11fCA45Af95CC199";
+    // currentSigner = provider.getSigner(currentAddress);
+    // contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
+    // voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
+    // classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    // await switchCurrentSigner_studentClass(currentSigner, contract, voteContract, classContract, currentAddress);
+    // console.log(await endClassProposal_interact(2));
+
+    // console.log(await endConfictProposal(2));  // 结束冲突提案
+    // await printAssignments(); // 打印课程分配情况
+
+
+    // console.log(await checkAndCreateProposalForTeacher());
+    // await Promise.all([
+    //     studentVote("0xA6Ac36B7629D23F39Faf603615371Ca58631b191", 3, 3), // 学生投票
+    //     studentVote("0xaf6f381cD2fC9aA2f5335Fe3b295fb726464eACC", 3, 3), // 学生投票
+    //     studentVote("0xfDc0C25E65C9A64b44475A9d4510921dc39566E9", 3, 5), // 学生投票
+
+    //     studentVote("0xe635D18E73B1D86A5Faf1d0E0b57126821EacE52", 3, 3), // 学生投票
+    //     studentVote("0xA3857CBf7BF664cF80543EB6Ce1e6689c161C80A", 3, 5), // 学生投票
+    //     studentVote("0xbB4e364BfDF39C6f33286E3b0A4b46a288831A3C", 3, 5), // 学生投票
+
+    //     teacherVote("0xE859517A7D96Ff9C74E498312f2C31f3CB29b496", 3, 3), // 教师投票
+    //     teacherVote("0xE692805941ae5b683B50727157CC384d2DABDE26", 3, 5), // 教师投票
+    //     teacherVote("0x5d48aE60f80Ca87590124002ED83A22735139BC1", 3, 5), // 教师投票
+    //     teacherVote("0x7887407A409c921AFC315714c068aA4A14B8F303", 3, 5), // 教师投票
+    //     teacherVote("0x46141B13870144d78c0fE44E08B2B530D1ef1671", 3, 3), // 教师投票
+
+    //     agentVote("0x961F688D3a00BD64C12c2cbb34119D329df7A789", 3), // 智能体投票
+    //     agentVote("0x9dcCf23262B81C636648d6A759eEA0A9FdA420cC", 3), // 智能体投票
+
+    //     teacherVote("0xbD76a0aEc7f46D10AAE6d1664D4ccD27408F06F3", 3, 3), // 班级投票
+    //     teacherVote("0xf65699E3cB26F132843649BB11fCA45Af95CC199", 3, 5), // 班级投票
+    // ]);
+    // await endProposalAndAssignCourseforWithoutteacher(3);
+
+    // console.log(await checkAndCreateProposalForTeacher());
+
+    // console.log(await proposalForCoursesWithoutAssigned());
+    // await printAssignments(); // 打印课程分配情况
+
+    let courseIds = await contract.getCourseIds();
+    courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    console.log(courseIds);
+    
+    // currentSigner = provider.getSigner("0xA6Ac36B7629D23F39Faf603615371Ca58631b191");
+    // classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    // await giveScoreStudent([100, 100, 100, 100, 100, 100, 100, 100, 100, 100],courseIds); // 学生打分
+    
+    // currentSigner = provider.getSigner("0xaf6f381cD2fC9aA2f5335Fe3b295fb726464eACC");
+    // classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    // await giveScoreStudent([80, 80, 80, 80, 80, 80, 80, 80, 80, 80],courseIds); // 学生打分
+
+    // currentSigner = provider.getSigner("0xfDc0C25E65C9A64b44475A9d4510921dc39566E9");
+    // classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    // await giveScoreStudent([60, 60, 60, 60, 60, 60, 60, 60, 60, 60],courseIds); // 学生打分
+
+    // currentSigner = provider.getSigner("0xe635D18E73B1D86A5Faf1d0E0b57126821EacE52");
+    // classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    // await giveScoreStudent([100, 100, 100, 100, 100, 100, 100, 100, 100, 100],courseIds); // 学生打分
+
+    // currentSigner = provider.getSigner("0xA3857CBf7BF664cF80543EB6Ce1e6689c161C80A");
+    // classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    // await giveScoreStudent([80, 80, 80, 80, 80, 80, 80, 80, 80, 80],courseIds); // 学生打分
+
+    // currentSigner = provider.getSigner("0xbB4e364BfDF39C6f33286E3b0A4b46a288831A3C");
+    // classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    // await giveScoreStudent([60, 60, 60, 60, 60, 60, 60, 60, 60, 60],courseIds); // 学生打分
+    
+    // // 遍历课程
+    // for (let i = 0; i < courseIds.length; i++) {
+    //     currentSigner = provider.getSigner("0xbD76a0aEc7f46D10AAE6d1664D4ccD27408F06F3");
+    //     classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    //     await giveScoreStudentToClass("0xbD76a0aEc7f46D10AAE6d1664D4ccD27408F06F3", courseIds[i]); // 班级评分
+    //     currentSigner = provider.getSigner("0xf65699E3cB26F132843649BB11fCA45Af95CC199");
+    //     classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    //     await giveScoreStudentToClass("0xf65699E3cB26F132843649BB11fCA45Af95CC199", courseIds[i]); // 班级评分
+    // }
+
+    // for (let i = 0; i < courseIds.length; i++) {
+    //     let classScores = await contract.getCourseClassScores(courseIds[i]); // 班级评分
+    //     console.log(`课程 ${courseIds[i]} 的班级评分: ${classScores}`); // 打印班级评分
+    // }
+    // // 老师评分
+    // await printAssignments(); // 打印课程分配情况
+    // await giveScoreByAgentSelf("0x961F688D3a00BD64C12c2cbb34119D329df7A789", [100, 100]); // 智能体自评
+    // await giveScoreByAgentSelf("0x9dcCf23262B81C636648d6A759eEA0A9FdA420cC", [90]); // 智能体自评
+    // await giveScoreByMyself("0xE859517A7D96Ff9C74E498312f2C31f3CB29b496", [80, 80]); // 老师自评
+    // await giveScoreByMyself("0xE692805941ae5b683B50727157CC384d2DABDE26", [70]); // 老师自评
+    // await giveScoreByMyself("0x5d48aE60f80Ca87590124002ED83A22735139BC1", [60]); // 老师自评
+    // await giveScoreByMyself("0x7887407A409c921AFC315714c068aA4A14B8F303", [50,50]); // 老师自评
+    // await giveScoreByMyself("0x46141B13870144d78c0fE44E08B2B530D1ef1671", [40]); // 老师自评
+
+    // // 打印老师评分
+    // for (let i = 0; i < courseIds.length; i++) {
+    //     let courseScores = await contract.courseScores(courseIds[i]);
+    //     let teacherScore = courseScores.selfScore; // 自己评价的分数
+    //     console.log(`课程 ${courseIds[i]} 的老师自己评分: ${teacherScore}`); 
+    // }
+
+    // // 督导评分
+    // for (let i = 0; i < courseIds.length; i++) {
+    //     await giveScoreBySupervisor("0x7a149a83C6775abFdc1A73Fa8b321b1841b5a84d", courseIds[i], 80);
+    //     await giveScoreBySupervisor("0x198a310896B403779DC663fE73F18eF5941d9163", courseIds[i], 70);
+    // }
+    // // 打印督导评分
+    // for (let i = 0; i < courseIds.length; i++) {
+    //     let supervisorScores = await contract.getCourseSupervisorScores(courseIds[i]); // 督导评分
+    //     console.log(`课程 ${courseIds[i]} 的督导评分: ${supervisorScores}`); // 打印督导评分
+    // }
+
+    // // 计算课程总分数
+    // for (let i = 0; i < courseIds.length; i++) {
+    //     let result = await calculateCourseTotalScore(courseIds[i]); // 计算课程总分数
+    //     console.log(result);
+    // }
+    // for (let i = 0; i < courseIds.length; i++) {
+    //     let courseScores = await contract.courseScores(courseIds[i]);
+    //     let totalScore = courseScores.totalScore; // 自己评价的分数
+    //     console.log(`课程 ${courseIds[i]} 的总评分: ${totalScore}`); 
+    // }
+}
+
+main();

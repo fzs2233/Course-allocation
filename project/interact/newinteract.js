@@ -276,7 +276,7 @@ async function voteForProposal(){
         }
     }else if(currentType === 'Agent'){
       console.log(`检测您为智能体，已为您选择性价比最高的教师进行投票`)
-      await agentVote();
+      await agentVote(currentAddress, proposalId);
     }else if(currentType === 'Class'){
       console.log(`班级不允许投票`)
     }

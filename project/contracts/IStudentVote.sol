@@ -5,7 +5,7 @@ interface StudentVote {
     function createProposal(string memory _description, uint256 _voteforID, uint256[] memory _votedIds) external returns (uint256);
     function vote(uint256 studentId, uint256 proposalId, uint256 optionId) external;
     function getProposalResults(address classAddress, uint256 proposalId) external view returns (uint256, uint256);
-    function getAverageSuitability() external view returns (uint256[] memory);
+    function getAverageSuitability(uint256[] memory courseIds) external view returns (uint256[] memory);
     function getClassNum() external view returns (uint256);
     function getClassWeight() external view returns (uint256);
 }
@@ -194,18 +194,18 @@ contract IStudentVote is StudentVote {
     }
 
     // 学生评分
-    function setCourseSuitability(uint256 studentId, uint256[] memory _suitabilities) public {
+    function setCourseSuitability(uint256 studentId, uint256[] memory _suitabilities, uint256[] memory courseIds) public {
         require(studentId <= studentCount, "Student does not exist");
          // 检查评分数组长度是否匹配
         require(_suitabilities.length == courseCount, "Suitability array length mismatch");
         Student storage student = students[studentId];
         student.isSetSuitability = true;
         for(uint256 i = 0; i < _suitabilities.length; i++){
-            student.courseSuitability[i] =  _suitabilities[i] ;
+            student.courseSuitability[courseIds[i]] =  _suitabilities[i] ;
         }
     }
 
-    function studentSetCourseSuitability(uint256[] memory _suitabilities) public {
+    function studentSetCourseSuitability(uint256[] memory _suitabilities, uint256[] memory courseIds) public {
         uint256 studentId = addressToStudentId[msg.sender]; 
         require(studentId <= studentCount, "Student does not exist");
         require(studentId != 0, "Student does not exist");
@@ -214,7 +214,7 @@ contract IStudentVote is StudentVote {
         Student storage student = students[studentId];
         student.isSetSuitability = true;
         for(uint256 i = 0; i < _suitabilities.length; i++){
-            student.courseSuitability[i] =  _suitabilities[i] ;
+            student.courseSuitability[courseIds[i]] =  _suitabilities[i];
         }
     }
 
@@ -224,22 +224,13 @@ contract IStudentVote is StudentVote {
         return student.courseSuitability[courseId];
     }
 
-    // 查看学生对课程的评分
-    function getCourseSuitability(uint256 studentId) public view returns(uint256[] memory) {
-        uint256[] memory _suitabilities = new uint256[](courseCount);
-        for(uint256 i = 0; i < courseCount; i++){
-            _suitabilities[i] = students[studentId].courseSuitability[i];
-        }
-        return _suitabilities;
-    }
-
     // 查看学生评分的平均分
-    function getAverageSuitability() public view override returns(uint256[] memory) {
+    function getAverageSuitability(uint256[] memory courseIds) public view override returns(uint256[] memory) {
         uint256[] memory totalCourseScore = new uint256[](courseCount);
         for(uint256 i = 1; i <= studentCount; i++){
             Student storage student = students[i];
             for(uint256 j = 0; j < courseCount; j++){
-                totalCourseScore[j] += student.courseSuitability[j];
+                totalCourseScore[j] += student.courseSuitability[courseIds[j]];
             }
         }
         for(uint256 j = 0; j < courseCount; j++){
