@@ -9,14 +9,18 @@ const inquirer = require('inquirer');
 const contractData = JSON.parse(fs.readFileSync("./build/contracts/ICourseAllocation.json", "utf8"));
 const voteData = JSON.parse(fs.readFileSync("./build/contracts/Vote.json", "utf8"));
 const classData = JSON.parse(fs.readFileSync("./build/contracts/IStudentVote.json", "utf8"));
+const teacherVoteData = JSON.parse(fs.readFileSync("./build/contracts/TeacherVote.json", "utf8"));
 
 // 提取合约地址和 ABI
 const contractAddress = process.env.contractAddress;
 const voteAddress = process.env.VotingContractAddress;
 const classContractAddress = process.env.classAddress;
+const teacherVoteAddress = process.env.teachervoteAddress;
 const contractABI = contractData.abi;
 const voteABI = voteData.abi;
 const classABI = classData.abi;
+const teacherVoteABI = teacherVoteData.abi;
+
 
 // 设置提供者（使用 Infura 或本地节点）
 const provider = new ethers.providers.JsonRpcProvider("http://127.0.0.1:7545");
@@ -29,6 +33,7 @@ let currentType = "account";
 let contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
 let voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
 let classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+let teacherVoteContract = new ethers.Contract(teacherVoteAddress, teacherVoteABI, currentSigner);
 
 
 // [保留原有的合约初始化代码...]
@@ -63,12 +68,22 @@ const {
     register
 } = require("../api/register.js");
 
+const {
+  createProposal,
+  init_teacherVote,
+  executeProposal,
+  switchAccount
+} = require("../api/test1.js");
+
 /* 交互菜单系统 */
 async function mainMenu() {
     const choices = [
       { name: '一键初始化数据', value: 'initializeData'},
       { name: '切换用户', value: 'switchUser'},
-      { name: '注册教师/智能体/班级/学生', value: 'register'},
+      { name: '注册教师/智能体/班级/学生', value: 'register'}, 
+      { name: '📌 创建课程提案（教师）', value: 'createTeacherProposal' },
+      { name: '🗳️ 教师评分并投票', value: 'init_teacherVote' },
+      { name: '✅ 执行教师提案', value: 'executeTeacherProposal' },
       { name: '初始化课程分配', value: 'initAllocation' },
       { name: '查看课程分配情况', value: 'viewAssignments' },
       { name: '查看课程冲突情况', value: 'checkCourseConflicts' },
@@ -103,12 +118,25 @@ async function mainMenu() {
               [currentType, currentSigner, contract, voteContract, classContract, currentName] = userResult.data;
               await switchCurrentSigner(currentSigner, contract, voteContract, classContract, currentName);
               await switchCurrentSigner_studentClass(currentSigner, contract, voteContract, classContract, currentName);
+              const accountIndex = parseInt(currentName.split('_')[1]); // 从 account_2 提取 2
+              if (!isNaN(accountIndex)) {
+                  await switchAccount(accountIndex); // 调用 test1.js 的 switchAccount(index)
+              }
               console.log(currentName)
           }
           break;
       case'register':
           [currentName, currentType] = await register();
           break;
+      case 'createTeacherProposal':
+        await createProposal();
+        break;
+      case 'init_teacherVote':
+        await init_teacherVote();
+        break;
+      case 'executeTeacherProposal':
+        await executeProposal();
+        break;
       case 'initAllocation':
           await handleInitAllocation();
           break;

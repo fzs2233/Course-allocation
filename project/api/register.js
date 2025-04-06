@@ -9,14 +9,17 @@ const inquirer = require('inquirer');
 const contractData = JSON.parse(fs.readFileSync("./build/contracts/ICourseAllocation.json", "utf8"));
 const voteData = JSON.parse(fs.readFileSync("./build/contracts/Vote.json", "utf8"));
 const classData = JSON.parse(fs.readFileSync("./build/contracts/IStudentVote.json", "utf8"));
+const teacherVoteData = JSON.parse(fs.readFileSync("./build/contracts/TeacherVote.json", "utf8"));
 
 // 提取合约地址和 ABI
 const contractAddress = process.env.contractAddress;
 const voteAddress = process.env.VotingContractAddress;
 const classContractAddress = process.env.classAddress;
+const teacherVoteAddress = process.env.teachervoteAddress;
 const contractABI = contractData.abi;
 const voteABI = voteData.abi;
 const classABI = classData.abi;
+const teacherVoteABI = teacherVoteData.abi;
 
 // 设置提供者（使用 Infura 或本地节点）
 const provider = new ethers.providers.JsonRpcProvider("http://127.0.0.1:7545");
@@ -28,6 +31,7 @@ let currentName = "account_0";
 let contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
 let voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
 let classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+let teacherVoteContract = new ethers.Contract(teacherVoteAddress, teacherVoteABI, currentSigner);
 
 // 创建课程
 async function initializeCourse(name, Importance, IsAgentSuitable) {
@@ -69,6 +73,7 @@ async function registerTeacher(name, addr) {
     await contract.setTeacherName(teacherCount, name);
     await contract.setTeacherAddress(teacherCount, addr);
     await voteContract.registerVoter(addr);
+    await teacherVoteContract.registerVoter(addr);
     return {
         code: 0,
         message: "Teacher Registered successfully",
