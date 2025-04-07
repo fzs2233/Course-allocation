@@ -28,9 +28,16 @@ let voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
 let classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
 let currentName = "account_0";
 
-let transferCourseStartDate = 0;
-let transferCourseEndDate = 0;
-let transferCourseTimes = 0;
+// 格式化为北京时间
+const options = { 
+    timeZone: 'Asia/Shanghai', 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit', 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    second: '2-digit' 
+};
 
 // 自动为老师分配课程（适合度≥50且意愿≥60）并更新结构体
 async function init_TeacherCourses() {
@@ -691,13 +698,25 @@ async function endConfictProposal(proposalId){
  */
 async function transferCourse(courseId, targetId) {
     try {
-        if (transferCourseTimes !== 0) {
-            const nowTime = new Date();
-            if (transferCourseEndDate && nowTime >= transferCourseEndDate) {
+        let transferCourseNumbers = await contract.transferCourseNumbers();
+        transferCourseNumbers = transferCourseNumbers.toNumber();
+        console.log(`给课次数: ${transferCourseNumbers}`)
+
+        if (transferCourseNumbers !== 0) {
+            let nowTime = new Date();
+            let transferCourseEndTime = await contract.transferCourseEndTime();
+            transferCourseEndTime = transferCourseEndTime.toNumber()
+            transferCourseEndTime = new Date(transferCourseEndTime * 1000).toLocaleString('zh-CN', options);
+            console.log(`换课的结束时间是: ${transferCourseEndTime}`);
+
+            if (transferCourseEndTime && nowTime >= transferCourseEndTime) {
                 return{
                     code: -1,
                     message: "转移课程的允许时间已经结束了！"
                 };
+            }else {
+                nowTime = nowTime.toLocaleString('zh-CN', options);
+                console.log(`现在的时间是${nowTime}，允许换课`)
             }
         }
 
@@ -739,12 +758,11 @@ async function transferCourse(courseId, targetId) {
         // 获取当前分配者性价比
         let currentPerf;
         if (senderTeacherId !== 0) {
-            currentPerf = await getCompareScore(senderTeacherId, courseId, "Cost-effectiveness").data;
+            currentPerf = (await getCompareScore(senderTeacherId, courseId, "Cost-effectiveness")).data;
         }
 
         // 获取目标性价比
-        let targetPerf = await getCompareScore(targetId, courseId, "Cost-effectiveness").data;
-
+        let targetPerf = (await getCompareScore(targetId, courseId, "Cost-effectiveness")).data;
 
         // 验证性价比提升
         if (targetPerf <= currentPerf) {
@@ -763,46 +781,38 @@ async function transferCourse(courseId, targetId) {
         await AssignedTeacherCourse(targetId, courseId);
 
         // 记录第一次转移课程的开始时间
-        if (transferCourseTimes === 0){
+        if (transferCourseNumbers === 0){
             // 设置开始时间
-            transferCourseStartDate = new Date();
-            // 设置结束日期为结束时间+1天
-            const endDate = new Date(transferCourseStartDate);
-            endDate.setDate(endDate.getDate() + 1);
-            transferCourseEndDate = endDate;
-            
-            // 格式化为北京时间
-            const options = { 
-                timeZone: 'Asia/Shanghai', 
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit', 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit' 
-            };
+            let transferCourseStartDate = Math.floor(Date.now() / 1000);
+            let transferCourseEndDate = transferCourseStartDate + 86400;
 
-            const formattedStartDate = transferCourseStartDate.toLocaleString('zh-CN', options);
-            const formattedEndDate = transferCourseEndDate.toLocaleString('zh-CN', options);
-
-            console.log("开始时间（北京时间）:", formattedStartDate);
-            console.log("结束时间（北京时间）:", formattedEndDate);
+            transferCourseNumbers++;
+            await contract.settransferCourseNumbers(transferCourseNumbers);
+            await contract.settransferCourseStartTime(transferCourseStartDate);
+            await contract.settransferCourseEndTime(transferCourseEndDate);
+            // 打印允许换课的开始时间和结束时间
+            const formattedStartDate = new Date(transferCourseStartDate * 1000).toLocaleString('zh-CN', options);
+            const formattedEndDate = new Date(transferCourseEndDate * 1000).toLocaleString('zh-CN', options);
+            console.log("允许换课的开始时间（北京时间）:", formattedStartDate);
+            console.log("允许换课的结束时间（北京时间）:", formattedEndDate);
         }
-        transferCourseTimes++;
+
         // 将给课的人的币数量-2，获得课的人币数量+1
         let senderCoins = (await contract.teachers(senderTeacherId)).transferCourseCoins;
         senderCoins = senderCoins.toNumber() -2;
         await contract.setTeacherTransferCourseCoins(senderTeacherId, senderCoins);
         let targetCoins = (await contract.teachers(targetId)).transferCourseCoins;
         targetCoins = targetCoins.toNumber() + 1;
-        await contract.setTeacherTransferCourseCoins(senderTeacherId, targetCoins);
-
+        await contract.setTeacherTransferCourseCoins(targetId, targetCoins);
+        
         // 返回转移情况
         return { 
             code: 0, 
             message: `课程 ${courseId} 已从 ${senderTeacherId || senderAgentId} 转移至教师 ${targetId}`,
             performanceImprovement: (targetPerf - currentPerf).toFixed(2),
-            targetSuitability: targetSuitability
+            targetSuitability: targetSuitability,
+            senderCoins: `给课老师的换课剩余币数量: ${senderCoins}`,
+            targetCoins: `被给课老师的换课剩余币数量: ${targetCoins}`
         };
 
     } catch (error) {
@@ -905,7 +915,9 @@ async function getCompareScore(teacherId, courseId, scoreType){
         let salary = teacher.value;
         salary = salary.toNumber();
         let suitability = await contract.getTeacherSuitability(teacherId, courseId);
-        let CostEffectiveness = salary/suitability;
+        suitability = suitability.toNumber();
+        let CostEffectiveness = suitability/salary;
+        // console.log(`计算出来的分数为 ${CostEffectiveness}`)
         return {
             code: 0,
             message: "Cost-effectiveness",

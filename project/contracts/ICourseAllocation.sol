@@ -43,6 +43,7 @@ contract ICourseAllocation {
         uint256[] assignedAgentId;
         bool isAgentSuitable;
     }
+
     struct CourseScore {
         uint256 id; // 和课程一样的id
         uint256 totalScore;
@@ -112,6 +113,15 @@ contract ICourseAllocation {
 
     // 督导ID存储数组
     uint256[] public supervisorIds;
+
+    // 转移课程的次数
+    uint256 public transferCourseNumbers;
+
+    // 转移课程开始的时间
+    uint256 public transferCourseStartTime;
+
+    // 转移课程结束的时间
+    uint256 public transferCourseEndTime;
 
     // 事件
     // event CourseImportanceSet(uint256 indexed courseId, uint256 importance);
@@ -799,4 +809,23 @@ contract ICourseAllocation {
     ) public {
         supervisors[supervisorId].courseScores[courseId] = score;
     }
+
+    function settransferCourseNumbers(
+        uint256 _transferCourseNumbers
+    ) public {
+        transferCourseNumbers = _transferCourseNumbers;
+    }
+
+    function settransferCourseStartTime(
+        uint256 _transferCourseStartTime
+    ) public {
+        transferCourseStartTime = _transferCourseStartTime;
+    }
+
+    function settransferCourseEndTime(
+        uint256 _transferCourseEndTime
+    ) public {
+        transferCourseEndTime = _transferCourseEndTime;
+    }
+
 }

@@ -46,9 +46,10 @@ async function addStudents(classAddr, numOfStudents){
 
 // 学生投票
 async function studentVote(studentAddress, proposalId, optionId){
-    console.log(studentAddress)
+    // console.log(studentAddress)
     let studentId = await classContract.addressToStudentId(studentAddress);
-    console.log(studentId);
+    // console.log(studentId);
+    studentId = studentId.toNumber();
     let student = await classContract.students(studentId);
     let classId = student.classId;
     classId = classId.toNumber();
@@ -66,7 +67,7 @@ async function studentVote(studentAddress, proposalId, optionId){
     await classContract.studentVote(studentId, proposalId, optionId);
     return {
         code: 0,
-        message: "Student Vote successfully",
+        message: `Student ${studentId} Vote for teacher ${optionId} successfully`,
     }
 }
 
