@@ -154,9 +154,7 @@ contract TeacherVote is Vote {
         uint256 avgRating = p.totalRating / p.raterCount;
 
         // 获取投票结果
-        (uint256 winningOption, ) = endVoteChooseTeacher(
-            p.suitabilityProposalId
-        );
+        (uint256 winningOption, ) = endVote(p.suitabilityProposalId);
         bool isSuitable = (winningOption == 2); // 假设2是赞成选项值
 
         // 更新课程状态
@@ -167,15 +165,30 @@ contract TeacherVote is Vote {
         emit ProposalExecuted(proposalId, avgRating, isSuitable);
     }
 
+    function endVote(
+        uint256 _proposalId
+    ) public view returns (uint256, uint256) {
+        ProposalBase storage p = proposals[_proposalId];
+
+        // 计算最终的投票选项：如果同意投票数大于反对投票数，选择 "适合"
+        uint256 winningOption = (p.agreeCount > p.disagreeCount) ? 2 : 1; // 2 代表适合，1 代表不适合
+        return (winningOption, p.agreeCount + p.disagreeCount); // 返回选项和总票数
+    }
+
     function getVoteDetails(
         uint256 proposalId
     )
         external
         view
-        returns (uint256 agree, uint256 disagree, uint256 totalRatings)
+        returns (
+            uint256 agree,
+            uint256 disagree,
+            uint256 totalRatings,
+            uint256 courseId
+        )
     {
         ProposalBase memory p = proposals[proposalId];
-        return (p.agreeCount, p.disagreeCount, p.raterCount);
+        return (p.agreeCount, p.disagreeCount, p.raterCount, p.courseId);
     }
 
     function getTeacherRating(

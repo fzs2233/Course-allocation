@@ -695,6 +695,18 @@ contract ICourseAllocation {
         return courses[_courseId].assignedAgentId;
     }
 
+    // 获取课程重要程度
+    function getCourseImportance(uint courseId) external view returns (uint) {
+        return courses[courseId].importance;
+    }
+
+    // 获取课程是否适合智能体
+    function getCourseIsAgentSuitable(
+        uint courseId
+    ) external view returns (bool) {
+        return courses[courseId].isAgentSuitable;
+    }
+
     function getTeacherIds() public view returns (uint256[] memory) {
         return teacherIds;
     }
@@ -726,20 +738,25 @@ contract ICourseAllocation {
 
     function getGiveScoreClassIdExists(
         uint256 courseId,
-        uint256 classId 
+        uint256 classId
     ) public view returns (uint256) {
-        return courseScores[courseId].giveScoreClassIdExists[classId]; 
+        return courseScores[courseId].giveScoreClassIdExists[classId];
     }
 
     // 清空班级分数
-    function removeCourseClassScores(uint256 courseId, uint256[] memory classIds_) public {
+    function removeCourseClassScores(
+        uint256 courseId,
+        uint256[] memory classIds_
+    ) public {
         for (uint256 i = 0; i < classIds_.length; i++) {
             courseScores[courseId].giveScoreClassIdExists[classIds_[i]] = 0;
         }
         delete courseScores[courseId].classScores;
     }
 
-    function getCourseClassScores(uint256 courseId) public view returns (uint256[] memory) {
+    function getCourseClassScores(
+        uint256 courseId
+    ) public view returns (uint256[] memory) {
         return courseScores[courseId].classScores;
     }
 
@@ -810,9 +827,7 @@ contract ICourseAllocation {
         supervisors[supervisorId].courseScores[courseId] = score;
     }
 
-    function settransferCourseNumbers(
-        uint256 _transferCourseNumbers
-    ) public {
+    function settransferCourseNumbers(uint256 _transferCourseNumbers) public {
         transferCourseNumbers = _transferCourseNumbers;
     }
 
@@ -822,10 +837,7 @@ contract ICourseAllocation {
         transferCourseStartTime = _transferCourseStartTime;
     }
 
-    function settransferCourseEndTime(
-        uint256 _transferCourseEndTime
-    ) public {
+    function settransferCourseEndTime(uint256 _transferCourseEndTime) public {
         transferCourseEndTime = _transferCourseEndTime;
     }
-
 }

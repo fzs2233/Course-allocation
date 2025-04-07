@@ -89,7 +89,7 @@ async function executeProposal() {
         validate: val => !isNaN(parseInt(val)),
         filter: Number
     }]);
-
+    await teacherVoteContract.setCourseAllocation(contractAddress);
     const tx = await teacherVoteContract.executeProposal(answer.proposalId, GAS_CONFIG);
     await tx.wait();
 
@@ -97,11 +97,17 @@ async function executeProposal() {
 
     // 👉 展示提案投票统计信息
     try {
-        const [agree, disagree, total] = await teacherVoteContract.getVoteDetails(answer.proposalId);
+        const [agree, disagree, total ,courseId] = await teacherVoteContract.getVoteDetails(answer.proposalId);
+        const importance = await contract.getCourseImportance(courseId);
+        const suitable = await contract.getCourseIsAgentSuitable(courseId);
         console.log("📊 提案投票结果:");
         console.log(`👍 同意: ${agree.toString()}`);
         console.log(`👎 反对: ${disagree.toString()}`);
         console.log(`🧑‍🏫 参与评分人数: ${total.toString()}`);
+
+
+        const isSuitableText = suitable === true || suitable.toString() === "1" ? "适合" : "不适合";
+        console.log(`📘 课程ID: ${courseId.toString()}，重要程度：${importance.toString()}，是否适合智能体：${isSuitableText}`);
 
         // 展示每个教师的评分（课程重要程度）
         console.log("📘 教师评分详情（课程重要程度）:");
