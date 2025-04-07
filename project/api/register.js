@@ -349,7 +349,8 @@ async function switchUser(){
     return{
         code: 0,
         currentAddress: currentAddress,
-        currentName: currentName
+        currentName: currentName,
+        currentType: userType
     }
 }
 
@@ -485,6 +486,8 @@ async function initializeData() {
     await switchAcount(17);
     await registerSupervisor("supervisor_2", accounts[17]);
     console.log("supervisor_2 注册完毕");
+
+    await switchAcount(0);
 }
 
 async function switchAcount(Index){

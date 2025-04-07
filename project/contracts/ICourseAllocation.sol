@@ -473,7 +473,6 @@ contract ICourseAllocation {
     function setCourseId(uint256 courseId) public {
         courses[courseId].id = courseId;
         courseIds.push(courseId);
-        courseCount++;
     }
 
     // 移除课程
@@ -485,7 +484,6 @@ contract ICourseAllocation {
                 courseIds[i] = courseIds[courseIds.length - 1];
                 // 移除数组中的最后一个元素
                 courseIds.pop();
-                courseCount--;
                 break;
             }
         }
@@ -710,10 +708,17 @@ contract ICourseAllocation {
     ) public {
         require(
             courseScores[courseId].giveScoreClassIdExists[classId] == 0,
-            unicode"该班级已经投票"
+            unicode"该班级已经打分"
         );
         courseScores[courseId].giveScoreClassIdExists[classId] = score;
         courseScores[courseId].classScores.push(score);
+    }
+
+    function getGiveScoreClassIdExists(
+        uint256 courseId,
+        uint256 classId 
+    ) public view returns (uint256) {
+        return courseScores[courseId].giveScoreClassIdExists[classId]; 
     }
 
     // 清空班级分数
@@ -744,12 +749,19 @@ contract ICourseAllocation {
         require(
             courseScores[courseId].giveScoreSupervisorIdExists[supervisorId] ==
                 0,
-            unicode"该督导已经投票"
+            unicode"该督导已经评分"
         );
         courseScores[courseId].giveScoreSupervisorIdExists[
             supervisorId
         ] = score;
         courseScores[courseId].supervisorScores.push(score);
+    }
+
+    function getGiveScoreSupervisorIdExists(
+        uint256 courseId,
+        uint256 supervisorId
+    ) public view returns (uint256) {
+        return courseScores[courseId].giveScoreSupervisorIdExists[supervisorId];
     }
 
     function getCourseSupervisorScores(

@@ -30,36 +30,8 @@ const scoreMax = 100;
 
 // [保留原有的合约初始化代码...]
 const {
-    init_TeacherCourses,
-    switchCurrentSigner,
-    init_AgentCourses,
-    getTeacherCostPerformance,
-    getAgentCostPerformance,
     printAssignments,
-    transferCourse,
-    checkCourseConflicts,
-    preprocessConflictCourses,
-    createConflictProposal,
-    checkAndCreateProposalForTeacher, // 给没有课程的老师投票选择课程
-    proposalForCoursesWithoutAssigned, // 为没有被分配的课程创建提案
-    endConfictProposal,
-    endProposalAndAssignCourseforWithoutteacher,
-    teacherVote,
-    agentVote
 } = require("../api/courseAllocation.js");
-
-const {
-    switchCurrentSigner_studentClass,
-    studentVote,
-    endClassProposal_interact,
-} = require("../api/studentClass.js");
-
-const {
-    initializeData,
-    switchUser,
-    register
-} = require("../api/register.js");
-
 
 // 老师自评,一次把自己所有课程的分数都填好
 async function giveScoreByMyself(teacherAddress, scores) {
@@ -77,6 +49,12 @@ async function giveScoreByMyself(teacherAddress, scores) {
     }
     
     let teacherId = await contract.addressToTeacherId(teacherAddress);
+    if(teacherId==0) {
+        return {
+            code: -1,
+            message: "当前账户不是老师" 
+        } 
+    }
     let reallyAssignedCourses = await contract.getTeacherReallyAssignedCourses(teacherId);
     if(reallyAssignedCourses.length != scores.length) {
         console.log("输入的分数数量与分配的课程数量不匹配");
@@ -109,6 +87,12 @@ async function giveScoreByAgentSelf(AgentAddress, scores) {
         }
     }
     let agentId = await contract.addressToAgentId(AgentAddress);
+    if(agentId==0) {
+        return {
+            code: -1,
+            message: "当前账户不是智能体"
+        } 
+    }
     let reallyAssignedCourses = await contract.getAgentAssignedCourses(agentId);
     if(reallyAssignedCourses.length != scores.length) {
         console.log("输入的分数数量与分配的课程数量不匹配");
@@ -136,7 +120,12 @@ async function giveScoreStudentToClass(classAddress, courseId) {
     
     let classId = await classContract.addressToClassId(classAddress);
     classId = Number(classId); // 转换为数字类型，因为返回的是BigNumber类型
-    
+    if(classId==0) {
+        return {
+            code: -1,
+            message: "--------当前账户不是班级---------"
+        }
+    }
     let studentIds = await classContract.getStudents();
     studentIds = studentIds.map(id => Number(id));
     
@@ -163,8 +152,16 @@ async function giveScoreStudentToClass(classAddress, courseId) {
     }
 
     totalScore /= studentScores.length || 1; // 防止除以0;
-    console.log(`长度为:${studentScores.length} 课程Id:${courseId} 班级Id:${classId} 平均分数:${totalScore}`);
-    await giveScoreByClass(courseId, classId, totalScore);
+    // console.log(`长度为:${studentScores.length} 课程Id:${courseId} 班级Id:${classId} 平均分数:${totalScore}`);
+    let result = await giveScoreByClass(courseId, classId, totalScore);
+    if (result.code !== 0) {
+        return result; // 如果返回错误，直接返回错误信息
+    }
+    return {
+        code: 0,
+        message: `班级评价成功, 长度为:${studentScores.length} 课程Id:${courseId} 班级Id:${classId} 平均分数:${totalScore}`,
+        data: totalScore
+    }
 }
 
 // 班级评价
@@ -172,14 +169,22 @@ async function giveScoreByClass(courseId, classId, score) {
     if(score>scoreMax || score<0) {
         return {
             code: -1,
-            message: "分数超出范围0-100",
+            message: "--------------分数超出范围0-100---------------",
             data: score
         }
+    }
+    let result = await contract.getGiveScoreClassIdExists(courseId, classId);
+    if (result > 0) {
+        return {
+            code: -1,
+            message: `班级已经评价过了`,
+            data: score
+        }; 
     }
     await contract.addCourseClassScores(courseId, classId, score);
     return {
         code: 0,
-        message: "班级评价成功",
+        message: `班级评价成功`,
         data: score
     };
 }
@@ -189,12 +194,26 @@ async function giveScoreBySupervisor(supervisorAddress, courseId, score) {
     if(score>scoreMax || score<0) {
         return {
             code: -1,
-            message: "分数超出范围"
+            message: "-----------分数超出范围-------------"
         }
     }
     let supervisorId = await contract.addressToSupervisorId(supervisorAddress);
-    await contract.setSupervisorsCourseScore(supervisorId, courseId, score);// 设置督导评价分数
+    if(supervisorId==0) {
+        return {
+            code: -1,
+            message: "----------当前账户不是督导-----------"
+        }
+    }
+    let supervisorScore = await contract.getGiveScoreSupervisorIdExists(courseId, supervisorId);
+    if (supervisorScore > 0) {
+        return {
+            code: -1,
+            message: "----------督导已经评价过了-------------"
+        }
+    }
     await contract.addCourseSupervisorScores(courseId, supervisorId, score);// 设置课程的督导评分
+    await contract.setSupervisorsCourseScore(supervisorId, courseId, score);// 设置督导评价分数
+    
     return {
         code: 0,
         message: "督导评价成功" 
@@ -250,7 +269,7 @@ async function calculateCourseTotalScore(courseId) {
         suitAfter = suitOriginal * 0.5 + totalScore * 0.5; // 范围0-100
         suitAfter = Math.round(suitAfter);
         await contract.setCourseTotalScore(courseId, totalScore);
-        await contract.setTeacherCourseSuitability(teacherId, courseId, suitAfter);
+        // await contract.setTeacherCourseSuitability(teacherId, courseId, suitAfter);
         typeId = teacherId;
     }else {
         let agentId = AssignedAgent[0];
@@ -258,7 +277,7 @@ async function calculateCourseTotalScore(courseId) {
         suitAfter = suitOriginal * 0.5 + totalScore * 0.5; // 范围0-100
         suitAfter = Math.round(suitAfter);
         await contract.setCourseTotalScore(courseId, totalScore);
-        await contract.setAgentCourseSuitability(agentId, courseId, suitAfter);
+        // await contract.setAgentCourseSuitability(agentId, courseId, suitAfter);
         typeId = agentId;
     }
     console.log(`classScoreAvg:${classScoreAvg}, supervisorScoreAvg:${supervisorScoreAvg}, selfScore:${selfScore}, totalScore:${totalScore}, suitAfter:${suitAfter}`)
@@ -269,12 +288,9 @@ async function calculateCourseTotalScore(courseId) {
     };
 }
 
-async function switchCurrentSigner_courseScore(newCurrentSigner, newContract, newVoteContract, newClassContract, newCurrentName){
-    currentSigner = newCurrentSigner;
-    contract = newContract;
-    voteContract = newVoteContract;
-    classContract = newClassContract;
-    currentName = newCurrentName;
+async function switchCurrentSigner_courseScore(address){
+    currentSigner = provider.getSigner(address);
+    classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
 }
 
 async function main() {
@@ -405,82 +421,90 @@ async function main() {
     courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
     console.log(courseIds);
     
-    // currentSigner = provider.getSigner("0xA6Ac36B7629D23F39Faf603615371Ca58631b191");
-    // classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
-    // await giveScoreStudent([100, 100, 100, 100, 100, 100, 100, 100, 100, 100],courseIds); // 学生打分
+    currentSigner = provider.getSigner("0xA6Ac36B7629D23F39Faf603615371Ca58631b191");
+    classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    await giveScoreStudent([100, 100, 100, 100, 100, 100, 100, 100, 100, 100],courseIds); // 学生打分
     
-    // currentSigner = provider.getSigner("0xaf6f381cD2fC9aA2f5335Fe3b295fb726464eACC");
-    // classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
-    // await giveScoreStudent([80, 80, 80, 80, 80, 80, 80, 80, 80, 80],courseIds); // 学生打分
+    currentSigner = provider.getSigner("0xaf6f381cD2fC9aA2f5335Fe3b295fb726464eACC");
+    classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    await giveScoreStudent([80, 80, 80, 80, 80, 80, 80, 80, 80, 80],courseIds); // 学生打分
 
-    // currentSigner = provider.getSigner("0xfDc0C25E65C9A64b44475A9d4510921dc39566E9");
-    // classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
-    // await giveScoreStudent([60, 60, 60, 60, 60, 60, 60, 60, 60, 60],courseIds); // 学生打分
+    currentSigner = provider.getSigner("0xfDc0C25E65C9A64b44475A9d4510921dc39566E9");
+    classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    await giveScoreStudent([50, 50, 50, 50, 50, 50, 50, 50, 50, 50],courseIds); // 学生打分
 
-    // currentSigner = provider.getSigner("0xe635D18E73B1D86A5Faf1d0E0b57126821EacE52");
-    // classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
-    // await giveScoreStudent([100, 100, 100, 100, 100, 100, 100, 100, 100, 100],courseIds); // 学生打分
+    currentSigner = provider.getSigner("0xe635D18E73B1D86A5Faf1d0E0b57126821EacE52");
+    classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    await giveScoreStudent([100, 100, 100, 100, 100, 100, 100, 100, 100, 100],courseIds); // 学生打分
 
-    // currentSigner = provider.getSigner("0xA3857CBf7BF664cF80543EB6Ce1e6689c161C80A");
-    // classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
-    // await giveScoreStudent([80, 80, 80, 80, 80, 80, 80, 80, 80, 80],courseIds); // 学生打分
+    currentSigner = provider.getSigner("0xA3857CBf7BF664cF80543EB6Ce1e6689c161C80A");
+    classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    await giveScoreStudent([70, 70, 70, 70, 70, 70, 70, 70, 70, 70],courseIds); // 学生打分
 
-    // currentSigner = provider.getSigner("0xbB4e364BfDF39C6f33286E3b0A4b46a288831A3C");
-    // classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
-    // await giveScoreStudent([60, 60, 60, 60, 60, 60, 60, 60, 60, 60],courseIds); // 学生打分
+    currentSigner = provider.getSigner("0xbB4e364BfDF39C6f33286E3b0A4b46a288831A3C");
+    classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+    await giveScoreStudent([50, 50, 50, 50, 50, 50, 50, 50, 50, 50],courseIds); // 学生打分
     
-    // // 遍历课程
-    // for (let i = 0; i < courseIds.length; i++) {
-    //     currentSigner = provider.getSigner("0xbD76a0aEc7f46D10AAE6d1664D4ccD27408F06F3");
-    //     classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
-    //     await giveScoreStudentToClass("0xbD76a0aEc7f46D10AAE6d1664D4ccD27408F06F3", courseIds[i]); // 班级评分
-    //     currentSigner = provider.getSigner("0xf65699E3cB26F132843649BB11fCA45Af95CC199");
-    //     classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
-    //     await giveScoreStudentToClass("0xf65699E3cB26F132843649BB11fCA45Af95CC199", courseIds[i]); // 班级评分
-    // }
+    // 遍历课程
+    for (let i = 0; i < courseIds.length; i++) {
+        currentSigner = provider.getSigner("0xbD76a0aEc7f46D10AAE6d1664D4ccD27408F06F3");
+        classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+        await giveScoreStudentToClass("0xbD76a0aEc7f46D10AAE6d1664D4ccD27408F06F3", courseIds[i]); // 班级评分
+        currentSigner = provider.getSigner("0xf65699E3cB26F132843649BB11fCA45Af95CC199");
+        classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+        await giveScoreStudentToClass("0xf65699E3cB26F132843649BB11fCA45Af95CC199", courseIds[i]); // 班级评分
+    }
 
-    // for (let i = 0; i < courseIds.length; i++) {
-    //     let classScores = await contract.getCourseClassScores(courseIds[i]); // 班级评分
-    //     console.log(`课程 ${courseIds[i]} 的班级评分: ${classScores}`); // 打印班级评分
-    // }
-    // // 老师评分
-    // await printAssignments(); // 打印课程分配情况
-    // await giveScoreByAgentSelf("0x961F688D3a00BD64C12c2cbb34119D329df7A789", [100, 100]); // 智能体自评
-    // await giveScoreByAgentSelf("0x9dcCf23262B81C636648d6A759eEA0A9FdA420cC", [90]); // 智能体自评
-    // await giveScoreByMyself("0xE859517A7D96Ff9C74E498312f2C31f3CB29b496", [80, 80]); // 老师自评
-    // await giveScoreByMyself("0xE692805941ae5b683B50727157CC384d2DABDE26", [70]); // 老师自评
-    // await giveScoreByMyself("0x5d48aE60f80Ca87590124002ED83A22735139BC1", [60]); // 老师自评
-    // await giveScoreByMyself("0x7887407A409c921AFC315714c068aA4A14B8F303", [50,50]); // 老师自评
-    // await giveScoreByMyself("0x46141B13870144d78c0fE44E08B2B530D1ef1671", [40]); // 老师自评
+    for (let i = 0; i < courseIds.length; i++) {
+        let classScores = await contract.getCourseClassScores(courseIds[i]); // 班级评分
+        console.log(`课程 ${courseIds[i]} 的班级评分: ${classScores}`); // 打印班级评分
+    }
+    // 老师评分
+    await printAssignments(); // 打印课程分配情况
+    await giveScoreByAgentSelf("0x961F688D3a00BD64C12c2cbb34119D329df7A789", [100, 100]); // 智能体自评
+    await giveScoreByAgentSelf("0x9dcCf23262B81C636648d6A759eEA0A9FdA420cC", [90]); // 智能体自评
+    await giveScoreByMyself("0xE859517A7D96Ff9C74E498312f2C31f3CB29b496", [80, 80]); // 老师自评
+    await giveScoreByMyself("0xE692805941ae5b683B50727157CC384d2DABDE26", [70]); // 老师自评
+    await giveScoreByMyself("0x5d48aE60f80Ca87590124002ED83A22735139BC1", [60]); // 老师自评
+    await giveScoreByMyself("0x7887407A409c921AFC315714c068aA4A14B8F303", [50,50]); // 老师自评
+    await giveScoreByMyself("0x46141B13870144d78c0fE44E08B2B530D1ef1671", [40]); // 老师自评
 
-    // // 打印老师评分
-    // for (let i = 0; i < courseIds.length; i++) {
-    //     let courseScores = await contract.courseScores(courseIds[i]);
-    //     let teacherScore = courseScores.selfScore; // 自己评价的分数
-    //     console.log(`课程 ${courseIds[i]} 的老师自己评分: ${teacherScore}`); 
-    // }
+    // 打印老师评分
+    for (let i = 0; i < courseIds.length; i++) {
+        let courseScores = await contract.courseScores(courseIds[i]);
+        let teacherScore = courseScores.selfScore; // 自己评价的分数
+        console.log(`课程 ${courseIds[i]} 的老师自己评分: ${teacherScore}`); 
+    }
 
-    // // 督导评分
-    // for (let i = 0; i < courseIds.length; i++) {
-    //     await giveScoreBySupervisor("0x7a149a83C6775abFdc1A73Fa8b321b1841b5a84d", courseIds[i], 80);
-    //     await giveScoreBySupervisor("0x198a310896B403779DC663fE73F18eF5941d9163", courseIds[i], 70);
-    // }
-    // // 打印督导评分
-    // for (let i = 0; i < courseIds.length; i++) {
-    //     let supervisorScores = await contract.getCourseSupervisorScores(courseIds[i]); // 督导评分
-    //     console.log(`课程 ${courseIds[i]} 的督导评分: ${supervisorScores}`); // 打印督导评分
-    // }
+    // 督导评分
+    for (let i = 0; i < courseIds.length; i++) {
+        await giveScoreBySupervisor("0x7a149a83C6775abFdc1A73Fa8b321b1841b5a84d", courseIds[i], 80);
+        await giveScoreBySupervisor("0x198a310896B403779DC663fE73F18eF5941d9163", courseIds[i], 70);
+    }
+    // 打印督导评分
+    for (let i = 0; i < courseIds.length; i++) {
+        let supervisorScores = await contract.getCourseSupervisorScores(courseIds[i]); // 督导评分
+        console.log(`课程 ${courseIds[i]} 的督导评分: ${supervisorScores}`); // 打印督导评分
+    }
 
-    // // 计算课程总分数
-    // for (let i = 0; i < courseIds.length; i++) {
-    //     let result = await calculateCourseTotalScore(courseIds[i]); // 计算课程总分数
-    //     console.log(result);
-    // }
-    // for (let i = 0; i < courseIds.length; i++) {
-    //     let courseScores = await contract.courseScores(courseIds[i]);
-    //     let totalScore = courseScores.totalScore; // 自己评价的分数
-    //     console.log(`课程 ${courseIds[i]} 的总评分: ${totalScore}`); 
-    // }
+    // 计算课程总分数
+    for (let i = 0; i < courseIds.length; i++) {
+        let result = await calculateCourseTotalScore(courseIds[i]); // 计算课程总分数
+        console.log(result);
+    }
+    for (let i = 0; i < courseIds.length; i++) {
+        let courseScores = await contract.courseScores(courseIds[i]);
+        let totalScore = courseScores.totalScore; // 总分数
+        console.log(`课程 ${courseIds[i]} 的总评分: ${totalScore}`); 
+    }
 }
-
-main();
+module.exports = {
+    giveScoreByMyself,
+    giveScoreByAgentSelf,
+    giveScoreStudent,
+    giveScoreStudentToClass,
+    giveScoreBySupervisor,
+    calculateCourseTotalScore,
+    switchCurrentSigner_courseScore
+};
+// main();

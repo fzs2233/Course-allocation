@@ -968,7 +968,7 @@ async function proposalForCoursesWithoutAssigned(){
     return {
         code: 0,
         message: "成功为没有老师的课程创建提案",
-        proposalId: proposalId,
+        proposalId: Number(proposalId),
         selectedCourseId: selectedCourseId,
         candidateTeacher: candidateTeacher
     }

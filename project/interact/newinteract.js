@@ -75,6 +75,16 @@ const {
   switchCurrentSigner_test1
 } = require("../api/test1.js");
 
+const {
+    giveScoreByMyself,
+    giveScoreByAgentSelf,
+    giveScoreStudent,
+    giveScoreStudentToClass,
+    giveScoreBySupervisor,
+    calculateCourseTotalScore,
+    switchCurrentSigner_courseScore
+} = require("../api/courseScore.js");
+
 /* 交互菜单系统 */
 async function mainMenu() {
     const choices = [
@@ -95,6 +105,13 @@ async function mainMenu() {
       { name: '为提案投票', value: 'voteForProposal' },
       { name: '结束提案投票', value: 'endProposal' },
       { name: '查询教师性价比', value: 'teacherCost' },
+      { name: '学生打分', value: 'studentGiveScore'},
+      { name: '总结班级学生打分', value:'endClassStudentGiveScore'},
+      { name: '老师自评', value:'teacherGiveScore'},
+      { name: '智能体自评', value:'agentGiveScore'},
+      { name: '督导评分', value:'supervisorGiveScore'},
+      { name: '计算课程总分数', value: 'calculateTotalScore' },
+      { name: '打印所有课程的总分数', value: 'printAllScore' },
       { name: '退出', value: 'exit' }
     ];
 
@@ -116,11 +133,13 @@ async function mainMenu() {
           let userResult = await switchUser();
           if(userResult.code === 0){
               currentName = userResult.currentName;
+              currentType = userResult.currentType;
               let currentAddress = userResult.currentAddress;
               await switchCurrentSigner_newinteract(currentAddress, currentName);
               await switchCurrentSigner_studentClass(currentAddress, currentName);
               await switchCurrentSigner_courseAllocation(currentAddress, currentName);
               await switchCurrentSigner_test1(currentAddress);
+              await switchCurrentSigner_courseScore(currentAddress);
           }
 
           break;
@@ -169,11 +188,229 @@ async function mainMenu() {
       case 'transferCourse':
           await handleTransferCourse();
           break;
+      case 'studentGiveScore':
+          await studentGiveScore();
+          break;
+      case'endClassStudentGiveScore':
+          await endClassStudentGiveScore();
+          break;
+      case 'teacherGiveScore':
+          await teacherGiveScore();
+          break;
+      case 'agentGiveScore':
+          await agentGiveScore();
+          break;
+      case 'supervisorGiveScore':
+          await supervisorGiveScore();
+          break;
+      case 'calculateTotalScore':
+          await calculateTotalScore();
+          break;
+      case 'printAllScore':
+          await printAllScore();
+          break;
       case 'exit':
           process.exit();
     }
 
     mainMenu(); // 循环显示菜单
+}
+
+// 学生自己评分，一次性给所有课程评分
+async function studentGiveScore() {
+    // 调用之前记得先转换为学生账户
+    let courseIds = await contract.getCourseIds();
+    courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    const { numbers } = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'numbers',
+          message: `请输入${courseIds.length}个0-100的数字评分（以英文逗号分隔）:`,
+          filter: (input) => {  // 处理输入格式
+            return input.split(',')
+                        .map(item => item.trim())  // 移除空格
+                        .map(Number);  // 转为数字
+          },
+          validate: (input) => {  // 验证输入有效性
+            if (input.length !== courseIds.length) return `请输入 ${courseIds.length} 个数字`;
+            const isValid = input.every(num => !isNaN(num)) && input.every(num => num >= 0 && num <= 100);
+            return isValid || '请输入有效的数字（如 1,2,3）';
+          }
+        }
+      ])
+    await giveScoreStudent(numbers,courseIds); // 学生打分
+}
+
+// 总结班级学生评分，一次一个班级，所有课程
+async function endClassStudentGiveScore() {
+    // 调用之前记得先转换为班级账户,两个班级记得都调用一次
+    let courseIds = await contract.getCourseIds();
+    courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    let addr = await currentSigner.getAddress();
+    let result;
+    let print_flag = false;
+    for (let i = 0; i < courseIds.length; i++) {
+        result = await giveScoreStudentToClass(addr, courseIds[i]); // 总结班级评分
+        if (result.code === -1 && !print_flag) {
+          print_flag = true;
+          console.log(result.message); // 打印错误信息
+        }
+    }
+    if (result.code === 0) {
+        for (let i = 0; i < courseIds.length; i++) {
+            let classScores = await contract.getCourseClassScores(courseIds[i]); // 班级评分
+            console.log(`课程 ${courseIds[i]} 的班级评分: ${classScores}`); // 打印班级评分
+        }
+    }
+}
+
+// 老师自评，一次性自己全部课程
+async function teacherGiveScore() {
+    // 调用前记得先切换教师账户,而且记得先打印分配情况，看老师有几门课
+    let addr = await currentSigner.getAddress();
+    let teacherId = await contract.addressToTeacherId(addr); // 老师id
+    if (teacherId === 0) {
+        console.log("当前账户不是教师");
+        return;
+    }
+    let courseIds = await contract.getTeacherReallyAssignedCourses(teacherId); // 老师课程
+    courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    const { numbers } = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'numbers',
+          message: `请输入${courseIds.length}个0-100的数字评分（以英文逗号分隔）:`,
+          filter: (input) => {  // 处理输入格式
+            return input.split(',')
+                        .map(item => item.trim())  // 移除空格
+                        .map(Number);  // 转为数字
+          },
+          validate: (input) => {  // 验证输入有效性
+            if (input.length !== courseIds.length) return `请输入 ${courseIds.length} 个数字`;
+            const isValid = input.every(num => !isNaN(num)) && input.every(num => num >= 0 && num <= 100);
+            return isValid || '请输入有效的数字（如 1,2,3）';
+          }
+        }
+      ])
+    
+    await giveScoreByMyself(addr, numbers); // 老师自评
+}
+
+async function agentGiveScore() {
+    // 调用前记得先切换智能体账户,而且记得先打印分配情况，看智能体有几门课
+    let addr = await currentSigner.getAddress();
+    let agentId = await contract.addressToAgentId(addr); // 智能体id
+    if (agentId === 0) {
+        console.log("当前账户不是智能体");
+        return; 
+    }
+    let courseIds = await contract.getAgentAssignedCourses(agentId); // 智能体课程
+    courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    const { numbers } = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'numbers',
+          message: `请输入${courseIds.length}个0-100的数字评分（以英文逗号分隔）:`,
+          filter: (input) => {  // 处理输入格式
+            return input.split(',')
+                        .map(item => item.trim())  // 移除空格
+                        .map(Number);  // 转为数字
+          },
+          validate: (input) => {  // 验证输入有效性
+            if (input.length !== courseIds.length) return `请输入 ${courseIds.length} 个数字`;
+            const isValid = input.every(num => !isNaN(num)) && input.every(num => num >= 0 && num <= 100); // 确保数字在0-100范围内
+            return isValid || '请输入有效的数字（如 1,2,3）';
+          }
+        }
+      ])
+    
+    await giveScoreByAgentSelf(addr, numbers); // 智能体自评
+}
+
+async function supervisorGiveScore() {
+    let courseIds = await contract.getCourseIds();
+    courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    const { numbers } = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'numbers',
+          message: `请输入${courseIds.length}个0-100的数字评分（以英文逗号分隔）:`,
+          filter: (input) => {  // 处理输入格式
+            return input.split(',')
+                        .map(item => item.trim())  // 移除空格
+                        .map(Number);  // 转为数字
+          },
+          validate: (input) => {  // 验证输入有效性
+            if (input.length !== courseIds.length) return `请输入 ${courseIds.length} 个数字`;
+            const isValid = input.every(num => !isNaN(num)) && input.every(num => num >= 0 && num <= 100);
+            return isValid || '请输入有效的数字（如 1,2,3）';
+          }
+        }
+      ])
+    let addr = await currentSigner.getAddress();
+    let print_flag = false;
+    for (let i = 0; i < courseIds.length; i++) {
+        let result = await giveScoreBySupervisor(addr, courseIds[i], numbers[i]);
+        if (result.code !== 0 && !print_flag) {
+          print_flag = true;
+          console.log(result.message); // 打印错误信息
+          break; // 退出循环 
+        }
+    }
+}
+
+async function calculateTotalScore() {
+    let courseIds = await contract.getCourseIds();
+    courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    for (let i = 0; i < courseIds.length; i++) {
+        let result = await calculateCourseTotalScore(courseIds[i]); // 计算课程总分
+        if (result.code === -1) {
+          console.log(result.message); // 打印错误信息
+          break; // 退出循环
+        } 
+    }
+}
+
+async function printAllScore() {
+    let courseIds = await contract.getCourseIds();
+    courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    let assignments = [];
+    for (let i = 0; i < courseIds.length; i++) {
+        let courseScores = await contract.courseScores(courseIds[i]);
+        let teacherScore = Number(courseScores.selfScore); // 自己评价的分数
+        let classScore = await contract.getCourseClassScores(courseIds[i]); // 班级评分
+        classScore = classScore.map(Number);
+        let supervisorScore = await contract.getCourseSupervisorScores(courseIds[i]); // 督导评分
+        supervisorScore = supervisorScore.map(Number);
+        let totalScore = Number(courseScores.totalScore);  // 总分
+        
+        // 获取分配的教师和智能体ID
+        const assignedTeachers = (await contract.getCoursesAssignedTeacher(courseIds[i])).map(t => t.toNumber());
+        const assignedAgents = (await contract.getCoursesAssignedAgent(courseIds[i])).map(a => a.toNumber());
+
+        // 构建分配信息
+        let assignedTo = [];
+        if (assignedTeachers.length > 0) {
+            assignedTo.push(`教师: ${assignedTeachers.join(', ')}`);
+        }
+        if (assignedAgents.length > 0) {
+            assignedTo.push(`智能体: ${assignedAgents.join(', ')}`);
+        }
+        if (assignedTo.length === 0) {
+            assignedTo.push('Unassigned');
+        }
+        assignments.push({
+            "课程ID": courseIds[i],
+            "分配对象": assignedTo.join(' | '),
+            "老师或智能体自评分": teacherScore,
+            "班级评分": classScore.join(', '),
+            "督导评分": supervisorScore.join(', '),
+            "总分": totalScore
+        });
+        // console.log(`课程 ${courseIds[i]} 的评分: 自评 ${teacherScore}, 学生 ${classScore}, 督导 ${supervisorScore}, 总分 ${totalScore}`); // 打印评分 
+    }
+    console.log('\n目前课程的评分情况:');
+    console.table(assignments); // 打印表格
 }
 
 
@@ -339,6 +576,7 @@ async function endProposal(){
         await endProposalAndAssignCourseforWithoutteacher(proposalId);
     }
 }
+
 
 async function switchCurrentSigner_newinteract(newAddress, newCurrentName){
     currentSigner = provider.getSigner(newAddress);
