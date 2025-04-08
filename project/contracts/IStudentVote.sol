@@ -17,7 +17,7 @@ interface StudentVote {
     function getProposalResults(
         address classAddress,
         uint256 proposalId
-    ) external view returns (uint256, uint256);
+    ) external view returns (uint256, uint256, uint256[] memory, uint256[] memory);
 
     function getAverageSuitability(uint256[] memory courseIds) external view returns (uint256[] memory);
 
@@ -238,7 +238,7 @@ contract IStudentVote is StudentVote {
         public
         view
         override
-        returns (uint256 winningOptionId, uint256 voteforID)
+        returns (uint256, uint256, uint256[] memory ,uint256[] memory)
     {
         uint256 classId = addressToClassId[classAddress];
         require(classes[classId].id != 0, "Class does not exist");
@@ -246,19 +246,23 @@ contract IStudentVote is StudentVote {
             classes[classId].proposals[proposalId].id != 0,
             "Proposal does not exist"
         );
-
+        uint256 winningOptionId;
+        uint256 voteforID;
+        
         Proposal storage proposal = classes[classId].proposals[proposalId];
+        uint256[] memory teacherVoteCounts = new uint256[](proposal.votedIds.length);
         voteforID = proposal.voteforID;
-
         uint256 maxVoteCount = 0;
         for (uint256 i = 0; i < proposal.votedIds.length; i++) {
             uint256 optionId = proposal.votedIds[i];
             uint256 voteCount = proposal.voteIdToCount[optionId];
+            teacherVoteCounts[i] = voteCount;
             if (voteCount > maxVoteCount) {
                 maxVoteCount = voteCount;
                 winningOptionId = optionId;
             }
         }
+        return (winningOptionId, voteforID, proposal.votedIds,teacherVoteCounts);
     }
 
     function getStudents() public view returns(uint256[] memory) {

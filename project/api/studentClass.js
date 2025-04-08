@@ -73,9 +73,15 @@ async function studentVote(studentAddress, proposalId, optionId){
 
 // 结束班级投票
 async function endClassProposal(classAddr, proposalId){
-    let [winningTeacher, courseId] = await classContract.getProposalResults(classAddr, proposalId);
+    let [winningTeacher, courseId, teacherIds, teacherIdsVoteCount] = await classContract.getProposalResults(classAddr, proposalId);
     let classId = await classContract.addressToClassId(classAddr);
     classId = classId.toNumber();
+    await voteContract.voteChooseTeacher(classAddr, proposalId, winningTeacher); 
+    let tableData = teacherIds.map((teacherId, index) => ({
+        老师ID: Number(teacherId),
+        票数: Number(teacherIdsVoteCount[index])
+    }));
+    console.table(tableData);
     return{
         code: 0,
         message: `Class ${classId} proposal ${proposalId} has been finished and voted teacher ${winningTeacher} successfully`,

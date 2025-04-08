@@ -94,6 +94,7 @@ async function mainMenu() {
       { name: '📌 创建为课程提案（教师）', value: 'createTeacherProposal' },
       { name: '🗳️ 教师评分并投票', value: 'init_teacherVote' },
       { name: '✅ 执行教师提案', value: 'executeTeacherProposal' },
+      { name: '查看课程重要程度', value: 'checkCourseImportance' }, 
       { name: '初始化课程分配', value: 'initAllocation' },
       { name: '查看课程分配情况', value: 'viewAssignments' },
       { name: '查看课程冲突情况', value: 'checkCourseConflicts' },
@@ -155,6 +156,9 @@ async function mainMenu() {
       case 'executeTeacherProposal':
         await executeProposal();
         break;
+      case 'checkCourseImportance':
+          await checkCourseImportance();
+          break;
       case 'initAllocation':
           await handleInitAllocation();
           break;
@@ -410,6 +414,24 @@ async function printAllScore() {
         // console.log(`课程 ${courseIds[i]} 的评分: 自评 ${teacherScore}, 学生 ${classScore}, 督导 ${supervisorScore}, 总分 ${totalScore}`); // 打印评分 
     }
     console.log('\n目前课程的评分情况:');
+    console.table(assignments); // 打印表格
+}
+
+// 查看课程重要程度，输出表格
+async function checkCourseImportance() {
+    let courseIds = await contract.getCourseIds();
+    courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    let assignments = [];
+    for (let i = 0; i < courseIds.length; i++) {
+        let importance = Number(await contract.getCourseImportance(courseIds[i])); // 查看课程重要程度
+        let suit = await contract.getCourseIsAgentSuitable(courseIds[i]);
+        assignments.push({
+            "课程ID": courseIds[i],
+            "重要程度": importance,
+            "是否适合智能体": suit
+        })
+    }
+    console.log('\n目前课程的重要程度:');
     console.table(assignments); // 打印表格
 }
 

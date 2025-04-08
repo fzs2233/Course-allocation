@@ -112,18 +112,21 @@ contract Vote is IVote{
     }
 
     // 结束投票并返回结果
-    function endVoteMultiple(uint256 _proposalId) public view returns (uint256, uint256) {
+    function endVoteMultiple(uint256 _proposalId) public view returns (uint256, uint256, uint256[] memory, uint256[] memory) {
         uint256 maxVoteCount = 0;
         uint256 result = 0;
         uint256[] memory temp = proposalMultiples[_proposalId].votedIds;
         uint256 _voteforID = proposalMultiples[_proposalId].voteforID;
+        uint256[] memory tempCount = new uint256[](temp.length);
         for (uint256 i = 0; i < temp.length; i++) {
             if(proposalMultiples[_proposalId].voteIdToCount[temp[i]]>maxVoteCount){
                 maxVoteCount = proposalMultiples[_proposalId].voteIdToCount[temp[i]];
                 result = temp[i];
             }
+            tempCount[i] = proposalMultiples[_proposalId].voteIdToCount[temp[i]];
         }
-        return (result, _voteforID);
+
+        return (result, _voteforID,temp,tempCount);
     }
 
     // 创建选老师提案
@@ -151,12 +154,12 @@ contract Vote is IVote{
 
     // 通过接口结束投票
     // 选老师结束投票
-    function endVoteChooseTeacher(uint256 _proposalId) public override(IVote) view returns (uint256, uint256) {
+    function endVoteChooseTeacher(uint256 _proposalId) public override(IVote) view returns (uint256, uint256, uint256[] memory, uint256[] memory) {
         return endVoteMultiple(_proposalId); 
     }
 
     // 选课程结束投票
-    function endVoteChooseCourse(uint256 _proposalId) public override(IVote) view returns (uint256, uint256) {
+    function endVoteChooseCourse(uint256 _proposalId) public override(IVote) view returns (uint256, uint256, uint256[] memory, uint256[] memory) {
         return endVoteMultiple(_proposalId); 
     }
 

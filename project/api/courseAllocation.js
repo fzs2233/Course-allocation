@@ -60,6 +60,23 @@ async function init_TeacherCourses() {
             }
         }
     }
+
+    let transferCourseNumbers = await contract.transferCourseNumbers();
+    transferCourseNumbers = transferCourseNumbers.toNumber();
+    // 记录第一次转移课程的开始时间
+    if (transferCourseNumbers === 0){
+        // 设置开始时间
+        let transferCourseStartDate = Math.floor(Date.now() / 1000);
+        let transferCourseEndDate = transferCourseStartDate + 86400;
+
+        await contract.settransferCourseStartTime(transferCourseStartDate);
+        await contract.settransferCourseEndTime(transferCourseEndDate);
+        // 打印允许换课的开始时间和结束时间
+        const formattedStartDate = new Date(transferCourseStartDate * 1000).toLocaleString('zh-CN', options);
+        const formattedEndDate = new Date(transferCourseEndDate * 1000).toLocaleString('zh-CN', options);
+        console.log("允许换课的开始时间（北京时间）:", formattedStartDate);
+        console.log("允许换课的结束时间（北京时间）:", formattedEndDate);
+    }
     return allocationResults;
 }
 
@@ -428,8 +445,13 @@ async function assignCourseToTeacherWithoutCourse(courseId, teacherId) {
 
 // 结束投票并分配课程
 async function endProposalAndAssignCourseforWithoutteacher(proposalId) {
-    let [teacherId, courseId] = await voteContract.endVoteChooseCourse(proposalId);
+    let [teacherId, courseId, teacherIds, teacherIdsVoteCount ] = await voteContract.endVoteChooseCourse(proposalId);
     console.log(await assignCourseToTeacherWithoutCourse(courseId, teacherId));
+    let tableData = teacherIds.map((teacherId, index) => ({
+        老师ID: Number(teacherId),
+        票数: Number(teacherIdsVoteCount[index])
+    }));
+    console.table(tableData);
     return {
         code: 0,
         message: `proposal ${proposalId} has been finished and course has been assigned successfully`
@@ -670,7 +692,7 @@ async function agentVote(agentAddress, proposalId){
 
 // 结束冲突投票
 async function endConfictProposal(proposalId){
-    let [winningTeacherId, courseId] = await voteContract.endVoteChooseCourse(proposalId);
+    let [winningTeacherId, courseId,teacherIds,teacherIdsVoteCount] = await voteContract.endVoteChooseCourse(proposalId);
     winningTeacherId = winningTeacherId.toNumber();
     courseId = courseId.toNumber();
 
@@ -683,6 +705,11 @@ async function endConfictProposal(proposalId){
         }
     }
     await contract.addTeacherReallyAssignedCourses(winningTeacherId, courseId);
+    let tableData = teacherIds.map((teacherId, index) => ({
+        老师ID: Number(teacherId),
+        票数: Number(teacherIdsVoteCount[index])
+    }));
+    console.table(tableData);
     return {
         code: 0,
         message: `End Conflict Proposal successfully, Winning Teacher Id: ${winningTeacherId}, Course Id: ${courseId}`,
@@ -698,27 +725,22 @@ async function endConfictProposal(proposalId){
  */
 async function transferCourse(courseId, targetId) {
     try {
-        let transferCourseNumbers = await contract.transferCourseNumbers();
-        transferCourseNumbers = transferCourseNumbers.toNumber();
-        console.log(`给课次数: ${transferCourseNumbers}`)
+        let nowTime = new Date();
+        let transferCourseEndTime = await contract.transferCourseEndTime();
+        transferCourseEndTime = transferCourseEndTime.toNumber()
+        transferCourseEndTime = new Date(transferCourseEndTime * 1000).toLocaleString('zh-CN', options);
+        console.log(`换课的结束时间是: ${transferCourseEndTime}`);
 
-        if (transferCourseNumbers !== 0) {
-            let nowTime = new Date();
-            let transferCourseEndTime = await contract.transferCourseEndTime();
-            transferCourseEndTime = transferCourseEndTime.toNumber()
-            transferCourseEndTime = new Date(transferCourseEndTime * 1000).toLocaleString('zh-CN', options);
-            console.log(`换课的结束时间是: ${transferCourseEndTime}`);
-
-            if (transferCourseEndTime && nowTime >= transferCourseEndTime) {
-                return{
-                    code: -1,
-                    message: "转移课程的允许时间已经结束了！"
-                };
-            }else {
-                nowTime = nowTime.toLocaleString('zh-CN', options);
-                console.log(`现在的时间是${nowTime}，允许换课`)
-            }
+        if (transferCourseEndTime && nowTime >= transferCourseEndTime) {
+            return{
+                code: -1,
+                message: "转移课程的允许时间已经结束了！"
+            };
+        }else {
+            nowTime = nowTime.toLocaleString('zh-CN', options);
+            console.log(`现在的时间是${nowTime}，允许换课`)
         }
+        
 
         // 获取当前分配者信息
         const currentTeachers = await contract.getCoursesAssignedTeacher(courseId);
@@ -730,7 +752,7 @@ async function transferCourse(courseId, targetId) {
         const isCurrentHolder = currentAssigned.includes(senderTeacherId);
         let coins = (await contract.teachers(senderTeacherId)).transferCourseCoins;
         coins = coins.toNumber();
-        if (coins < 1) {
+        if (coins < 2) {
             return{
                 code: -1,
                 message: `当前转移课程币的数量为 ${coins}, 无法实现转移课程`
@@ -780,22 +802,7 @@ async function transferCourse(courseId, targetId) {
         }
         await AssignedTeacherCourse(targetId, courseId);
 
-        // 记录第一次转移课程的开始时间
-        if (transferCourseNumbers === 0){
-            // 设置开始时间
-            let transferCourseStartDate = Math.floor(Date.now() / 1000);
-            let transferCourseEndDate = transferCourseStartDate + 86400;
-
-            transferCourseNumbers++;
-            await contract.settransferCourseNumbers(transferCourseNumbers);
-            await contract.settransferCourseStartTime(transferCourseStartDate);
-            await contract.settransferCourseEndTime(transferCourseEndDate);
-            // 打印允许换课的开始时间和结束时间
-            const formattedStartDate = new Date(transferCourseStartDate * 1000).toLocaleString('zh-CN', options);
-            const formattedEndDate = new Date(transferCourseEndDate * 1000).toLocaleString('zh-CN', options);
-            console.log("允许换课的开始时间（北京时间）:", formattedStartDate);
-            console.log("允许换课的结束时间（北京时间）:", formattedEndDate);
-        }
+        
 
         // 将给课的人的币数量-2，获得课的人币数量+1
         let senderCoins = (await contract.teachers(senderTeacherId)).transferCourseCoins;
@@ -804,7 +811,12 @@ async function transferCourse(courseId, targetId) {
         let targetCoins = (await contract.teachers(targetId)).transferCourseCoins;
         targetCoins = targetCoins.toNumber() + 1;
         await contract.setTeacherTransferCourseCoins(targetId, targetCoins);
-        
+
+        let transferCourseNumbers = await contract.transferCourseNumbers();
+        transferCourseNumbers = transferCourseNumbers.toNumber();
+        transferCourseNumbers++;
+        console.log(`给课次数: ${transferCourseNumbers}`)
+        await contract.settransferCourseNumbers(transferCourseNumbers);
         // 返回转移情况
         return { 
             code: 0, 
@@ -827,8 +839,9 @@ async function transferCourse(courseId, targetId) {
 
 async function preprocessConflictCourses() {
     try {
-        // 设置结束时间为开始时间，不允许转移课程
-        transferCourseEndDate = transferCourseStartDate;
+        let nowTime = Math.floor(Date.now() / 1000);
+        await contract.settransferCourseEndTime(nowTime);
+        console.log(`转移课程已结束`);
         
         const courseIds = (await contract.getCourseIds()).map(id => id.toNumber());
         let successCount = 0;
