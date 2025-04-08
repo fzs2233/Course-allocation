@@ -110,6 +110,26 @@ async function giveScoreByAgentSelf(AgentAddress, scores) {
     };
 }
 
+// 学期结束后学生考试分数
+async function examineScore(courseId, scores) {
+    let studentIds = await classContract.getStudentIds();
+    if (scores.length !== studentIds.length) {
+        return {
+            code: -1,
+            message: `输入的分数数量${scores.length}与学生数量${studentIds.length}不匹配`
+        }; 
+    }
+    for (let i = 0; i < scores.length; i++) {
+        await classContract.setStudentCourseScore(studentIds[i], courseId, scores[i]);
+        thisStudentCourseScore = await classContract.getStudentCourseScore(studentIds[i], courseId);
+        console.log(`学生Id:${studentIds[i]} 课程Id:${courseId} 考试分数:${thisStudentCourseScore}`);
+    } 
+    return {
+        code: 0,
+        message: "考试分数录入成功"
+    }
+}
+
 // 学生打分 一次给所有课程评分
 async function giveScoreStudent(scores, courseIds) {
     await classContract.studentSetCourseSuitability(scores, courseIds)
@@ -131,14 +151,19 @@ async function giveScoreStudentToClass(classAddress, courseId) {
     
     // 遍历studentIds，找到classId对应的学生评分，将其加入到classContract的classScores中
     let thisStudentScore;
+    let thisStudentCourseScore;
     let totalScore = 0;
     let studentScores = [];
     // console.log("学生：",studentIds);
     for (let i = 0; i < studentIds.length; i++) {
         thisStudentScore = await classContract.getStudentCourseSuitability(studentIds[i], courseId);
-        studentScores.push(thisStudentScore);
+        thisStudentCourseScore = await classContract.getStudentCourseScore(studentIds[i], courseId);
+        studentScores.push({
+            thisStudentScore: Number(thisStudentScore),
+            thisStudentCourseScore: Number(thisStudentCourseScore)
+        });
     }
-    studentScores.sort((a, b) => a - b); // 升序排序
+    studentScores.sort((a, b) => a.thisStudentCourseScore - b.thisStudentCourseScore); // 按考试分数升序排序
     // 去除前35%和后35%的数
     let number = studentScores.length * 0.35; // 去掉35%的数before和after
     let before = Math.floor(number); // 向下取整
@@ -148,10 +173,10 @@ async function giveScoreStudentToClass(classAddress, courseId) {
     // console.log("学生分数后：",studentScores);
     // 计算平均值
     for (let i = 0; i < studentScores.length; i++) {
-        totalScore += studentScores[i];  
+        totalScore += studentScores[i].thisStudentScore * studentScores[i].thisStudentCourseScore;  
     }
 
-    totalScore /= studentScores.length || 1; // 防止除以0;
+    totalScore /= studentScores.reduce((sum, item) => sum + item.thisStudentCourseScore, 0) || 1; // 防止除以0;
     // console.log(`长度为:${studentScores.length} 课程Id:${courseId} 班级Id:${classId} 平均分数:${totalScore}`);
     let result = await giveScoreByClass(courseId, classId, totalScore);
     if (result.code !== 0) {
@@ -181,6 +206,7 @@ async function giveScoreByClass(courseId, classId, score) {
             data: score
         }; 
     }
+    score = Math.round(score);
     await contract.addCourseClassScores(courseId, classId, score);
     return {
         code: 0,
@@ -268,6 +294,7 @@ async function calculateCourseTotalScore(courseId) {
         let suitOriginal = await contract.getTeacherSuitability(teacherId, courseId);
         suitAfter = suitOriginal * 0.5 + totalScore * 0.5; // 范围0-100
         suitAfter = Math.round(suitAfter);
+        totalScore = Math.round(totalScore);
         await contract.setCourseTotalScore(courseId, totalScore);
         // await contract.setTeacherCourseSuitability(teacherId, courseId, suitAfter);
         typeId = teacherId;
@@ -276,6 +303,7 @@ async function calculateCourseTotalScore(courseId) {
         let suitOriginal = await contract.getAgentSuitability(agentId, courseId);
         suitAfter = suitOriginal * 0.5 + totalScore * 0.5; // 范围0-100
         suitAfter = Math.round(suitAfter);
+        totalScore = Math.round(totalScore);
         await contract.setCourseTotalScore(courseId, totalScore);
         // await contract.setAgentCourseSuitability(agentId, courseId, suitAfter);
         typeId = agentId;
@@ -505,6 +533,7 @@ module.exports = {
     giveScoreStudentToClass,
     giveScoreBySupervisor,
     calculateCourseTotalScore,
-    switchCurrentSigner_courseScore
+    switchCurrentSigner_courseScore,
+    examineScore
 };
 // main();

@@ -82,7 +82,8 @@ const {
     giveScoreStudentToClass,
     giveScoreBySupervisor,
     calculateCourseTotalScore,
-    switchCurrentSigner_courseScore
+    switchCurrentSigner_courseScore,
+    examineScore
 } = require("../api/courseScore.js");
 
 /* 交互菜单系统 */
@@ -106,7 +107,9 @@ async function mainMenu() {
       { name: '为提案投票', value: 'voteForProposal' },
       { name: '结束提案投票', value: 'endProposal' },
       { name: '查询教师性价比', value: 'teacherCost' },
+      { name: '给学生考试分数', value: 'giveExamineScore'},
       { name: '学生打分', value: 'studentGiveScore'},
+      { name: '打印学生考试和评价分数', value: 'printStudentExamAndEvaluateScore' },
       { name: '总结班级学生打分', value:'endClassStudentGiveScore'},
       { name: '老师自评', value:'teacherGiveScore'},
       { name: '智能体自评', value:'agentGiveScore'},
@@ -189,11 +192,17 @@ async function mainMenu() {
       case 'teacherCost':
           await handleCostPerformance();
           break;
+      case 'giveExamineScore':
+          await giveExamineScore();
+          break;
       case 'transferCourse':
           await handleTransferCourse();
           break;
       case 'studentGiveScore':
           await studentGiveScore();
+          break;
+      case 'printStudentExamAndEvaluateScore':
+          await printStudentExamAndEvaluateScore();
           break;
       case'endClassStudentGiveScore':
           await endClassStudentGiveScore();
@@ -417,6 +426,28 @@ async function printAllScore() {
     console.table(assignments); // 打印表格
 }
 
+// 打印学生考试和评价分数
+async function printStudentExamAndEvaluateScore() {
+    let courseIds = await contract.getCourseIds();
+    courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    let assignments = [];
+    let studentIds = await classContract.getStudentIds(); // 学生id
+    studentIds = studentIds.map(id => Number(id)); // 转换为数字数组
+    for (let i = 0; i < courseIds.length; i++) {
+        let courseId = courseIds[i];
+        let object = {};
+        for (let j = 0; j < studentIds.length; j++) {
+            thisStudentScore = await classContract.getStudentCourseSuitability(studentIds[j], courseId);
+            thisStudentCourseScore = await classContract.getStudentCourseScore(studentIds[j], courseId);
+            let key = "student_" + studentIds[j];
+            object[key] = thisStudentCourseScore + ", " + thisStudentScore;
+        }
+        assignments.push(object);
+    }
+    console.log('\n目前课程的学生考试和评价情况:');
+    console.table(assignments); // 打印表格
+}
+
 // 查看课程重要程度，输出表格
 async function checkCourseImportance() {
     let courseIds = await contract.getCourseIds();
@@ -433,6 +464,41 @@ async function checkCourseImportance() {
     }
     console.log('\n目前课程的重要程度:');
     console.table(assignments); // 打印表格
+}
+
+async function giveExamineScore() {
+    let courseIds = await contract.getCourseIds();
+    courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    let studentIds = await classContract.getStudentIds(); // 学生id
+    studentIds = studentIds.map(id => Number(id)); // 转换为数字数组
+    const { courseId,scores } = await inquirer.prompt([
+        {
+          type: 'number',
+          name: 'courseId',
+          message: `请输入要打分的courseId:`, 
+          default: 1,
+          validate: input => courseIds.includes(input) || `请输入正确的courseId, 范围为${courseIds.join(', ')}`
+        },
+        {
+          type: 'input',
+          name: 'scores',
+          message: `请输入${studentIds.length}个要打分的分数(0-100):`, 
+          filter: (input) => {  // 处理输入格式
+            return input.split(',')
+                       .map(item => item.trim())  // 移除空格
+                       .map(Number);  // 转为数字
+          },
+          validate: (input) => {  // 验证输入有效性
+            if (input.length!== studentIds.length) return `请输入 ${studentIds.length} 个数字`;
+            const isValid = input.every(num =>!isNaN(num)) && input.every(num => num >= 0 && num <= 100); // 确保数字在0-100范围内
+            return isValid || '请输入有效的数字（如 1,2,3）';
+          }
+        }
+    ])
+    let result = await examineScore(courseId, scores); // 学生打分
+    if(result.code === -1){
+        console.log(result.message); // 打印错误信息
+    }
 }
 
 

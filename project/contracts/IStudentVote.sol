@@ -34,6 +34,7 @@ contract IStudentVote is StudentVote {
         uint256 classId;
         bool isSetSuitability;
         mapping(uint256 => uint256) courseSuitability;
+        mapping(uint256 => uint256) courseScores;
     }
 
     struct Class {
@@ -67,6 +68,8 @@ contract IStudentVote is StudentVote {
     uint256 public studentCount;
     uint256 courseCount = 10;
 
+    
+
     function getClassNum() public view override returns (uint256) {
         return classCount;
     }
@@ -89,19 +92,6 @@ contract IStudentVote is StudentVote {
         classes[classCount].name = className;
         classes[classCount].weightForAutoVote = 10;
         classIds.push(classCount);
-    }
-
-    // 添加学生到班级
-    function addStudentToClass(string memory _name) public {
-        uint256 classId = addressToClassId[msg.sender];
-        require(classes[classId].id != 0, "Class does not exist");
-        studentCount++;
-        students[studentCount].id = studentCount;
-        students[studentCount].name = _name;
-        students[studentCount].classId = classId;
-        students[studentCount].isSetSuitability = false;
-        classes[classId].studentsId.push(studentCount);
-        studentIds.push(studentCount);
     }
 
     // 注册学生
@@ -267,6 +257,7 @@ contract IStudentVote is StudentVote {
 
     function getStudents() public view returns(uint256[] memory) {
         uint classId = addressToClassId[msg.sender];
+        require(classes[classId].id!= 0, unicode"当前账户不是班级");
         return classes[classId].studentsId;
     }
 
@@ -302,6 +293,15 @@ contract IStudentVote is StudentVote {
     function getStudentCourseSuitability(uint256 studentId, uint256 courseId) public view returns(uint256) {
         Student storage student = students[studentId];
         return student.courseSuitability[courseId];
+    }
+
+    // 获取学生考试分数
+    function getStudentCourseScore(uint256 studentId, uint256 courseId) public view returns (uint256) {
+        return students[studentId].courseScores[courseId];
+    }
+    // 设置学生考试分数
+    function setStudentCourseScore(uint256 studentId, uint256 courseId, uint256 score) public {
+        students[studentId].courseScores[courseId] = score;
     }
 
     // 查看学生评分的平均分
