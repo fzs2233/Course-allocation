@@ -426,6 +426,10 @@ async function printAllScore() {
     console.table(assignments); // 打印表格
 }
 
+function formatNumber(num) {
+    return String(num).padStart(3, ' ');
+  }
+
 // 打印学生考试和评价分数
 async function printStudentExamAndEvaluateScore() {
     let courseIds = await contract.getCourseIds();
@@ -436,11 +440,13 @@ async function printStudentExamAndEvaluateScore() {
     for (let i = 0; i < courseIds.length; i++) {
         let courseId = courseIds[i];
         let object = {};
+        object["课程ID"] = courseId;
         for (let j = 0; j < studentIds.length; j++) {
             thisStudentScore = await classContract.getStudentCourseSuitability(studentIds[j], courseId);
             thisStudentCourseScore = await classContract.getStudentCourseScore(studentIds[j], courseId);
             let key = "student_" + studentIds[j];
-            object[key] = thisStudentCourseScore + ", " + thisStudentScore;
+
+            object[key] = formatNumber(thisStudentCourseScore) + "," + formatNumber(thisStudentScore);
         }
         assignments.push(object);
     }
