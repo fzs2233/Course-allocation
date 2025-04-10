@@ -128,7 +128,7 @@ async function setTeacherSuitabilityForAllCourses(
 
 // 函数：计算五个老师对智能体所有课程的平均适合度评分并保存
 async function saveAverageSuitability(_agentId, _courseIds) {
-    const numTeachers = 2;  // 假设五个老师为智能体评分
+    const numTeachers = 5;  // 假设五个老师为智能体评分
     const averageSuitabilities = [];
 
     // 计算每门课程的平均适合度评分
@@ -153,6 +153,65 @@ async function saveAverageSuitability(_agentId, _courseIds) {
     const tx = await contract.setAllAgentCourseSuitability(_agentId, averageSuitabilities);
     await tx.wait();
     console.log(`已保存智能体 ${_agentId} 的所有课程的平均适合度评分`);
+}
+
+let Scores = {};
+async function setImportanceForAllCourses(
+    _teacherId,
+    _courseIds,  // 多门课程的 ID 数组
+    _importances  // 每门课程的适合度评分数组
+) {
+    // 验证课程和评分数组的长度
+    if (_courseIds.length !== _importances.length) {
+        console.log("课程ID数组和重要程度数组长度不匹配");
+        return;
+    }
+
+    // 存储每个教师的评分
+    for (let i = 0; i < _courseIds.length; i++) {
+        let score = _importances[i];
+
+        // 确保适合度评分在0到100之间
+        if (score < 0 || score > 100) {
+            console.log("适合度评分无效");
+            return;
+        }
+
+        // 将评分存储在 teacherScores 中
+        if (!Scores[_teacherId]) {
+            Scores[_teacherId] = [];
+        }
+
+        Scores[_teacherId].push(score);
+    }
+}
+
+async function saveAverageImportance(_courseIds) {
+    const numTeachers = 5;  // 假设五个老师为智能体评分
+    const averageimportances = [];
+
+    // 计算每门课程的平均评分
+    for (let j = 0; j < _courseIds.length; j++) {
+        let totalimportance = 0;
+
+        for (let teacherId = 1; teacherId <= numTeachers; teacherId++) {
+            let scores = Scores[teacherId];
+            if (scores && scores[j] !== undefined) {
+                totalimportance += scores[j];  // 累加每个老师对课程的评分
+            }
+        }
+
+        // 计算评分
+        const averageimportance = totalimportance / numTeachers;
+        const flooredimportance = Math.floor(averageimportance);
+        averageimportances.push(flooredimportance);
+    }
+
+    // 使用 setAllAgentCourseSuitability 函数保存评分
+    console.table(averageimportances);
+    const tx = await contract.setAllCourseImportance(averageimportances);
+    await tx.wait();
+    console.log(`已保存所有课程重要程度评分`);
 }
 
 // End proposal
@@ -192,5 +251,7 @@ module.exports = {
     executeProposal,
     switchCurrentSigner_test1,
     setTeacherSuitabilityForAllCourses,
-    saveAverageSuitability
+    saveAverageSuitability,
+    setImportanceForAllCourses,
+    saveAverageImportance
 };

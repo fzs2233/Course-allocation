@@ -14,7 +14,7 @@ contract TeacherVote is Vote {
     mapping(uint256 => uint256[]) private _proposalOptions; //存储每个提案的投票选项
 
     struct ProposalBase {
-        uint256 courseId;
+        uint256 courseId; //由于父合约用到，所以保留
         uint256 suitabilityProposalId;
         bool executed;
         uint256 agreeCount;
