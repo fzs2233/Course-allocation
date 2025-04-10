@@ -790,6 +790,9 @@ async function transferCourse(courseId, targetId) {
         transferCourseEndTime = new Date(transferCourseEndTime * 1000).toLocaleString('zh-CN', options);
         console.log(`换课的结束时间是: ${transferCourseEndTime}`);
 
+        // 获取计算分数的类型
+        let scoreType = await contract.ScoreTypeChioce();
+
         if (transferCourseEndTime && nowTime >= transferCourseEndTime) {
             return{
                 code: -1,
@@ -839,11 +842,11 @@ async function transferCourse(courseId, targetId) {
         // 获取当前分配者性价比
         let currentPerf;
         if (senderTeacherId !== 0) {
-            currentPerf = (await getCompareScore(senderTeacherId, courseId, "Cost-effectiveness")).data;
+            currentPerf = (await getCompareScore(senderTeacherId, courseId, scoreType)).data;
         }
 
         // 获取目标性价比
-        let targetPerf = (await getCompareScore(targetId, courseId, "Cost-effectiveness")).data;
+        let targetPerf = (await getCompareScore(targetId, courseId, scoreType)).data;
 
         // 验证性价比提升
         if (targetPerf <= currentPerf) {
@@ -906,7 +909,7 @@ async function preprocessConflictCourses() {
         let successCount = 0;
         let skippedCourses = 0;
         let failedCourses = 0;
-
+        let scoreType = await contract.ScoreTypeChioce();
         // 串行处理所有课程
         for (const courseId of courseIds) {
             try {
@@ -929,13 +932,13 @@ async function preprocessConflictCourses() {
                         await contract.removeTeacherAssignedCourses(teacherId, courseId);
                         await contract.removeCourseAssignedTeacherId(courseId, teacherId);
                         // 获取当前课程的 score
-                        let currentScore = (await getCompareScore(teacherId, courseId, "Cost-effectiveness")).data;
+                        let currentScore = (await getCompareScore(teacherId, courseId, scoreType)).data;
                         existingCourses = existingCourses.map(id => id.toNumber());
 
                         // 获取所有现有课程的 score 并存储
                         const coursesWithScores = [];
                         for (const existCourseId of existingCourses) {
-                            let courseScore = (await getCompareScore(teacherId, existCourseId, "Cost-effectiveness")).data;
+                            let courseScore = (await getCompareScore(teacherId, existCourseId, scoreType)).data;
                             coursesWithScores.push({
                                 courseId: existCourseId,
                                 score: courseScore
