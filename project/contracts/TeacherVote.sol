@@ -15,21 +15,13 @@ contract TeacherVote is Vote {
 
     struct ProposalBase {
         uint256 courseId;
-        uint256 totalRating;
-        uint256 raterCount;
         uint256 suitabilityProposalId;
         bool executed;
         uint256 agreeCount;
         uint256 disagreeCount;
     }
 
-    struct TeacherRating {
-        uint256 rating;
-        bool hasRated;
-    }
-
     mapping(uint256 => ProposalBase) public proposals;
-    mapping(uint256 => mapping(uint256 => TeacherRating)) public teacherRatings;
     mapping(uint256 => mapping(address => bool)) public suitabilityVotes;
     // mapping(uint256 => mapping(uint256 => uint256[])) public teacherScores;        // 暂存老师评分的数组
 
@@ -40,11 +32,7 @@ contract TeacherVote is Vote {
         uint256 indexed courseId,
         uint256 suitabilityProposalId
     );
-    event ProposalExecuted(
-        uint256 indexed proposalId,
-        uint256 avgImportance,
-        string Choice
-    );
+    event ProposalExecuted(uint256 indexed proposalId, string Choice);
 
     modifier onlyTeacher() {
         require(
@@ -85,8 +73,6 @@ contract TeacherVote is Vote {
         proposalCount++;
         proposals[proposalCount] = ProposalBase({
             courseId: courseId,
-            totalRating: 0,
-            raterCount: 0,
             suitabilityProposalId: suitabilityProposalId,
             executed: false,
             agreeCount: 0,
@@ -103,7 +89,6 @@ contract TeacherVote is Vote {
 
     function submitCombinedVote(
         uint256 proposalId,
-        uint256 rating,
         uint256 suitabilityOptionIndex
     ) external onlyTeacher {
         ProposalBase storage p = proposals[proposalId];
@@ -113,16 +98,6 @@ contract TeacherVote is Vote {
         // 验证教师身份
         uint256 teacherId = courseAllocation.addressToTeacherId(msg.sender);
         require(teacherId != 0, "Unregistered teacher");
-
-        // 处理评分逻辑
-        require(rating >= 1 && rating <= 10, "Invalid rating (1-10)");
-        TeacherRating storage tr = teacherRatings[proposalId][teacherId];
-        require(!tr.hasRated, "Already rated");
-
-        tr.rating = rating;
-        tr.hasRated = true;
-        p.totalRating += rating;
-        p.raterCount++;
 
         // 处理投票逻辑
         require(suitabilityOptionIndex < 2, "Invalid option index (0-1)");
@@ -196,10 +171,6 @@ contract TeacherVote is Vote {
         ProposalBase storage p = proposals[proposalId];
         require(p.courseId != 0, "Invalid proposal");
         require(!p.executed, "Already executed");
-        require(p.raterCount > 0, "No ratings submitted");
-
-        // 计算平均评分
-        uint256 avgRating = p.totalRating / p.raterCount;
 
         // 获取投票结果
         (uint256 winningOption, ) = endVote(p.suitabilityProposalId);
@@ -210,11 +181,10 @@ contract TeacherVote is Vote {
         } else Choice = "Suitability&Preference";
 
         // 更新课程状态
-        courseAllocation.setCourseImportance(p.courseId, avgRating);
         courseAllocation.setScoreType(Choice);
 
         p.executed = true;
-        emit ProposalExecuted(proposalId, avgRating, Choice);
+        emit ProposalExecuted(proposalId, Choice);
     }
 
     function endVote(
@@ -229,24 +199,8 @@ contract TeacherVote is Vote {
 
     function getVoteDetails(
         uint256 proposalId
-    )
-        external
-        view
-        returns (
-            uint256 agree,
-            uint256 disagree,
-            uint256 totalRatings,
-            uint256 courseId
-        )
-    {
+    ) external view returns (uint256 agree, uint256 disagree, uint256 total) {
         ProposalBase memory p = proposals[proposalId];
-        return (p.agreeCount, p.disagreeCount, p.raterCount, p.courseId);
-    }
-
-    function getTeacherRating(
-        uint256 proposalId,
-        uint256 teacherId
-    ) public view returns (uint256) {
-        return teacherRatings[proposalId][teacherId].rating;
+        return (p.agreeCount, p.disagreeCount, p.agreeCount + p.disagreeCount);
     }
 }
