@@ -43,7 +43,7 @@ contract TeacherVote is Vote {
     event ProposalExecuted(
         uint256 indexed proposalId,
         uint256 avgImportance,
-        bool isAgentSuitable
+        string Choice
     );
 
     modifier onlyTeacher() {
@@ -203,14 +203,18 @@ contract TeacherVote is Vote {
 
         // 获取投票结果
         (uint256 winningOption, ) = endVote(p.suitabilityProposalId);
-        bool isSuitable = (winningOption == 2); // 假设2是赞成选项值
+
+        string memory Choice;
+        if (winningOption == 2) {
+            Choice = "Cost-effectiveness";
+        } else Choice = "Suitability&Preference";
 
         // 更新课程状态
         courseAllocation.setCourseImportance(p.courseId, avgRating);
-        //courseAllocation.setCourseIsAgentSuitable(p.courseId, isSuitable);
+        courseAllocation.setScoreType(Choice);
 
         p.executed = true;
-        emit ProposalExecuted(proposalId, avgRating, isSuitable);
+        emit ProposalExecuted(proposalId, avgRating, Choice);
     }
 
     function endVote(
@@ -219,7 +223,7 @@ contract TeacherVote is Vote {
         ProposalBase storage p = proposals[_proposalId];
 
         // 计算最终的投票选项：如果同意投票数大于反对投票数，选择 "适合"
-        uint256 winningOption = (p.agreeCount > p.disagreeCount) ? 2 : 1; // 2 代表适合，1 代表不适合
+        uint256 winningOption = (p.agreeCount > p.disagreeCount) ? 2 : 1; // 2 代表适合，1 代表不适合  1性价比 2suit preference
         return (winningOption, p.agreeCount + p.disagreeCount); // 返回选项和总票数
     }
 

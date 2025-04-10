@@ -52,7 +52,7 @@ async function createProposal() {
     const event = receipt.events.find(e => e.event === "NewCombinedProposal");
     const proposalId = event.args.proposalId;
 
-    console.log(`✅ 提案创建成功，proposalId = ${proposalId}`);
+    console.log(`提案创建成功，proposalId = ${proposalId}`);
 }
 
 // Teacher voting
@@ -60,7 +60,7 @@ async function init_teacherVote() {
     const answer = await inquirer.prompt([
         { type: "input", name: "proposalId", message: "请输入提案 ID:", validate: val => !isNaN(parseInt(val)), filter: Number },
         { type: "input", name: "importance", message: "请输入课程重要程度（1~10）:", validate: val => (val >= 1 && val <= 10) || "请输入1~10的数字", filter: Number },
-        { type: "list", name: "isSuitable", message: "该课程是否适合智能体:", choices: [{ name: "适合", value: 1 }, { name: "不适合", value: 0 }] }
+        { type: "list", name: "isSuitable", message: "请选择倾向的规则:", choices: [{ name: "Cost-effectiveness", value: 1 }, { name: "Suitability&Preference", value: 0 }] }
     ]);
     const addr = await currentSigner.getAddress();
     const teacherId = await contract.addressToTeacherId(addr);
@@ -75,7 +75,7 @@ async function init_teacherVote() {
     );
     await tx.wait();
 
-    console.log(`✅ 教师投票成功：提案ID ${answer.proposalId}`);
+    console.log(`教师投票成功：提案ID ${answer.proposalId}`);
 }
 
 let teacherScores = {};
@@ -157,24 +157,23 @@ async function executeProposal() {
     const tx = await teacherVoteContract.executeProposal(answer.proposalId, GAS_CONFIG);
     await tx.wait();
 
-    console.log(`✅ 提案 ${answer.proposalId} 已成功结束`);
+    console.log(`提案 ${answer.proposalId} 已成功结束`);
 
     // 👉 展示提案投票统计信息
     try {
         const [agree, disagree, total ,courseId] = await teacherVoteContract.getVoteDetails(answer.proposalId);
         const importance = await contract.getCourseImportance(courseId);
-        const suitable = await contract.getCourseIsAgentSuitable(courseId);
-        console.log("📊 提案投票结果:");
-        console.log(`👍 同意: ${agree.toString()}`);
-        console.log(`👎 反对: ${disagree.toString()}`);
-        console.log(`🧑‍🏫 参与评分人数: ${total.toString()}`);
+        const choice = await contract.ScoreTypeChioce();
+        console.log("提案投票结果:");
+        console.log(`选择Cost-effectiveness的人数: ${agree.toString()}`);
+        console.log(`选择Suitability&Preference的人数: ${disagree.toString()}`);
+        console.log(`参与评分人数: ${total.toString()}`);
 
 
-        const isSuitableText = suitable === true || suitable.toString() === "1" ? "适合" : "不适合";
-        console.log(`📘 课程ID: ${courseId.toString()}，重要程度：${importance.toString()}，是否适合智能体：${isSuitableText}`);
-
+        console.log(`课程ID: ${courseId.toString()}，重要程度：${importance.toString()}`);
+        console.log(`最终选择按照：${choice}的规则`);
         // 展示每个教师的评分（课程重要程度）
-        console.log("📘 教师评分详情（课程重要程度）:");
+        console.log(" 教师评分详情（课程重要程度）:");
         for (let teacherId = 1; teacherId <= 5; teacherId++) { // 假设最多5个教师
             const rating = await teacherVoteContract.getTeacherRating(answer.proposalId, teacherId);
             if (rating.toNumber() > 0) {
@@ -182,7 +181,7 @@ async function executeProposal() {
             }
         }
     } catch (err) {
-        console.error("❌ 提案信息读取失败:", err.message);
+        console.error("提案信息读取失败:", err.message);
     }
 }
 
