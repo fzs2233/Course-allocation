@@ -72,7 +72,11 @@ const {
   createProposal,
   init_teacherVote,
   executeProposal,
-  switchCurrentSigner_test1
+  switchCurrentSigner_test1,
+  setTeacherSuitabilityForAllCourses,
+  saveAverageSuitability,
+  setImportanceForAllCourses,
+  saveAverageImportance
 } = require("../api/test1.js");
 
 const {
@@ -92,9 +96,13 @@ async function mainMenu() {
       { name: '一键初始化数据', value: 'initializeData'},
       { name: '切换用户', value: 'switchUser'},
       { name: '注册教师/智能体/班级/学生', value: 'register'}, 
-      { name: '📌 创建为课程提案（教师）', value: 'createTeacherProposal' },
-      { name: '🗳️ 教师评分并投票', value: 'init_teacherVote' },
-      { name: '✅ 执行教师提案', value: 'executeTeacherProposal' },
+      { name: '创建确定规则的提案', value: 'createTeacherProposal' },
+      { name: '教师投票', value: 'init_teacherVote' },
+      { name: '执行教师提案', value: 'executeTeacherProposal' },
+      { name: '教师给课程的重要程度打分', value: 'setImportance' },
+      { name: '查看并保存课程的重要程度', value: 'saveImportance' },
+      { name: '教师给智能体对课程的适合程度打分', value: 'setTeacherSuitabilityForAllCourses' },
+      { name: '查看并保存智能体对课程的适合程度', value: 'saveAverageSuitabilityInteract' },
       { name: '查看课程重要程度', value: 'checkCourseImportance' }, 
       { name: '初始化课程分配', value: 'initAllocation' },
       { name: '查看课程分配情况', value: 'viewAssignments' },
@@ -155,6 +163,18 @@ async function mainMenu() {
         break;
       case 'init_teacherVote':
         await init_teacherVote();
+        break;
+      case 'setImportance':
+        await set_ImportanceForAllCourses();
+        break;
+      case 'saveImportance':
+        await save_AverageImportance();
+        break;
+      case 'setTeacherSuitabilityForAllCourses':
+        await setSuitabilityForAllCoursesInteract();
+        break;
+      case 'saveAverageSuitabilityInteract':
+        await saveAverageSuitabilityInteract();
         break;
       case 'executeTeacherProposal':
         await executeProposal();
@@ -713,6 +733,91 @@ async function switchCurrentSigner_newinteract(newAddress, newCurrentName){
     classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
     teacherVoteContract = new ethers.Contract(teacherVoteAddress, teacherVoteABI, currentSigner);
 }
+
+
+// 为所有课程设置适合度评分
+async function setSuitabilityForAllCoursesInteract() {
+    // 获取当前用户的教师ID（无需手动输入）
+    let teacherId = await contract.addressToTeacherId(await currentSigner.getAddress());
+
+    // 确保当前账户是教师
+    if (teacherId === 0) {
+        console.log("当前账户不是教师");
+        return;
+    }
+
+    const { agentId, suitabilities } = await inquirer.prompt([
+        { type: 'number', name: 'agentId', message: '请输入智能体ID:' },
+        {
+            type: 'input',
+            name: 'suitabilities',
+            message: '请输入适合度评分（以英文逗号分隔）:',
+            filter: (input) => input.split(',').map(score => Number(score))
+        }
+    ]);
+
+    // 固定课程ID 1,2,3,4,5,6,7,8,9,10
+    const courseIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    // 调用设置适合度评分的函数
+    await setTeacherSuitabilityForAllCourses(teacherId, agentId, courseIds, suitabilities);
+    console.log('✅ 已为所有课程设置适合度评分');
+}
+
+
+
+// 计算并保存平均适合度评分
+async function saveAverageSuitabilityInteract() {
+    const { agentId } = await inquirer.prompt([
+        { type: 'number', name: 'agentId', message: '请输入智能体ID:' }
+    ]);
+
+    // 固定课程ID 1,2,3,4,5,6,7,8,9,10
+    const courseIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    await saveAverageSuitability(agentId, courseIds);
+    //console.log('✅ 已计算并保存平均适合度评分');
+}
+
+
+// 为所有课程设置重要程度评分
+async function set_ImportanceForAllCourses() {
+    // 获取当前用户的教师ID（无需手动输入）
+    let teacherId = await contract.addressToTeacherId(await currentSigner.getAddress());
+
+    // 确保当前账户是教师
+    if (teacherId === 0) {
+        console.log("当前账户不是教师");
+        return;
+    }
+
+    const { agentId, suitabilities } = await inquirer.prompt([
+        {
+            type: 'input',
+            name: 'suitabilities',
+            message: '请输入重要程度评分（以英文逗号分隔）:',
+            filter: (input) => input.split(',').map(score => Number(score))
+        }
+    ]);
+
+    // 固定课程ID 1,2,3,4,5,6,7,8,9,10
+    const courseIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    // 调用设置适合度评分的函数
+    await setImportanceForAllCourses(teacherId,  courseIds, suitabilities);
+    console.log('✅ 已为所有课程设置重要程度');
+}
+
+// 计算并保存平均重要程度评分
+async function save_AverageImportance() {
+
+    const courseIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    await saveAverageImportance(courseIds);
+
+}
+
+
 // 启动交互
 console.log('=== 课程分配管理系统 ===');
 async function begin(){

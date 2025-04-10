@@ -41,7 +41,6 @@ contract ICourseAllocation {
         uint256 importance;
         uint256[] assignedTeacherId;
         uint256[] assignedAgentId;
-        bool isAgentSuitable;
     }
 
     struct CourseScore {
@@ -54,6 +53,8 @@ contract ICourseAllocation {
         uint256[] supervisorScores;
         mapping(uint256 => uint256) giveScoreSupervisorIdExists;
     }
+    // 选择性价比或者加权分
+    string public ScoreTypeChioce;
 
     // 所有教师的总偏好
     uint256 public totalWeight;
@@ -609,13 +610,13 @@ contract ICourseAllocation {
         }
     }
 
-    // 设置课程是否适合智能体
-    function setCourseIsAgentSuitable(
-        uint256 courseId,
-        bool _isAgentSuitable
-    ) public {
-        courses[courseId].isAgentSuitable = _isAgentSuitable;
-    }
+    // // 设置课程是否适合智能体
+    // function setCourseIsAgentSuitable(
+    //     uint256 courseId,
+    //     bool _isAgentSuitable
+    // ) public {
+    //     courses[courseId].isAgentSuitable = _isAgentSuitable;
+    // }
 
     // 设置教师计数器
     function setTeacherCount(uint256 _teacherCount) public {
@@ -701,12 +702,12 @@ contract ICourseAllocation {
         return courses[courseId].importance;
     }
 
-    // 获取课程是否适合智能体
-    function getCourseIsAgentSuitable(
-        uint courseId
-    ) external view returns (bool) {
-        return courses[courseId].isAgentSuitable;
-    }
+    // // 获取课程是否适合智能体
+    // function getCourseIsAgentSuitable(
+    //     uint courseId
+    // ) external view returns (bool) {
+    //     return courses[courseId].isAgentSuitable;
+    // }
 
     function getTeacherIds() public view returns (uint256[] memory) {
         return teacherIds;
@@ -880,5 +881,9 @@ contract ICourseAllocation {
 
     function settransferCourseEndTime(uint256 _transferCourseEndTime) public {
         transferCourseEndTime = _transferCourseEndTime;
+    }
+
+    function setScoreType(string calldata option) public {
+        ScoreTypeChioce = option;
     }
 }

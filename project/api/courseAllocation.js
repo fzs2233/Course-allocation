@@ -80,7 +80,39 @@ async function init_TeacherCourses() {
     return allocationResults;
 }
 
-//为Agent分配课程 （适合度≥50
+// //为Agent分配课程 （适合度≥50
+// async function init_AgentCourses_old() {
+//     const allocationResults = [];
+//     const agentIds = (await contract.getAgentIds()).map(id => id.toNumber());
+//     const courseIds = (await contract.getCourseIds()).map(id => id.toNumber());
+
+//     for (const courseIdz of courseIds) {
+//         const course = await contract.courses(courseId);
+//         if (!course.isAgentSuitable) continue; // 只处理智能体专属课程
+
+//         let max_Cost_effectivenes = 0;
+//         let selectAgent = 0;
+//         for (const agentId of agentIds) {
+//             const suitability = (await contract.getAgentSuitability(agentId, courseId)).toNumber();
+//             let agent = await contract.agents(agentId);
+//             let value = agent.value;
+//             value = value.toNumber();
+//             if (suitability >= 50) { 
+//                 if( (suitability / value) > max_Cost_effectivenes){
+//                     max_Cost_effectivenes = suitability / value;
+//                     selectAgent = agentId;
+//                 }
+//             }
+//         }
+//         if(selectAgent > 0){
+//             await contract.addAgentAssignedCourses(selectAgent, courseId);
+//             await contract.addCourseAssignedAgentId(courseId, selectAgent);
+//             allocationResults.push({ selectAgent, courseId });
+//         }
+//     }
+//     return allocationResults;
+// }
+
 async function init_AgentCourses() {
     const allocationResults = [];
     const agentIds = (await contract.getAgentIds()).map(id => id.toNumber());
@@ -88,30 +120,56 @@ async function init_AgentCourses() {
 
     for (const courseId of courseIds) {
         const course = await contract.courses(courseId);
-        if (!course.isAgentSuitable) continue; // 只处理智能体专属课程
 
-        let max_Cost_effectivenes = 0;
-        let selectAgent = 0;
+        let suitableAgents = [];
+        
+        // 找出所有适合度 >= 80 的智能体
         for (const agentId of agentIds) {
             const suitability = (await contract.getAgentSuitability(agentId, courseId)).toNumber();
-            let agent = await contract.agents(agentId);
-            let value = agent.value;
-            value = value.toNumber();
-            if (suitability >= 50) { 
-                if( (suitability / value) > max_Cost_effectivenes){
-                    max_Cost_effectivenes = suitability / value;
-                    selectAgent = agentId;
-                }
+            if (suitability >= 80) {
+                suitableAgents.push({ agentId, suitability });
             }
         }
-        if(selectAgent > 0){
-            await contract.addAgentAssignedCourses(selectAgent, courseId);
-            await contract.addCourseAssignedAgentId(courseId, selectAgent);
-            allocationResults.push({ selectAgent, courseId });
+
+        // 如果只有一个适合的智能体，直接分配
+        if (suitableAgents.length === 1) {
+            const { agentId } = suitableAgents[0];
+            await contract.addAgentAssignedCourses(agentId, courseId);
+            await contract.addCourseAssignedAgentId(courseId, agentId);
+            allocationResults.push({ agentId, courseId });
+        }
+        // 如果有两个适合的智能体，选择性价比最高的
+        else if (suitableAgents.length === 2) {
+            let maxCostEffectiveness = 0;
+            let selectedAgentId = 0;
+
+            // 选择性价比最高的智能体
+            for (const { agentId, suitability } of suitableAgents) {
+                let agent = await contract.agents(agentId);
+                let value = agent.value.toNumber();
+                if (value > 0) {
+                    let costEffectiveness = suitability / value;
+                    if (costEffectiveness > maxCostEffectiveness) {
+                        maxCostEffectiveness = costEffectiveness;
+                        selectedAgentId = agentId;
+                    }
+                }
+            }
+            let agentId=0;
+            agentId = selectedAgentId;
+
+            // 分配给性价比最高的智能体
+            if (agentId > 0) {
+                await contract.addAgentAssignedCourses(agentId, courseId);
+                await contract.addCourseAssignedAgentId(courseId, agentId);
+                allocationResults.push({ agentId, courseId });
+            }
         }
     }
+
     return allocationResults;
 }
+
 
 async function printAssignments() { //查看目前的课程分配情况
     const courseIds = (await contract.getCourseIds()).map(id => id.toNumber());
