@@ -78,8 +78,72 @@ async function init_teacherVote() {
     console.log(`✅ 教师投票成功：提案ID ${answer.proposalId}`);
 }
 
+let teacherScores = {};
+async function setTeacherSuitabilityForAllCourses(
+    _teacherId,
+    _agentId,
+    _courseIds,  // 多门课程的 ID 数组
+    _suitabilities  // 每门课程的适合度评分数组
+) {
+    // 验证课程和评分数组的长度
+    if (_courseIds.length !== _suitabilities.length) {
+        console.log("课程和适合度评分数组长度不匹配");
+        return;
+    }
+
+    // 存储每个教师的评分
+    for (let i = 0; i < _courseIds.length; i++) {
+        let suitability = _suitabilities[i];
+
+        // 确保适合度评分在0到100之间
+        if (suitability < 0 || suitability > 100) {
+            console.log("适合度评分无效");
+            return;
+        }
+
+        // 将评分存储在 teacherScores 中
+        if (!teacherScores[_teacherId]) {
+            teacherScores[_teacherId] = {};
+        }
+
+        if (!teacherScores[_teacherId][_agentId]) {
+            teacherScores[_teacherId][_agentId] = [];
+        }
+
+        teacherScores[_teacherId][_agentId].push(suitability);
+    }
+}
+
+// 函数：计算五个老师对智能体所有课程的平均适合度评分并保存
+async function saveAverageSuitability(_agentId, _courseIds) {
+    const numTeachers = 2;  // 假设五个老师为智能体评分
+    const averageSuitabilities = [];
+
+    // 计算每门课程的平均适合度评分
+    for (let j = 0; j < _courseIds.length; j++) {
+        let totalSuitability = 0;
+
+        for (let teacherId = 1; teacherId <= numTeachers; teacherId++) {
+            let scores = teacherScores[teacherId][_agentId];
+            if (scores && scores[j] !== undefined) {
+                totalSuitability += scores[j];  // 累加每个老师对课程的评分
+            }
+        }
+
+        // 计算平均适合度评分
+        const averageSuitability = totalSuitability / numTeachers;
+        const flooredSuitability = Math.floor(averageSuitability);
+        averageSuitabilities.push(flooredSuitability);
+    }
+
+    // 使用 setAllAgentCourseSuitability 函数保存适合度评分
+    console.table(averageSuitabilities);
+    const tx = await contract.setAllAgentCourseSuitability(_agentId, averageSuitabilities);
+    await tx.wait();
+    console.log(`已保存智能体 ${_agentId} 的所有课程的平均适合度评分`);
+}
+
 // End proposal
-// 修改后的 executeProposal 方法
 // 修改后的 executeProposal 方法
 async function executeProposal() {
     const answer = await inquirer.prompt([{
@@ -126,5 +190,7 @@ module.exports = {
     createProposal,
     init_teacherVote,
     executeProposal,
-    switchCurrentSigner_test1
+    switchCurrentSigner_test1,
+    setTeacherSuitabilityForAllCourses,
+    saveAverageSuitability
 };

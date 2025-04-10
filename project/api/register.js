@@ -34,7 +34,7 @@ let classContract = new ethers.Contract(classContractAddress, classABI, currentS
 let teacherVoteContract = new ethers.Contract(teacherVoteAddress, teacherVoteABI, currentSigner);
 
 // 创建课程
-async function initializeCourse(name, Importance, IsAgentSuitable) {
+async function initializeCourse(name, Importance) {
     let courseCount = await contract.courseCount();
     courseCount = courseCount.toNumber();
     courseCount = courseCount + 1;
@@ -43,7 +43,7 @@ async function initializeCourse(name, Importance, IsAgentSuitable) {
     await contract.setCourseId(courseCount);
     await contract.setCourseName(courseCount, name);
     await contract.setCourseImportance(courseCount, Importance);
-    await contract.setCourseIsAgentSuitable(courseCount, IsAgentSuitable);
+    //await contract.setCourseIsAgentSuitable(courseCount, IsAgentSuitable);
 
     return {
         code: 0,
@@ -385,16 +385,16 @@ async function initializeData() {
     const accounts = await web3.eth.getAccounts();
     // 初始化课程
     console.log("Initializing courses...");
-    await initializeCourse("c1", 3, true);
-    await initializeCourse("c2", 7, true);
-    await initializeCourse("c3", 1, true);
-    await initializeCourse("c4", 9, false);
-    await initializeCourse("c5", 5, false);
-    await initializeCourse("c6", 2, false);
-    await initializeCourse("c7", 8, false);
-    await initializeCourse("c8", 4, false);
-    await initializeCourse("c9", 6, false);
-    await initializeCourse("c10", 10, false);
+    await initializeCourse("c1", 3);
+    await initializeCourse("c2", 7);
+    await initializeCourse("c3", 1);
+    await initializeCourse("c4", 9);
+    await initializeCourse("c5", 5);
+    await initializeCourse("c6", 2);
+    await initializeCourse("c7", 8);
+    await initializeCourse("c8", 4);
+    await initializeCourse("c9", 6);
+    await initializeCourse("c10", 10);
     // 注册教师
     console.log("Registering teachers...");
     await switchAcount(1);

@@ -7,6 +7,9 @@ import "./ICourseAllocation.sol";
 contract TeacherVote is Vote {
     ICourseAllocation public courseAllocation;
 
+    // // 映射：存储每个教师、每个智能体、每门课程的适合度评分
+    // mapping(uint256 => mapping(uint256 => mapping(uint256 => uint256))) public teacherAgentSuitability;
+
     // 新增本地选项存储
     mapping(uint256 => uint256[]) private _proposalOptions; //存储每个提案的投票选项
 
@@ -28,6 +31,7 @@ contract TeacherVote is Vote {
     mapping(uint256 => ProposalBase) public proposals;
     mapping(uint256 => mapping(uint256 => TeacherRating)) public teacherRatings;
     mapping(uint256 => mapping(address => bool)) public suitabilityVotes;
+    // mapping(uint256 => mapping(uint256 => uint256[])) public teacherScores;        // 暂存老师评分的数组
 
     uint256 public proposalCount;
 
@@ -144,6 +148,50 @@ contract TeacherVote is Vote {
         );
     }
 
+    // // 函数：允许某个老师为某个智能体的所有课程设置适合度评分
+    // function setTeacherSuitabilityForAllCourses(
+    //     uint256 _teacherId,
+    //     uint256 _agentId,
+    //     uint256[] memory _courseIds,  // 多门课程的 ID 数组
+    //     uint256[] memory _suitabilities  // 每门课程的适合度评分数组
+    // ) public {
+    //     require(_courseIds.length == _suitabilities.length, unicode"课程和适合度评分数组长度不匹配");
+
+    //     // 存储每个教师的评分
+    //     for (uint256 i = 0; i < _courseIds.length; i++) {
+    //         uint256 suitability = _suitabilities[i];
+
+    //         // 确保适合度评分在0到100之间
+    //         require(suitability >= 0 && suitability <= 100, unicode"适合度评分无效");
+
+    //         // 将评分存储在 teacherScores 中
+    //         teacherScores[_teacherId][_agentId].push(suitability);
+    //     }
+    // }
+
+    // // 函数：计算五个老师对智能体所有课程的平均适合度评分并保存
+    // function saveAverageSuitability(uint256 _agentId, uint256[] memory _courseIds) public {
+    //     uint256 numTeachers = 5;  // 假设五个老师为智能体评分
+    //     uint256[] memory averageSuitabilities = new uint256[](_courseIds.length);
+
+    //     // 计算每门课程的平均适合度评分
+    //     for (uint256 j = 0; j < _courseIds.length; j++) {
+    //         uint256 totalSuitability = 0;
+
+    //         for (uint256 teacherId = 0; teacherId < numTeachers; teacherId++) {
+    //             uint256[] memory scores = teacherScores[teacherId][_agentId];
+    //             totalSuitability += scores[j];  // 累加每个老师对课程的评分
+    //         }
+
+    //         // 计算平均适合度评分
+    //         uint256 averageSuitability = totalSuitability / numTeachers;
+    //         averageSuitabilities[j] = averageSuitability;
+    //     }
+
+    //     // 使用 setAllAgentCourseSuitability 函数保存适合度评分
+    //     courseAllocation.setAllAgentCourseSuitability(_agentId, averageSuitabilities);
+    // }
+
     function executeProposal(uint256 proposalId) external {
         ProposalBase storage p = proposals[proposalId];
         require(p.courseId != 0, "Invalid proposal");
@@ -159,7 +207,7 @@ contract TeacherVote is Vote {
 
         // 更新课程状态
         courseAllocation.setCourseImportance(p.courseId, avgRating);
-        courseAllocation.setCourseIsAgentSuitable(p.courseId, isSuitable);
+        //courseAllocation.setCourseIsAgentSuitable(p.courseId, isSuitable);
 
         p.executed = true;
         emit ProposalExecuted(proposalId, avgRating, isSuitable);
