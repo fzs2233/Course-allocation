@@ -36936,12 +36936,12 @@
     "5777": {
       "events": {},
       "links": {},
-      "address": "0x74A8F79b4C21627D0a3b77E61f44e86FE51E0a3a",
-      "transactionHash": "0x7f69f3cdad3818000b8c27cc5ce805a2e22cdee1dbf6d9f01abaf9d7465b7278"
+      "address": "0x66ab8A534A26D0054720feE93bD47e526D8a45d9",
+      "transactionHash": "0x9d4f274c6c78f19f9cb20bba035721caf124923006965afbf15b36d1afcf3d86"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2025-04-10T05:53:18.406Z",
+  "updatedAt": "2025-04-10T06:13:25.772Z",
   "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",
