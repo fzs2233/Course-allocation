@@ -637,6 +637,7 @@ async function createConflictProposal() {
     let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateId, 9);//7老师+2班级
     await classContract.createProposal("createProposal", selectedCourseId, candidateId);
     let receipt = await tx.wait();
+    console.log(receipt);
     const event = receipt.events.find(event => event.event === "ProposalCreated");
     let { proposalId, description } = event.args;
     proposalId = proposalId.toNumber();

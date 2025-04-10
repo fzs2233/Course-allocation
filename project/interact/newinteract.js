@@ -76,7 +76,7 @@ const {
 } = require("../api/test1.js");
 
 const {
-    giveScoreByMyself,
+    giveScoreByTeacher,
     giveScoreByAgentSelf,
     giveScoreStudent,
     giveScoreStudentToClass,
@@ -111,7 +111,7 @@ async function mainMenu() {
       { name: '学生打分', value: 'studentGiveScore'},
       { name: '打印学生考试和评价分数', value: 'printStudentExamAndEvaluateScore' },
       { name: '总结班级学生打分', value:'endClassStudentGiveScore'},
-      { name: '老师自评', value:'teacherGiveScore'},
+      { name: '老师互评', value:'teacherGiveScore'},
       { name: '智能体自评', value:'agentGiveScore'},
       { name: '督导评分', value:'supervisorGiveScore'},
       { name: '计算课程总分数', value: 'calculateTotalScore' },
@@ -277,7 +277,7 @@ async function endClassStudentGiveScore() {
     }
 }
 
-// 老师自评，一次性自己全部课程
+// 老师互评，一次性全部课程
 async function teacherGiveScore() {
     // 调用前记得先切换教师账户,而且记得先打印分配情况，看老师有几门课
     let addr = await currentSigner.getAddress();
@@ -286,8 +286,13 @@ async function teacherGiveScore() {
         console.log("当前账户不是教师");
         return;
     }
-    let courseIds = await contract.getTeacherReallyAssignedCourses(teacherId); // 老师课程
+    let reallyAssignedcourseIds = await contract.getTeacherReallyAssignedCourses(teacherId); // 老师课程
+    reallyAssignedcourseIds = reallyAssignedcourseIds.map(id => Number(id)); // 转换为数字数组
+    let removeSet = new Set(reallyAssignedcourseIds); // 转换为集合
+    let courseIds = await contract.getCourseIds(); // 所有课程
     courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    courseIds = courseIds.filter(id => !removeSet.has(id)); // 过滤掉自己的课程
+
     const { numbers } = await inquirer.prompt([
         {
           type: 'input',
@@ -299,6 +304,7 @@ async function teacherGiveScore() {
                         .map(Number);  // 转为数字
           },
           validate: (input) => {  // 验证输入有效性
+            console.log(input.length, courseIds.length);
             if (input.length !== courseIds.length) return `请输入 ${courseIds.length} 个数字`;
             const isValid = input.every(num => !isNaN(num)) && input.every(num => num >= 0 && num <= 100);
             return isValid || '请输入有效的数字（如 1,2,3）';
@@ -306,7 +312,7 @@ async function teacherGiveScore() {
         }
       ])
     
-    await giveScoreByMyself(addr, numbers); // 老师自评
+    await giveScoreByTeacher(addr, courseIds, numbers); // 老师自评
 }
 
 async function agentGiveScore() {
@@ -387,10 +393,14 @@ async function calculateTotalScore() {
 async function printAllScore() {
     let courseIds = await contract.getCourseIds();
     courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    let studentIds = await classContract.getStudentIds(); // 学生id
+    studentIds = studentIds.map(id => Number(id)); // 转换为数字数组
     let assignments = [];
     for (let i = 0; i < courseIds.length; i++) {
         let courseScores = await contract.courseScores(courseIds[i]);
-        let teacherScore = Number(courseScores.selfScore); // 自己评价的分数
+
+        let teacherScore = await contract.getTeacherScores(courseIds[i]); // 互评分数
+        teacherScore = teacherScore.map(Number);
         let classScore = await contract.getCourseClassScores(courseIds[i]); // 班级评分
         classScore = classScore.map(Number);
         let supervisorScore = await contract.getCourseSupervisorScores(courseIds[i]); // 督导评分
@@ -412,13 +422,34 @@ async function printAllScore() {
         if (assignedTo.length === 0) {
             assignedTo.push('Unassigned');
         }
+
+        //计算这门课的学生平均分
+        let studentScoresTotal = 0;
+        for (let j = 0; j < studentIds.length; j++) {
+            studentScoresTotal += Number(await classContract.getStudentCourseScore(studentIds[j], courseIds[i])); // 学生评分
+        }
+        let studentScoresAvg = studentScoresTotal / studentIds.length; // 学生平均分
+        studentScoresAvg = studentScoresAvg.toFixed(2); // 保留两位小数
+        let salary = 0;
+        if(assignedTeachers.length > 0) {
+            let teacher = await contract.teachers(assignedTeachers[0]); // 老师
+            salary = Number(teacher.value); // 工资
+        }else if(assignedAgents.length > 0) {
+            let agent = await contract.agents(assignedAgents[0]); // 智能体
+            salary = Number(agent.value); // 工资
+        }
+        
+        
+
         assignments.push({
             "课程ID": courseIds[i],
             "分配对象": assignedTo.join(' | '),
-            "老师或智能体自评分": teacherScore,
+            "学生平均分": studentScoresAvg,
+            "老师或智能体互评分": teacherScore.join(', '),
             "班级评分": classScore.join(', '),
             "督导评分": supervisorScore.join(', '),
-            "总分": totalScore
+            "总分": totalScore,
+            "薪水": salary,
         });
         // console.log(`课程 ${courseIds[i]} 的评分: 自评 ${teacherScore}, 学生 ${classScore}, 督导 ${supervisorScore}, 总分 ${totalScore}`); // 打印评分 
     }

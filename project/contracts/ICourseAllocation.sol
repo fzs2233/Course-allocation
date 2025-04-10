@@ -49,7 +49,8 @@ contract ICourseAllocation {
         uint256 totalScore;
         uint256[] classScores;
         mapping(uint256 => uint256) giveScoreClassIdExists;
-        uint256 selfScore;
+        uint256[] teacherScores;
+        mapping(uint256 => uint256) giveScoreTeacherIdExists;
         uint256[] supervisorScores;
         mapping(uint256 => uint256) giveScoreSupervisorIdExists;
     }
@@ -760,8 +761,38 @@ contract ICourseAllocation {
         return courseScores[courseId].classScores;
     }
 
-    function setCourseSelfScore(uint256 courseId, uint256 score) public {
-        courseScores[courseId].selfScore = score;
+    function addTeacherScores(
+        uint256 courseId,
+        uint256 teacherId,
+        uint256 score
+    ) public {
+        require(
+            courseScores[courseId].giveScoreTeacherIdExists[teacherId] == 0,
+            unicode"该老师已经打分"
+        );
+        courseScores[courseId].giveScoreTeacherIdExists[teacherId] = score;
+        courseScores[courseId].teacherScores.push(score);
+    }
+
+    function removeTeacherScores(
+        uint256 courseId,
+        uint256[] memory teacherIds_
+    ) public {
+        for (uint256 i = 0; i < teacherIds_.length; i++) {
+            courseScores[courseId].giveScoreTeacherIdExists[teacherIds_[i]] = 0;
+        }
+        delete courseScores[courseId].teacherScores;
+    }
+
+    function getTeacherScores(uint256 courseId) public view returns (uint256[] memory) {
+        return courseScores[courseId].teacherScores;
+    }
+
+    function getGiveScoreTeacherIdExists(
+        uint256 courseId,
+        uint256 teacherId 
+    ) public view returns (uint256) {
+        return courseScores[courseId].giveScoreTeacherIdExists[teacherId]; 
     }
 
     function setCourseTotalScore(uint256 courseId, uint256 score) public {
@@ -782,6 +813,16 @@ contract ICourseAllocation {
             supervisorId
         ] = score;
         courseScores[courseId].supervisorScores.push(score);
+    }
+
+    function removeCourseSupervisorScores(
+        uint256 courseId,
+        uint256[] memory supervisorIds_ 
+    ) public {
+        for (uint256 i = 0; i < supervisorIds_.length; i++) {
+            courseScores[courseId].giveScoreSupervisorIdExists[supervisorIds_[i]] = 0;
+        }
+        delete courseScores[courseId].supervisorScores;
     }
 
     function getGiveScoreSupervisorIdExists(

@@ -33,8 +33,8 @@ const {
     printAssignments,
 } = require("../api/courseAllocation.js");
 
-// 老师自评,一次把自己所有课程的分数都填好
-async function giveScoreByMyself(teacherAddress, scores) {
+// 老师互评,一次把除自己外所有课程的分数都填好
+async function giveScoreByTeacher(teacherAddress, courseIds, scores) {
     for (let i = 0; i < scores.length; i++) {
         if(scores[i]>scoreMax || scores[i]<0) {
             return {
@@ -55,20 +55,19 @@ async function giveScoreByMyself(teacherAddress, scores) {
             message: "当前账户不是老师" 
         } 
     }
-    let reallyAssignedCourses = await contract.getTeacherReallyAssignedCourses(teacherId);
-    if(reallyAssignedCourses.length != scores.length) {
-        console.log("输入的分数数量与分配的课程数量不匹配");
+    if(courseIds.length != scores.length) {
+        console.log("输入的分数数量与互评的课程数量不匹配");
         return {
             code: -1,
-            message: "输入的分数数量与分配的课程数量不匹配"
+            message: "输入的分数数量与互评的课程数量不匹配"
         };
     }
-    for (let i = 0; i < reallyAssignedCourses.length; i++) {
-        await contract.setCourseSelfScore(reallyAssignedCourses[i], scores[i]);
+    for (let i = 0; i < courseIds.length; i++) {
+        await contract.addTeacherScores(courseIds[i], teacherId, scores[i]);
     }
     return {
         code: 0,
-        message: "老师自评成功"
+        message: "老师互评成功"
     };
 }
 
@@ -262,10 +261,15 @@ async function calculateCourseTotalScore(courseId) {
         }
         type = "Agent";
     }
-    let courseScores = await contract.courseScores(courseId);
+    let teacherScores = await contract.getTeacherScores(courseId); // 一个数组 
     let classScores = await contract.getCourseClassScores(courseId);  // 一个数组
     let supervisorScores = await contract.getCourseSupervisorScores(courseId); // 一个数组
-    let selfScore = courseScores.selfScore;
+    // 计算老师互评平均分
+    let teacherScoreAvg = 0;
+    for (let i = 0; i < teacherScores.length; i++) {
+        teacherScoreAvg += Number(teacherScores[i]);
+    }
+    teacherScoreAvg /= teacherScores.length!== 0? teacherScores.length : 1;
     // 计算班级的平均分数
     let classScoreAvg = 0;
     let classCount = 0;
@@ -285,7 +289,7 @@ async function calculateCourseTotalScore(courseId) {
     }
     supervisorScoreAvg /= supervisorScores.length !== 0 ? supervisorScores.length : 1;
     // 计算总加权后分数
-    let totalScore = selfScore * 0.3 + classScoreAvg * 0.3 + supervisorScoreAvg * 0.4;
+    let totalScore = teacherScoreAvg * 0.2 + classScoreAvg * 0.4 + supervisorScoreAvg * 0.4;
     let typeId = 0;
     let suitAfter = 0;
     // 通过分数改变适合程度
@@ -308,7 +312,7 @@ async function calculateCourseTotalScore(courseId) {
         // await contract.setAgentCourseSuitability(agentId, courseId, suitAfter);
         typeId = agentId;
     }
-    console.log(`classScoreAvg:${classScoreAvg}, supervisorScoreAvg:${supervisorScoreAvg}, selfScore:${selfScore}, totalScore:${totalScore}, suitAfter:${suitAfter}`)
+    console.log(`classScoreAvg:${classScoreAvg.toFixed(2)}, supervisorScoreAvg:${supervisorScoreAvg.toFixed(2)}, teacherScoreAvg:${teacherScoreAvg.toFixed(2)}, totalScore:${totalScore.toFixed(2)}, suitAfter:${suitAfter.toFixed(2)}`)
     return {
         code: 0,
         message: `课程Id:${courseId}  ${type}Id:${typeId}  适合程度:${suitAfter}`,
@@ -527,7 +531,7 @@ async function main() {
     }
 }
 module.exports = {
-    giveScoreByMyself,
+    giveScoreByTeacher,
     giveScoreByAgentSelf,
     giveScoreStudent,
     giveScoreStudentToClass,
