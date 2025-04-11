@@ -47,7 +47,8 @@ async function init_TeacherCourses() {
 
     for (const courseId of courseIds) {
         const course = await contract.courses(courseId);
-        if (course.isAgentSuitable) continue; // 跳过智能体专属课程
+        let assignedAgent = await contract.getCoursesAssignedAgent(courseId);
+        if (assignedAgent.length !== 0) continue; // 跳过智能体专属课程
 
         for (const teacherId of teacherIds) {
             const suitability = (await contract.getTeacherSuitability(teacherId, courseId)).toNumber();
@@ -176,11 +177,10 @@ async function printAssignments() { //查看目前的课程分配情况
     const assignments = [];
 
     for (const courseId of courseIds) {
-        // 获取课程基础信息（id, name, importance, isAgentSuitable）
+        // 获取课程基础信息（id, name, importance）
         const course = await contract.courses(courseId);
         const courseName = course[1];
         const importance = course[2].toNumber();
-        const isAgentSuitable = course[3] ? 'Yes' : 'No';
 
         // 获取分配的教师和智能体ID
         const assignedTeachers = (await contract.getCoursesAssignedTeacher(courseId)).map(t => t.toNumber());
@@ -202,7 +202,6 @@ async function printAssignments() { //查看目前的课程分配情况
             "课程ID": courseId,
             "课程名": courseName,
             "课程重要程度": importance,
-            "是否适合智能体": isAgentSuitable,
             "分配对象": assignedTo.join(' | ')
         });
     }
@@ -515,26 +514,6 @@ async function endProposalAndAssignCourseforWithoutteacher(proposalId) {
         message: `proposal ${proposalId} has been finished and course has been assigned successfully`
     }
 }
-
-// 创建课程
-async function initializeCourse(name, Importance, IsAgentSuitable) {
-    let courseCount = await contract.courseCount();
-    courseCount = courseCount.toNumber();
-    courseCount = courseCount + 1;
-    // console.log(courseCount);
-    await contract.setCourseCount(courseCount);
-    await contract.setCourseId(courseCount);
-    await contract.setCourseName(courseCount, name);
-    await contract.setCourseImportance(courseCount, Importance);
-    await contract.setCourseIsAgentSuitable(courseCount, IsAgentSuitable);
-
-    return {
-        code: 0,
-        message: "Course initialized successfully",
-        courseId: courseCount
-    };
-}
-
 
 // 为老师分配课程
 async function AssignedTeacherCourse(teacherId, courseId){
