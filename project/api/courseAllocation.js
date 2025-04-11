@@ -978,7 +978,7 @@ async function getCompareScore(teacherId, courseId, scoreType){
             data: CostEffectiveness
         }
     }else if(scoreType === "Suitability&Preference"){
-        let totalTeacherWeight = await contract.totalTeacherWeight();
+        let totalTeacherWeight = await contract.totalWeight();
         totalTeacherWeight = totalTeacherWeight.toNumber();
         let totalClassWeight = await classContract.getClassWeight();
         let totalWeight = totalTeacherWeight + totalClassWeight.toNumber();
