@@ -394,8 +394,29 @@ async function checkAndCreateProposalForTeacher(){
 
     let candidateCourse = -1;
     // 获取没有分配老师的课程作为候选课程
+    // 获取所有课程的ID
     let courseIds = await contract.getCourseIds();
     courseIds = courseIds.map(id => id.toNumber());
+
+    // 创建一个数组来存储课程ID和它们的重要程度
+    let coursesWithImportance = [];
+
+    // 遍历每个课程ID，获取课程的重要程度
+    for (let i = 0; i < courseIds.length; i++) {
+        let courseId = courseIds[i];
+        let course = await contract.courses(courseId);
+        let courseImportance = Number(course.importance);
+        coursesWithImportance.push({
+            courseId: courseId,
+            importance: courseImportance
+        });
+    }
+
+    // 按照重要程度对课程进行排序（降序）
+    coursesWithImportance.sort((a, b) => b.importance - a.importance);
+
+    // 提取排序后的课程ID
+    courseIds = coursesWithImportance.map(item => item.courseId);
 
     for(let courseId of courseIds){
         let teachers = await contract.getCoursesAssignedTeacher(courseId);
@@ -998,7 +1019,27 @@ async function proposalForCoursesWithoutAssigned(){
     let selectedCourseId = 0;
     let isCreate = false;
     let candidateTeacher = [];
-    const courseIds = (await contract.getCourseIds()).map(id => id.toNumber());
+    let courseIds = (await contract.getCourseIds()).map(id => id.toNumber());
+    
+    // 创建一个数组来存储课程ID和它们的重要程度
+    let coursesWithImportance = [];
+
+    // 遍历每个课程ID，获取课程的重要程度
+    for (let i = 0; i < courseIds.length; i++) {
+        let courseId = courseIds[i];
+        let course = await contract.courses(courseId);
+        let courseImportance = Number(course.importance);
+        coursesWithImportance.push({
+            courseId: courseId,
+            importance: courseImportance
+        });
+    }
+
+    // 按照重要程度对课程进行排序（降序）
+    coursesWithImportance.sort((a, b) => b.importance - a.importance);
+
+    // 提取排序后的课程ID
+    courseIds = coursesWithImportance.map(item => item.courseId);
     for(const courseId of courseIds){
         const [teachers, agents] = await Promise.all([
             contract.getCoursesAssignedTeacher(courseId),
@@ -1021,6 +1062,16 @@ async function proposalForCoursesWithoutAssigned(){
         code : 0,
         message : "All Courses Assigned"
     }
+
+    if(candidateTeacher.length == 1 && selectedCourseId != -1) {
+        // 只有一个没有课程的老师，直接分配
+        console.log(await assignCourseToTeacherWithoutCourse(selectedCourseId, candidateTeacher[0]));
+        return {
+            code: 0,
+            message: `课程 ${selectedCourseId} 已经分配给了老师 ${candidateTeacher[0]}, 现在所有老师都有课程了`
+        }
+    }
+    
     candidateTeacher = candidateTeacher.map(id => id.toNumber());
     // 创建提案
     let tx = await voteContract.createChooseTeacherProposal("Create proposals for course not assigned", selectedCourseId, candidateTeacher, 9); //7老师+2班级

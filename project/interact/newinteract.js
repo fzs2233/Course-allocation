@@ -732,14 +732,13 @@ async function switchCurrentSigner_newinteract(newAddress, newCurrentName){
     teacherVoteContract = new ethers.Contract(teacherVoteAddress, teacherVoteABI, currentSigner);
 }
 
-
 // 为所有课程设置适合度评分
 async function setSuitabilityForAllCoursesInteract() {
     // 获取当前用户的教师ID（无需手动输入）
     let teacherId = await contract.addressToTeacherId(await currentSigner.getAddress());
 
     // 确保当前账户是教师
-    if (teacherId === 0) {
+    if (teacherId == 0) {
         console.log("当前账户不是教师");
         return;
     }
