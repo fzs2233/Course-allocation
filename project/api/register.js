@@ -402,40 +402,51 @@ async function initializeData() {
     await contract.setTeacherValue(1, 800);
     await contract.setTeacherSuitabilityWeight(1,1);
     await contract.setTeacherTransferCourseCoins(1, 6);
-    await contract.setAllTeacherCourseSuitability(1, [26,44,65,88,40,37,79,92,14,87]);
-    await contract.setAllTeacherCoursePreferences(1, [35,54,76,80,93,48,64,17,86,70]);
+    // await contract.setAllTeacherCourseSuitability(1, [26,44,65,88,40,37,79,92,14,87]);
+    await contract.setAllTeacherCourseSuitability(1, [51,60,74,88,59,58,80,95,50,90]); // 适合程度高
+    // await contract.setAllTeacherCoursePreferences(1, [35,54,76,80,93,48,64,17,86,70]); // 意愿正常
+    await contract.setAllTeacherCoursePreferences(1, [100,90,80,60,90,90,60,60,100,60]); // 意愿都很高
 
     await switchAcount(2);
     await registerTeacher("teacher_2", accounts[2]);
     await contract.setTeacherValue(2, 1000);
     await contract.setTeacherSuitabilityWeight(2,2);
     await contract.setTeacherTransferCourseCoins(2, 6);
-    await contract.setAllTeacherCourseSuitability(2, [51,32,53,34,85,26,37,48,55,43]);
-    await contract.setAllTeacherCoursePreferences(2, [35,74,17,95,57,23,88,46,64,60]);
+    // await contract.setAllTeacherCourseSuitability(2, [51,32,53,34,85,26,37,48,55,43]);
+    await contract.setAllTeacherCourseSuitability(2, [64,54,70,65,90,58,68,70,70,60]);// 适合程度高
+    // await contract.setAllTeacherCoursePreferences(2, [35,74,17,95,57,23,88,46,64,60]);// 意愿正常
+    await contract.setAllTeacherCoursePreferences(2, [90,95,90,95,67,100,95,90,90,85]);// 意愿都很高
 
     await switchAcount(3);
     await registerTeacher("teacher_3", accounts[3]);
     await contract.setTeacherValue(3, 1500);
     await contract.setTeacherSuitabilityWeight(3,3);
     await contract.setTeacherTransferCourseCoins(3, 6);
-    await contract.setAllTeacherCourseSuitability(3, [32,31,54,43,68,27,44,72,58,30]);
-    await contract.setAllTeacherCoursePreferences(3, [51,32,83,14,95,76,27,70,45,67]);
+    // await contract.setAllTeacherCourseSuitability(3, [32,31,54,43,68,27,44,72,58,30]);
+    await contract.setAllTeacherCourseSuitability(3, [55,54,67,60,80,54,67,85,70,54]);// 适合程度高
+    // await contract.setAllTeacherCoursePreferences(3, [51,32,83,14,95,76,27,70,45,67]);// 意愿正常
+    await contract.setAllTeacherCoursePreferences(3, [90,90,80,80,70,99,80,60,68,90]);// 意愿都很高
 
     await switchAcount(4);
     await registerTeacher("teacher_4", accounts[4]);
     await contract.setTeacherSuitabilityWeight(4,4);
     await contract.setTeacherValue(4, 1200);
     await contract.setTeacherTransferCourseCoins(4, 6);
-    await contract.setAllTeacherCourseSuitability(4, [43,24,35,36,67,18,39,80,61,33]);
-    await contract.setAllTeacherCoursePreferences(4, [22,63,44,85,66,87,38,79,57,60]);
+    // await contract.setAllTeacherCourseSuitability(4, [43,24,35,36,67,18,39,80,61,33]); // 适合程度正常
+    await contract.setAllTeacherCourseSuitability(4, [67,52,54,55,76,51,65,84,76,56]); // 适合程度高
+
+    // await contract.setAllTeacherCoursePreferences(4, [22,63,44,85,66,87,38,79,57,60]);// 意愿正常
+    await contract.setAllTeacherCoursePreferences(4, [80,98,86,85,66,99,90,67,70,90]);// 意愿都很高
 
     await switchAcount(5);
     await registerTeacher("teacher_5", accounts[5]);
     await contract.setTeacherSuitabilityWeight(5,5);
     await contract.setTeacherValue(5, 1100);
     await contract.setTeacherTransferCourseCoins(5, 6);
-    await contract.setAllTeacherCourseSuitability(5, [22,43,44,35,100,37,31,32,33,34]);
-    await contract.setAllTeacherCoursePreferences(5, [43,14,75,35,46,67,28,59,59,79]);
+    // await contract.setAllTeacherCourseSuitability(5, [22,43,44,35,100,37,31,32,33,34]);
+    await contract.setAllTeacherCourseSuitability(5, [51,62,63,60,100,58,56,57,58,59]);// 适合程度高
+    // await contract.setAllTeacherCoursePreferences(5, [43,14,75,35,46,67,28,59,59,79]);// 意愿正常
+    await contract.setAllTeacherCoursePreferences(5, [97,80,80,84,60,84,88,87,86,85]);// 意愿都很高
 
     // 注册智能体
     console.log("Registering agents...");

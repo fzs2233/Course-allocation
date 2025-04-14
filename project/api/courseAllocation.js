@@ -394,8 +394,29 @@ async function checkAndCreateProposalForTeacher(){
 
     let candidateCourse = -1;
     // 获取没有分配老师的课程作为候选课程
+    // 获取所有课程的ID
     let courseIds = await contract.getCourseIds();
     courseIds = courseIds.map(id => id.toNumber());
+
+    // 创建一个数组来存储课程ID和它们的重要程度
+    let coursesWithImportance = [];
+
+    // 遍历每个课程ID，获取课程的重要程度
+    for (let i = 0; i < courseIds.length; i++) {
+        let courseId = courseIds[i];
+        let course = await contract.courses(courseId);
+        let courseImportance = Number(course.importance);
+        coursesWithImportance.push({
+            courseId: courseId,
+            importance: courseImportance
+        });
+    }
+
+    // 按照重要程度对课程进行排序（降序）
+    coursesWithImportance.sort((a, b) => b.importance - a.importance);
+
+    // 提取排序后的课程ID
+    courseIds = coursesWithImportance.map(item => item.courseId);
 
     for(let courseId of courseIds){
         let teachers = await contract.getCoursesAssignedTeacher(courseId);

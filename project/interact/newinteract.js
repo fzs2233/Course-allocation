@@ -739,7 +739,7 @@ async function setSuitabilityForAllCoursesInteract() {
     let teacherId = await contract.addressToTeacherId(await currentSigner.getAddress());
 
     // 确保当前账户是教师
-    if (teacherId === 0) {
+    if (teacherId == 0) {
         console.log("当前账户不是教师");
         return;
     }
@@ -784,7 +784,7 @@ async function set_ImportanceForAllCourses() {
     let teacherId = await contract.addressToTeacherId(await currentSigner.getAddress());
 
     // 确保当前账户是教师
-    if (teacherId === 0) {
+    if (teacherId == 0) {
         console.log("当前账户不是教师");
         return;
     }
