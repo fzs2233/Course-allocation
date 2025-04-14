@@ -684,18 +684,32 @@ async function createConflictProposal() {
             for(let teacherIndex = 0; teacherIndex < teachers.length; teacherIndex++){
                 let teacherId = teachers[teacherIndex];
                 let reallyTeacher = await contract.getTeacherReallyAssignedCourses(teacherId);
-                if(reallyTeacher.length < 2)
+                if(reallyTeacher.length < 2){
                     candidateTeachers.push(teacherId);
+                }else{
+                    await removeTeacherCourse(teacherId, courseId);
+                }
             }
             candidateId = candidateTeachers;
             break;
         }
     }
-
+    if(candidateId.length === 1){
+        // 冲突提案只有一个候选老师，直接分配
+        await contract.addTeacherReallyAssignedCourses(candidateId[0], selectedCourseId);
+        return {
+            code: 0,
+            message: `候选老师只有 ${candidateId[0]}，课程 ${selectedCourseId} 分配给老师 ${candidateId[0]}`
+        }
+    }else if(candidateId.length === 0){
+        return{
+            code: 0,
+            message: `所有的候选老师都已经拥有两门课程了，这门课程无法创建冲突提案，课程 ${selectedCourseId} 被置为未分配状态`
+        }
+    }
     let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateId, 9);//7老师+2班级
     await classContract.createProposal("createProposal", selectedCourseId, candidateId);
     let receipt = await tx.wait();
-    console.log(receipt);
     const event = receipt.events.find(event => event.event === "ProposalCreated");
     let { proposalId, description } = event.args;
     proposalId = proposalId.toNumber();
