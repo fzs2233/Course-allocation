@@ -806,7 +806,12 @@ async function transferCourse(courseId, targetId) {
 
         // 获取计算分数的类型
         let scoreType = await contract.ScoreTypeChioce();
-
+        let scoreTypePrint;
+        if(scoreType === "Cost-effectiveness"){
+            scoreTypePrint = "性价比"
+        }else if(scoreType === "Suitability&Preference"){
+            scoreTypePrint = "能力意愿的加权分数"
+        }
         if (transferCourseEndTime && nowTime >= transferCourseEndTime) {
             return{
                 code: -1,
@@ -853,20 +858,20 @@ async function transferCourse(courseId, targetId) {
             }
         }
 
-        // 获取当前分配者性价比
+        // 获取当前分配者分数
         let currentPerf;
         if (senderTeacherId !== 0) {
             currentPerf = (await getCompareScore(senderTeacherId, courseId, scoreType)).data;
         }
 
-        // 获取目标性价比
+        // 获取目标分数
         let targetPerf = (await getCompareScore(targetId, courseId, scoreType)).data;
 
-        // 验证性价比提升
+        // 验证分数提升
         if (targetPerf <= currentPerf) {
             return{
                 code: -1,
-                message: `目标性价比需大于当前值（当前: ${currentPerf.toFixed(2)}, 目标: ${targetPerf.toFixed(2)}）`
+                message: `目标${scoreTypePrint}需大于当前值（当前: ${currentPerf.toFixed(2)}, 目标: ${targetPerf.toFixed(2)}）`
             }
         }
 
@@ -900,7 +905,8 @@ async function transferCourse(courseId, targetId) {
             performanceImprovement: (targetPerf - currentPerf).toFixed(2),
             targetSuitability: targetSuitability,
             senderCoins: `给课老师的换课剩余币数量: ${senderCoins}`,
-            targetCoins: `被给课老师的换课剩余币数量: ${targetCoins}`
+            targetCoins: `被给课老师的换课剩余币数量: ${targetCoins}`,
+            scoreTypePrint: scoreTypePrint
         };
 
     } catch (error) {
@@ -1020,7 +1026,9 @@ async function getCompareScore(teacherId, courseId, scoreType){
         let currentWeight = totalWeight - (teacher.suitabilityWeight).toNumber();
         let courseSuitability = await contract.getTeacherSuitability(teacherId, courseId);
         let coursePreference = await contract.getPreference(teacherId, courseId);
-        let teacherScore = currentWeight * courseSuitability + (10 * (teacherCount + classCount -1) - currentWeight) * coursePreference;
+        let teacherCount = Number(await contract.teacherCount());
+        let classCount = Number(await contract.classCount());
+        let teacherScore = (currentWeight * courseSuitability + (10 * (teacherCount + classCount -1) - currentWeight) * coursePreference)/60;
         return {
             code: 0,
             message: "Suitability&Preference",

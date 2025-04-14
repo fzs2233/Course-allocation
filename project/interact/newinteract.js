@@ -647,7 +647,7 @@ async function handleTransferCourse() {
         
         console.log(result.message);
         if (result.performanceImprovement) {
-        console.log(`性价比提升: ${result.performanceImprovement}`);
+        console.log(`${result.scoreTypePrint}提升: ${result.performanceImprovement}`);
         console.log(result.senderCoins);
         console.log(result.targetCoins);
         }
