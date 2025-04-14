@@ -647,7 +647,7 @@ async function handleTransferCourse() {
         
         console.log(result.message);
         if (result.performanceImprovement) {
-        console.log(`性价比提升: ${result.performanceImprovement}`);
+        console.log(`${result.scoreTypePrint}提升: ${result.performanceImprovement}`);
         console.log(result.senderCoins);
         console.log(result.targetCoins);
         }
@@ -684,10 +684,10 @@ async function voteForProposal(){
             console.log(await studentVote(currentAddress, proposalId, choice));
         }
     }else if(currentType === 'Agent'){
-      console.log(`检测您为智能体，已为您选择性价比最高的教师进行投票`)
-      await agentVote(currentAddress, proposalId);
+        let currentAddress = await currentSigner.getAddress();
+        await agentVote(currentAddress, proposalId);
     }else if(currentType === 'Class'){
-      console.log(`班级不允许投票`)
+        console.log(`班级不允许投票`)
     }
 
 }
@@ -718,7 +718,7 @@ async function endProposal(){
     }else if(proposalType === 'endClass'){
         await endClassProposal_interact(proposalId); 
     }else{
-        await endProposalAndAssignCourseforWithoutteacher(proposalId);
+        console.log(await endProposalAndAssignCourseforWithoutteacher(proposalId));
     }
 }
 
@@ -731,7 +731,6 @@ async function switchCurrentSigner_newinteract(newAddress, newCurrentName){
     classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
     teacherVoteContract = new ethers.Contract(teacherVoteAddress, teacherVoteABI, currentSigner);
 }
-
 
 // 为所有课程设置适合度评分
 async function setSuitabilityForAllCoursesInteract() {

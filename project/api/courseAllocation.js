@@ -442,19 +442,21 @@ async function checkAndCreateProposalForTeacher(){
         }
     }
     
-    // 创建提案
-    let tx = await voteContract.createChooseTeacherProposal("Create proposals for teachers without courses", candidateCourse, teacherWithoutCourse, 9); //7老师+2班级
-    await classContract.createProposal("createProposal", candidateCourse, teacherWithoutCourse);
+    let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", candidateCourse, teacherWithoutCourse, 9);//7老师+2班级
+    let txClass = await classContract.createProposal("createProposal", candidateCourse, teacherWithoutCourse);
     let receipt = await tx.wait();
+    let receiptClass = await txClass.wait();
     const event = receipt.events.find(event => event.event === "ProposalCreated");
+    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
     let { proposalId, description } = event.args;
-    proposalId = proposalId.toNumber();
-    // emit ProposalCreated(proposalId, candidateCourse, teacherWithoutCourse);
-    // emit ProposalCreated(studentProposalId, candidateCourse, teacherWithoutCourse);
+    let { classProposalId, classDescription } = eventClass.args;
+    proposalId = Number(proposalId);
+    classProposalId = Number(classProposalId);
     return {
         code: 0,
         message: "成功为没有课程的老师创建提案",
         proposalId: proposalId,
+        classProposalId: classProposalId,
         candidateCourse: candidateCourse,
         teacherWithoutCourse: teacherWithoutCourse
     }
@@ -523,16 +525,36 @@ async function assignCourseToTeacherWithoutCourse(courseId, teacherId) {
 
 // 结束投票并分配课程
 async function endProposalAndAssignCourseforWithoutteacher(proposalId) {
-    let [teacherId, courseId, teacherIds, teacherIdsVoteCount ] = await voteContract.endVoteChooseCourse(proposalId);
-    console.log(await assignCourseToTeacherWithoutCourse(courseId, teacherId));
+    // 获取投票结果
+    let [teacherId, courseId, teacherIds, teacherIdsVoteCount] = await voteContract.endVoteChooseCourse(proposalId);
+
+    // 创建投票结果表格
     let tableData = teacherIds.map((teacherId, index) => ({
         老师ID: Number(teacherId),
         票数: Number(teacherIdsVoteCount[index])
     }));
     console.table(tableData);
-    return {
-        code: 0,
-        message: `proposal ${proposalId} has been finished and course has been assigned successfully`
+    // 找出最大票数
+    const maxVotes = Math.max(...teacherIdsVoteCount.map(v => v.toNumber()));
+    
+    // 找出所有获得最大票数的老师
+    const maxVoteTeachers = teacherIds.filter((teacherId, index) => 
+        teacherIdsVoteCount[index].toNumber() === maxVotes
+    ).map(id => id.toNumber());
+
+    if (maxVoteTeachers.length === 1) {
+        // 如果只有一个最大票数的老师，分配课程
+        await assignCourseToTeacherWithoutCourse(courseId, maxVoteTeachers[0]);
+        console.log("Course assigned successfully");
+
+        return {
+            code: 0,
+            message: `Proposal ${proposalId} has been finished and course has been assigned to teacher ${maxVoteTeachers[0]} successfully`
+        };
+    } else {
+        // 如果有多个最大票数的老师，重新创建提案
+        let result = await createNewProposal(courseId, maxVoteTeachers);
+        return result;
     }
 }
 
@@ -684,25 +706,45 @@ async function createConflictProposal() {
             for(let teacherIndex = 0; teacherIndex < teachers.length; teacherIndex++){
                 let teacherId = teachers[teacherIndex];
                 let reallyTeacher = await contract.getTeacherReallyAssignedCourses(teacherId);
-                if(reallyTeacher.length < 2)
+                if(reallyTeacher.length < 2){
                     candidateTeachers.push(teacherId);
+                }else{
+                    await removeTeacherCourse(teacherId, courseId);
+                }
             }
             candidateId = candidateTeachers;
             break;
         }
     }
-
+    if(candidateId.length === 1){
+        // 冲突提案只有一个候选老师，直接分配
+        await contract.addTeacherReallyAssignedCourses(candidateId[0], selectedCourseId);
+        return {
+            code: 0,
+            message: `候选老师只有 ${candidateId[0]}，课程 ${selectedCourseId} 分配给老师 ${candidateId[0]}`
+        }
+    }else if(candidateId.length === 0){
+        return{
+            code: 0,
+            message: `所有的候选老师都已经拥有两门课程了，这门课程无法创建冲突提案，课程 ${selectedCourseId} 被置为未分配状态`
+        }
+    }
     let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateId, 9);//7老师+2班级
-    await classContract.createProposal("createProposal", selectedCourseId, candidateId);
+    let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateId);
     let receipt = await tx.wait();
-    console.log(receipt);
+    let receiptClass = await txClass.wait();
     const event = receipt.events.find(event => event.event === "ProposalCreated");
+    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
     let { proposalId, description } = event.args;
+    let { classProposalId, classDescription } = eventClass.args;
     proposalId = proposalId.toNumber();
+    classProposalId = classProposalId.toNumber();
     return {
         code: 0,
         message: `Create Conflict Proposal successfully, Proposal Id: ${proposalId}`,
+        messageClass: `Create Conflict Proposal in class successfully, Proposal Id: ${classProposalId}`,
         proposalId: proposalId,
+        classProposalId: classProposalId,
         selectedCourseId : selectedCourseId,
         candidateTeacherId : candidateId
     };
@@ -720,28 +762,32 @@ async function teacherVote(teacherAddress, proposalId, voteForId){
 
 // 智能体投票
 async function agentVote(agentAddress, proposalId){
-    // 计算每个老师的性价比
-    let [voteIds, voteForId] = await voteContract.getVotedIds(proposalId);
+    // 计算每个老师的分数
+    let [voteIds, courseId] = await voteContract.getVotedIds(proposalId);
     voteIds = voteIds.map(id => id.toNumber());
-
-    let max_Cost_effectiveness = 0;
+    courseId = Number(courseId);
+    // console.log(voteIds)
+    let max_Score = 0;
     let chooseId = 0;
+    let scoreType = await contract.ScoreTypeChioce();
+    let scoreTypePrint;
+    if(scoreType === "Cost-effectiveness"){
+        scoreTypePrint = "性价比"
+    }else if(scoreType === "Suitability&Preference"){
+        scoreTypePrint = "能力意愿的加权分数"
+    }
+    
     for(let candidateIndex = 0; candidateIndex < voteIds.length; candidateIndex++){
         let candidateId = voteIds[candidateIndex];
-        let candidate = await contract.teachers(candidateId);
-        let value = candidate.value;
-        value = value.toNumber();
-
-        let suitability = await contract.getTeacherSuitability(candidateId, voteForId);
-        let Cost_effectiveness = suitability/value;
-
-        if(Cost_effectiveness > max_Cost_effectiveness){
-            max_Cost_effectiveness = Cost_effectiveness;
+        let currentScore = (await getCompareScore(candidateId, courseId, scoreType)).data;
+        // console.log(max_Score, currentScore, chooseId)
+        if(currentScore > max_Score){
+            max_Score = currentScore;
             chooseId = candidateId;
         }
     }
-
-    voteContract.voteChooseTeacher(agentAddress, proposalId, chooseId);
+    console.log(`检测您为智能体，已为您选择${scoreTypePrint}最高的教师 ${chooseId} 进行投票`)
+    await voteContract.voteChooseTeacher(agentAddress, proposalId, chooseId);
     let agentId = await contract.addressToAgentId(agentAddress);
     return {
         code: 0,
@@ -750,29 +796,88 @@ async function agentVote(agentAddress, proposalId){
 }
 
 // 结束冲突投票
-async function endConfictProposal(proposalId){
-    let [winningTeacherId, courseId,teacherIds,teacherIdsVoteCount] = await voteContract.endVoteChooseCourse(proposalId);
+async function endConfictProposal(proposalId) {
+    // 获取投票结果
+    let [winningTeacherId, courseId, teacherIds, teacherIdsVoteCount] = await voteContract.endVoteChooseCourse(proposalId);
     winningTeacherId = winningTeacherId.toNumber();
     courseId = courseId.toNumber();
 
-    let allTeacher = await contract.getCoursesAssignedTeacher(courseId);
-    allTeacher = allTeacher.map(id => id.toNumber());
-    for(let teacherId of allTeacher){
-        if(teacherId != winningTeacherId){
-            let remove_result = await removeTeacherCourse(teacherId, courseId);
-            // console.log(remove_result);
-        }
-    }
-    await contract.addTeacherReallyAssignedCourses(winningTeacherId, courseId);
+    // 创建投票结果表格
     let tableData = teacherIds.map((teacherId, index) => ({
         老师ID: Number(teacherId),
         票数: Number(teacherIdsVoteCount[index])
     }));
     console.table(tableData);
+
+    // 找出最大票数
+    const maxVotes = Math.max(...teacherIdsVoteCount.map(v => v.toNumber()));
+    
+    // 找出所有获得最大票数的老师
+    const maxVoteTeachers = teacherIds.filter((teacherId, index) => 
+        teacherIdsVoteCount[index].toNumber() === maxVotes
+    ).map(id => id.toNumber());
+
+    if (maxVoteTeachers.length === 1) {
+        // 如果只有一个最大票数的老师，结束提案
+        const winningTeacherId = maxVoteTeachers[0];
+
+        // 获取所有分配给该课程的老师
+        let allTeacher = await contract.getCoursesAssignedTeacher(courseId);
+        allTeacher = allTeacher.map(id => id.toNumber());
+
+        // 移除其他老师的课程分配
+        for (let teacherId of allTeacher) {
+            if (teacherId !== winningTeacherId) {
+                await removeTeacherCourse(teacherId, courseId);
+            }
+        }
+
+        // 分配课程给获胜老师
+        await contract.addTeacherReallyAssignedCourses(winningTeacherId, courseId);
+
+        return {
+            code: 0,
+            message: `End Conflict Proposal successfully, Winning Teacher Id: ${winningTeacherId}, Course Id: ${courseId}`
+        };
+    } else {
+        // 如果有多个最大票数的老师，移除票数不是最大的老师，并重新创建提案
+        let allTeacher = await contract.getCoursesAssignedTeacher(courseId);
+        allTeacher = allTeacher.map(id => id.toNumber());
+
+        // 移除票数不是最大的老师的课程分配
+        for (let teacherId of allTeacher) {
+            const teacherIndex = teacherIds.findIndex(id => id.toNumber() === teacherId);
+            if (teacherIndex !== -1 && teacherIdsVoteCount[teacherIndex].toNumber() < maxVotes) {
+                await removeTeacherCourse(teacherId, courseId);
+            }
+        }
+
+        // 创建新提案
+        const result = await createNewProposal(courseId, maxVoteTeachers);
+        return result
+    }
+}
+
+// 假设的重新创建提案函数
+async function createNewProposal(selectedCourseId, candidateId) {
+    let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateId, 9);//7老师+2班级
+    let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateId);
+    let receipt = await tx.wait();
+    let receiptClass = await txClass.wait();
+    const event = receipt.events.find(event => event.event === "ProposalCreated");
+    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
+    let { proposalId, description } = event.args;
+    let { classProposalId, classDescription } = eventClass.args;
+    proposalId = proposalId.toNumber();
+    classProposalId = classProposalId.toNumber();
     return {
         code: 0,
-        message: `End Conflict Proposal successfully, Winning Teacher Id: ${winningTeacherId}, Course Id: ${courseId}`,
-    }
+        message: `Teachers have equal votes, Create new Proposal successfully, Proposal Id: ${proposalId}`,
+        classMessage: `Teachers have equal votes, Create new Proposal in class successfully, Proposal Id: ${classProposalId}`,
+        proposalId: proposalId,
+        classProposalId : classProposalId,
+        candidateTeacherId : candidateId
+    };
 }
 
 /**
@@ -786,23 +891,37 @@ async function transferCourse(courseId, targetId) {
     try {
         let nowTime = new Date();
         let transferCourseEndTime = await contract.transferCourseEndTime();
-        transferCourseEndTime = transferCourseEndTime.toNumber()
-        transferCourseEndTime = new Date(transferCourseEndTime * 1000).toLocaleString('zh-CN', options);
-        console.log(`换课的结束时间是: ${transferCourseEndTime}`);
-
+        transferCourseEndTime = transferCourseEndTime.toNumber(); // 获取秒级时间戳
+        
+        // 将秒级时间戳转换为毫秒级时间戳
+        transferCourseEndTime = transferCourseEndTime * 1000;
+        
+        // 获取当前时间的毫秒级时间戳
+        const nowTimeMs = nowTime.getTime();
+        
+        // 格式化时间用于日志输出
+        const formattedTransferCourseEndTime = new Date(transferCourseEndTime).toLocaleString('zh-CN', options);
+        console.log(`换课的结束时间是: ${formattedTransferCourseEndTime}`);
+        
         // 获取计算分数的类型
         let scoreType = await contract.ScoreTypeChioce();
-
-        if (transferCourseEndTime && nowTime >= transferCourseEndTime) {
-            return{
+        let scoreTypePrint;
+        if (scoreType === "Cost-effectiveness") {
+            scoreTypePrint = "性价比";
+        } else if (scoreType === "Suitability&Preference") {
+            scoreTypePrint = "能力意愿的加权分数";
+        }
+        
+        // 比较当前时间与换课结束时间
+        if (nowTimeMs >= transferCourseEndTime) {
+            return {
                 code: -1,
                 message: "转移课程的允许时间已经结束了！"
             };
-        }else {
-            nowTime = nowTime.toLocaleString('zh-CN', options);
-            console.log(`现在的时间是${nowTime}，允许换课`)
+        } else {
+            const formattedNowTime = nowTime.toLocaleString('zh-CN', options);
+            console.log(`现在的时间是${formattedNowTime}，允许换课`);
         }
-        
 
         // 获取当前分配者信息
         const currentTeachers = await contract.getCoursesAssignedTeacher(courseId);
@@ -839,20 +958,20 @@ async function transferCourse(courseId, targetId) {
             }
         }
 
-        // 获取当前分配者性价比
+        // 获取当前分配者分数
         let currentPerf;
         if (senderTeacherId !== 0) {
             currentPerf = (await getCompareScore(senderTeacherId, courseId, scoreType)).data;
         }
 
-        // 获取目标性价比
+        // 获取目标分数
         let targetPerf = (await getCompareScore(targetId, courseId, scoreType)).data;
 
-        // 验证性价比提升
+        // 验证分数提升
         if (targetPerf <= currentPerf) {
             return{
                 code: -1,
-                message: `目标性价比需大于当前值（当前: ${currentPerf.toFixed(2)}, 目标: ${targetPerf.toFixed(2)}）`
+                message: `目标${scoreTypePrint}需大于当前值（当前: ${currentPerf.toFixed(2)}, 目标: ${targetPerf.toFixed(2)}）`
             }
         }
 
@@ -886,7 +1005,8 @@ async function transferCourse(courseId, targetId) {
             performanceImprovement: (targetPerf - currentPerf).toFixed(2),
             targetSuitability: targetSuitability,
             senderCoins: `给课老师的换课剩余币数量: ${senderCoins}`,
-            targetCoins: `被给课老师的换课剩余币数量: ${targetCoins}`
+            targetCoins: `被给课老师的换课剩余币数量: ${targetCoins}`,
+            scoreTypePrint: scoreTypePrint
         };
 
     } catch (error) {
@@ -1006,7 +1126,9 @@ async function getCompareScore(teacherId, courseId, scoreType){
         let currentWeight = totalWeight - (teacher.suitabilityWeight).toNumber();
         let courseSuitability = await contract.getTeacherSuitability(teacherId, courseId);
         let coursePreference = await contract.getPreference(teacherId, courseId);
-        let teacherScore = currentWeight * courseSuitability + (10 * (teacherCount + classCount -1) - currentWeight) * coursePreference;
+        let teacherCount = Number(await contract.teacherCount());
+        let classCount = Number(await contract.classCount());
+        let teacherScore = (currentWeight * courseSuitability + (10 * (teacherCount + classCount -1) - currentWeight) * coursePreference)/60;
         return {
             code: 0,
             message: "Suitability&Preference",
@@ -1019,7 +1141,27 @@ async function proposalForCoursesWithoutAssigned(){
     let selectedCourseId = 0;
     let isCreate = false;
     let candidateTeacher = [];
-    const courseIds = (await contract.getCourseIds()).map(id => id.toNumber());
+    let courseIds = (await contract.getCourseIds()).map(id => id.toNumber());
+    
+    // 创建一个数组来存储课程ID和它们的重要程度
+    let coursesWithImportance = [];
+
+    // 遍历每个课程ID，获取课程的重要程度
+    for (let i = 0; i < courseIds.length; i++) {
+        let courseId = courseIds[i];
+        let course = await contract.courses(courseId);
+        let courseImportance = Number(course.importance);
+        coursesWithImportance.push({
+            courseId: courseId,
+            importance: courseImportance
+        });
+    }
+
+    // 按照重要程度对课程进行排序（降序）
+    coursesWithImportance.sort((a, b) => b.importance - a.importance);
+
+    // 提取排序后的课程ID
+    courseIds = coursesWithImportance.map(item => item.courseId);
     for(const courseId of courseIds){
         const [teachers, agents] = await Promise.all([
             contract.getCoursesAssignedTeacher(courseId),
@@ -1042,20 +1184,33 @@ async function proposalForCoursesWithoutAssigned(){
         code : 0,
         message : "All Courses Assigned"
     }
+
+    if(candidateTeacher.length == 1 && selectedCourseId != -1) {
+        // 只有一个没有课程的老师，直接分配
+        console.log(await assignCourseToTeacherWithoutCourse(selectedCourseId, candidateTeacher[0]));
+        return {
+            code: 0,
+            message: `课程 ${selectedCourseId} 已经分配给了老师 ${candidateTeacher[0]}, 现在所有老师都有课程了`
+        }
+    }
+    
     candidateTeacher = candidateTeacher.map(id => id.toNumber());
     // 创建提案
-    let tx = await voteContract.createChooseTeacherProposal("Create proposals for course not assigned", selectedCourseId, candidateTeacher, 9); //7老师+2班级
-    await classContract.createProposal("createProposal", selectedCourseId, candidateTeacher);
+    let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateTeacher, 9);//7老师+2班级
+    let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateTeacher);
     let receipt = await tx.wait();
+    let receiptClass = await txClass.wait();
     const event = receipt.events.find(event => event.event === "ProposalCreated");
+    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
     let { proposalId, description } = event.args;
-
-    // emit ProposalCreated(proposalId, candidateCourse, teacherWithoutCourse);
-    // emit ProposalCreated(studentProposalId, candidateCourse, teacherWithoutCourse);
+    let { classProposalId, classDescription } = eventClass.args;
+    proposalId = Number(proposalId);
+    classProposalId = Number(classProposalId);
     return {
         code: 0,
         message: "成功为没有老师的课程创建提案",
-        proposalId: Number(proposalId),
+        proposalId: proposalId,
+        classProposalId: classProposalId,
         selectedCourseId: selectedCourseId,
         candidateTeacher: candidateTeacher
     }

@@ -111,7 +111,8 @@ contract IStudentVote is StudentVote {
         classes[classId].studentsId.push(studentCount);
         studentIds.push(studentCount);
     }
-
+    // 事件：当有新提案创建时触发
+    event ProposalCreated(uint256 classProposalId, string description);
     // 创建提案
     function createProposal(
         string memory _description,
@@ -136,6 +137,7 @@ contract IStudentVote is StudentVote {
             cls.proposals[proposalId].voteforID = _voteforID;
             newProposalID = proposalId;
         }
+        emit ProposalCreated(newProposalID, _description);
         return newProposalID;
     }
 

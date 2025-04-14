@@ -452,13 +452,14 @@ async function initializeData() {
     console.log("Registering agents...");
     await switchAcount(6);
     await registerAgent("agent_1", accounts[6]);
-    await contract.setAllAgentCourseSuitability(1, [85,94,68,27,48,34,37,42,46,14]);
+    await contract.setAllAgentCourseSuitability(1, [75,74,68,27,48,34,37,42,46,14]);
     await contract.setAgentValue(1,1000);
 
     await switchAcount(7);
     await registerAgent("agent_2", accounts[7]);
-    await contract.setAllAgentCourseSuitability(2, [43,86,90,47,24,36,32,45,16,34]);
+    await contract.setAllAgentCourseSuitability(2, [43,76,70,47,24,36,32,45,16,34]);
     await contract.setAgentValue(2,1200);
+
 
     // 注册班级
     console.log("Registering classes...");
@@ -478,29 +479,45 @@ async function initializeData() {
     await registerStudent(1, "student_3", accounts[12]);
     console.log("student_3 (class_1) 注册完毕");
 
+    await switchAcount(13);
+    await registerStudent(1, "student_4", accounts[13]);
+    console.log("student_4 (class_1) 注册完毕");
+
+    await switchAcount(14);
+    await registerStudent(1, "student_5", accounts[14]);
+    console.log("student_5 (class_1) 注册完毕");
+
     await switchAcount(9);
     await registerClass("class_2", accounts[9]);
     console.log("班级2注册完毕");
 
-    await switchAcount(13);
-    await registerStudent(2, "student_4", accounts[13]);
-    console.log("student_4 (class_2) 注册完毕");
-
-    await switchAcount(14);
-    await registerStudent(2, "student_5", accounts[14]);
-    console.log("student_5 (class_2) 注册完毕");
-    
     await switchAcount(15);
     await registerStudent(2, "student_6", accounts[15]);
     console.log("student_6 (class_2) 注册完毕");
+
+    await switchAcount(16);
+    await registerStudent(2, "student_7", accounts[16]);
+    console.log("student_7 (class_2) 注册完毕");
+    
+    await switchAcount(17);
+    await registerStudent(2, "student_8", accounts[17]);
+    console.log("student_8 (class_2) 注册完毕");
+
+    await switchAcount(18);
+    await registerStudent(2, "student_9", accounts[18]);
+    console.log("student_9 (class_2) 注册完毕");
+    
+    await switchAcount(19);
+    await registerStudent(2, "student_10", accounts[19]);
+    console.log("student_10 (class_2) 注册完毕");
     
     console.log("Registering supervisors...");
-    await switchAcount(16);
-    await registerSupervisor("supervisor_1", accounts[16]);
+    await switchAcount(20);
+    await registerSupervisor("supervisor_1", accounts[20]);
     console.log("supervisor_1 注册完毕");
 
-    await switchAcount(17);
-    await registerSupervisor("supervisor_2", accounts[17]);
+    await switchAcount(21);
+    await registerSupervisor("supervisor_2", accounts[21]);
     console.log("supervisor_2 注册完毕");
 
     await switchAcount(0);
