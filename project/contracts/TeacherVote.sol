@@ -70,7 +70,7 @@ contract TeacherVote is Vote {
         _proposalOptions[suitabilityProposalId] = options;
 
         // 初始化合并提案
-        proposalCount++;
+
         proposals[proposalCount] = ProposalBase({
             courseId: courseId,
             suitabilityProposalId: suitabilityProposalId,
@@ -84,6 +84,7 @@ contract TeacherVote is Vote {
             courseId,
             suitabilityProposalId
         );
+        proposalCount++;
         return proposalCount;
     }
 
