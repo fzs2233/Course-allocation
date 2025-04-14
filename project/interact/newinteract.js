@@ -120,7 +120,7 @@ async function mainMenu() {
       { name: '打印学生考试和评价分数', value: 'printStudentExamAndEvaluateScore' },
       { name: '总结班级学生打分', value:'endClassStudentGiveScore'},
       { name: '老师互评', value:'teacherGiveScore'},
-      { name: '智能体自评', value:'agentGiveScore'},
+     // { name: '智能体自评', value:'agentGiveScore'},
       { name: '督导评分', value:'supervisorGiveScore'},
       { name: '计算课程总分数', value: 'calculateTotalScore' },
       { name: '打印所有课程的总分数', value: 'printAllScore' },
@@ -685,6 +685,7 @@ async function voteForProposal(){
         }
     }else if(currentType === 'Agent'){
       console.log(`检测您为智能体，已为您选择性价比最高的教师进行投票`)
+      let currentAddress = await currentSigner.getAddress();
       await agentVote(currentAddress, proposalId);
     }else if(currentType === 'Class'){
       console.log(`班级不允许投票`)

@@ -396,59 +396,59 @@ async function initializeData() {
     await initializeCourse("c9", 6);
     await initializeCourse("c10", 10);
 
-    // 注册教师
-    console.log("Registering teachers...");
-    await switchAcount(1);
-    await registerTeacher("teacher_1", accounts[1]);
-    await contract.setTeacherValue(1, 800);
-    await contract.setTeacherSuitabilityWeight(1,1);
-    await contract.setTeacherTransferCourseCoins(1, 6);
-    await contract.setAllTeacherCourseSuitability(1, [26,44,65,88,40,37,79,92,14,87]);
-    await contract.setAllTeacherCoursePreferences(1, [35,54,76,80,93,48,64,17,86,70]);
-
-    await switchAcount(2);
-    await registerTeacher("teacher_2", accounts[2]);
-    await contract.setTeacherValue(2, 1000);
-    await contract.setTeacherSuitabilityWeight(2,2);
-    await contract.setTeacherTransferCourseCoins(2, 6);
-    await contract.setAllTeacherCourseSuitability(2, [51,32,53,34,85,26,37,48,55,43]);
-    await contract.setAllTeacherCoursePreferences(2, [35,74,17,95,57,23,88,46,64,60]);
-
-    await switchAcount(3);
-    await registerTeacher("teacher_3", accounts[3]);
-    await contract.setTeacherValue(3, 1500);
-    await contract.setTeacherSuitabilityWeight(3,3);
-    await contract.setTeacherTransferCourseCoins(3, 6);
-    await contract.setAllTeacherCourseSuitability(3, [32,31,54,43,68,27,44,72,58,30]);
-    await contract.setAllTeacherCoursePreferences(3, [51,32,83,14,95,76,27,70,45,67]);
-
-    await switchAcount(4);
-    await registerTeacher("teacher_4", accounts[4]);
-    await contract.setTeacherSuitabilityWeight(4,4);
-    await contract.setTeacherValue(4, 1200);
-    await contract.setTeacherTransferCourseCoins(4, 6);
-    await contract.setAllTeacherCourseSuitability(4, [43,24,35,36,67,18,39,80,61,33]);
-    await contract.setAllTeacherCoursePreferences(4, [22,63,44,85,66,87,38,79,57,60]);
-
-    await switchAcount(5);
-    await registerTeacher("teacher_5", accounts[5]);
-    await contract.setTeacherSuitabilityWeight(5,5);
-    await contract.setTeacherValue(5, 1100);
-    await contract.setTeacherTransferCourseCoins(5, 6);
-    await contract.setAllTeacherCourseSuitability(5, [22,43,44,35,100,37,31,32,33,34]);
-    await contract.setAllTeacherCoursePreferences(5, [43,14,75,35,46,67,28,59,59,79]);
-
-    // 注册智能体
-    console.log("Registering agents...");
-    await switchAcount(6);
-    await registerAgent("agent_1", accounts[6]);
-    await contract.setAllAgentCourseSuitability(1, [75,74,68,27,48,34,37,42,46,14]);
-    await contract.setAgentValue(1,1000);
-
-    await switchAcount(7);
-    await registerAgent("agent_2", accounts[7]);
-    await contract.setAllAgentCourseSuitability(2, [43,76,70,47,24,36,32,45,16,34]);
-    await contract.setAgentValue(2,1200);
+       // 注册教师
+       console.log("Registering teachers...");
+       await switchAcount(1);
+       await registerTeacher("teacher_1", accounts[1]);
+       await contract.setTeacherValue(1, 800);
+       await contract.setTeacherSuitabilityWeight(1,1);
+       await contract.setTeacherTransferCourseCoins(1, 6);
+       await contract.setAllTeacherCourseSuitability(1, [26,44,65,88,40,37,79,92,14,87]);
+       await contract.setAllTeacherCoursePreferences(1, [35,54,76,80,93,48,64,17,86,70]);
+   
+       await switchAcount(2);
+       await registerTeacher("teacher_2", accounts[2]);
+       await contract.setTeacherValue(2, 1000);
+       await contract.setTeacherSuitabilityWeight(2,2);
+       await contract.setTeacherTransferCourseCoins(2, 6);
+       await contract.setAllTeacherCourseSuitability(2, [51,32,53,34,85,26,37,48,55,43]);
+       await contract.setAllTeacherCoursePreferences(2, [35,74,17,95,57,23,88,46,64,60]);
+   
+       await switchAcount(3);
+       await registerTeacher("teacher_3", accounts[3]);
+       await contract.setTeacherValue(3, 1500);
+       await contract.setTeacherSuitabilityWeight(3,3);
+       await contract.setTeacherTransferCourseCoins(3, 6);
+       await contract.setAllTeacherCourseSuitability(3, [32,31,54,43,68,27,44,72,58,30]);
+       await contract.setAllTeacherCoursePreferences(3, [51,32,83,14,95,76,27,70,45,67]);
+   
+       await switchAcount(4);
+       await registerTeacher("teacher_4", accounts[4]);
+       await contract.setTeacherSuitabilityWeight(4,4);
+       await contract.setTeacherValue(4, 1200);
+       await contract.setTeacherTransferCourseCoins(4, 6);
+       await contract.setAllTeacherCourseSuitability(4, [43,24,35,36,67,18,39,80,61,33]);
+       await contract.setAllTeacherCoursePreferences(4, [22,63,44,85,66,87,38,79,57,60]);
+   
+       await switchAcount(5);
+       await registerTeacher("teacher_5", accounts[5]);
+       await contract.setTeacherSuitabilityWeight(5,5);
+       await contract.setTeacherValue(5, 1100);
+       await contract.setTeacherTransferCourseCoins(5, 6);
+       await contract.setAllTeacherCourseSuitability(5, [22,43,44,35,100,37,31,32,33,34]);
+       await contract.setAllTeacherCoursePreferences(5, [43,14,75,35,46,67,28,59,59,79]);
+   
+       // 注册智能体
+       console.log("Registering agents...");
+       await switchAcount(6);
+       await registerAgent("agent_1", accounts[6]);
+       await contract.setAllAgentCourseSuitability(1, [85,94,68,27,48,34,37,42,46,14]);
+       await contract.setAgentValue(1,1000);
+   
+       await switchAcount(7);
+       await registerAgent("agent_2", accounts[7]);
+       await contract.setAllAgentCourseSuitability(2, [43,86,90,47,24,36,32,45,16,34]);
+       await contract.setAgentValue(2,1200);
 
     // 注册班级
     console.log("Registering classes...");

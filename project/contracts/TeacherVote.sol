@@ -178,8 +178,8 @@ contract TeacherVote is Vote {
 
         string memory Choice;
         if (winningOption == 2) {
-            Choice = "Cost-effectiveness";
-        } else Choice = "Suitability&Preference";
+            Choice = "Suitability&Preference";
+        } else Choice = "Cost-effectiveness";
 
         // 更新课程状态
         courseAllocation.setScoreType(Choice);
