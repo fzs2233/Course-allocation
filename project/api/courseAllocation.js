@@ -891,28 +891,37 @@ async function transferCourse(courseId, targetId) {
     try {
         let nowTime = new Date();
         let transferCourseEndTime = await contract.transferCourseEndTime();
-        transferCourseEndTime = transferCourseEndTime.toNumber()
-        transferCourseEndTime = new Date(transferCourseEndTime * 1000).toLocaleString('zh-CN', options);
-        console.log(`换课的结束时间是: ${transferCourseEndTime}`);
-
+        transferCourseEndTime = transferCourseEndTime.toNumber(); // 获取秒级时间戳
+        
+        // 将秒级时间戳转换为毫秒级时间戳
+        transferCourseEndTime = transferCourseEndTime * 1000;
+        
+        // 获取当前时间的毫秒级时间戳
+        const nowTimeMs = nowTime.getTime();
+        
+        // 格式化时间用于日志输出
+        const formattedTransferCourseEndTime = new Date(transferCourseEndTime).toLocaleString('zh-CN', options);
+        console.log(`换课的结束时间是: ${formattedTransferCourseEndTime}`);
+        
         // 获取计算分数的类型
         let scoreType = await contract.ScoreTypeChioce();
         let scoreTypePrint;
-        if(scoreType === "Cost-effectiveness"){
-            scoreTypePrint = "性价比"
-        }else if(scoreType === "Suitability&Preference"){
-            scoreTypePrint = "能力意愿的加权分数"
+        if (scoreType === "Cost-effectiveness") {
+            scoreTypePrint = "性价比";
+        } else if (scoreType === "Suitability&Preference") {
+            scoreTypePrint = "能力意愿的加权分数";
         }
-        if (transferCourseEndTime && nowTime >= transferCourseEndTime) {
-            return{
+        
+        // 比较当前时间与换课结束时间
+        if (nowTimeMs >= transferCourseEndTime) {
+            return {
                 code: -1,
                 message: "转移课程的允许时间已经结束了！"
             };
-        }else {
-            nowTime = nowTime.toLocaleString('zh-CN', options);
-            console.log(`现在的时间是${nowTime}，允许换课`)
+        } else {
+            const formattedNowTime = nowTime.toLocaleString('zh-CN', options);
+            console.log(`现在的时间是${formattedNowTime}，允许换课`);
         }
-        
 
         // 获取当前分配者信息
         const currentTeachers = await contract.getCoursesAssignedTeacher(courseId);
