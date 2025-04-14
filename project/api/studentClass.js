@@ -72,25 +72,67 @@ async function studentVote(studentAddress, proposalId, optionId){
 }
 
 // 结束班级投票
-async function endClassProposal(classAddr, proposalId){
+async function endClassProposal(classAddr, proposalId) {
+    // 获取提案结果
     let [winningTeacher, courseId, teacherIds, teacherIdsVoteCount] = await classContract.getProposalResults(classAddr, proposalId);
+    courseId = Number(courseId)
     let classId = await classContract.addressToClassId(classAddr);
     classId = classId.toNumber();
-    await voteContract.voteChooseTeacher(classAddr, proposalId, winningTeacher); 
+
+    // 创建投票结果表格
     let tableData = teacherIds.map((teacherId, index) => ({
         老师ID: Number(teacherId),
         票数: Number(teacherIdsVoteCount[index])
     }));
     console.table(tableData);
-    return{
-        code: 0,
-        message: `Class ${classId} proposal ${proposalId} has been finished and voted teacher ${winningTeacher} successfully`,
+
+    // 找出最大票数
+    const maxVotes = Math.max(...teacherIdsVoteCount.map(v => v.toNumber()));
+    
+    // 找出所有获得最大票数的老师
+    const maxVoteTeachers = teacherIds.filter((teacherId, index) => 
+        teacherIdsVoteCount[index].toNumber() === maxVotes
+    ).map(id => id.toNumber());
+
+    if (maxVoteTeachers.length === 1) {
+        // 如果只有一个最大票数的老师，执行投票
+        await voteContract.voteChooseTeacher(classAddr, proposalId, maxVoteTeachers[0]);
+
+        return {
+            code: 0,
+            message: `Class ${classId} proposal ${proposalId} has been finished and voted teacher ${maxVoteTeachers[0]} successfully`
+        };
+    } else {
+        // 如果有多个最大票数的老师，重新创建提案
+        // 假设有一个createNewProposal函数
+        let result = await createNewClassProposal(courseId, maxVoteTeachers);
+        console.log(result)
+        return {
+            code: 1,
+            message: `Multiple teachers have the highest votes. Created new proposal with Id: ${result.classProposalId} for Class ${classId} and Course ${courseId}`
+        };
     }
+}
+
+// 假设的重新创建提案函数
+async function createNewClassProposal(selectedCourseId, candidateId) {
+    let tx = await classContract.createProposal("createProposal", selectedCourseId, candidateId);
+    let receipt = await tx.wait();
+    const event = receipt.events.find(event => event.event === "ProposalCreated");
+    let { classProposalId, description } = event.args;
+    classProposalId = classProposalId.toNumber();
+    return {
+        code: 0,
+        message: `Create new Proposal in class successfully, Proposal Id: ${classProposalId}`,
+        classProposalId: classProposalId,
+        selectedCourseId : selectedCourseId,
+        candidateTeacherId : candidateId
+    };
 }
 
 async function endClassProposal_interact(proposalId){
     let currentClassAddress = await currentSigner.getAddress();
-    console.log(await endClassProposal(currentClassAddress, proposalId));
+    await endClassProposal(currentClassAddress, proposalId);
 }
 
 async function switchCurrentSigner_studentClass(newAddress, newCurrentName){

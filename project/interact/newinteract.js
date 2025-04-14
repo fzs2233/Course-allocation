@@ -718,7 +718,7 @@ async function endProposal(){
     }else if(proposalType === 'endClass'){
         await endClassProposal_interact(proposalId); 
     }else{
-        await endProposalAndAssignCourseforWithoutteacher(proposalId);
+        console.log(await endProposalAndAssignCourseforWithoutteacher(proposalId));
     }
 }
 
