@@ -5,7 +5,8 @@ interface StudentVote {
     function createProposal(
         string memory _description,
         uint256 _voteforID,
-        uint256[] memory _votedIds
+        uint256[] memory _votedIds,
+        uint256 _teacherProposalId
     ) external returns (uint256);
 
     function vote(
@@ -50,6 +51,7 @@ contract IStudentVote is StudentVote {
 
     struct Proposal {
         uint256 id;
+        uint256 teacherProposalId;
         string description;
         uint256 voteforID; // 为哪个ID进行投票
         uint256[] votedIds;
@@ -117,7 +119,8 @@ contract IStudentVote is StudentVote {
     function createProposal(
         string memory _description,
         uint256 _voteforID,
-        uint256[] memory _votedIds
+        uint256[] memory _votedIds,
+        uint256 _teacherProposalId
     ) public override returns (uint256) {
         uint256 newProposalID = 0;
         for (uint256 i = 1; i <= classCount; i++) {
@@ -127,7 +130,7 @@ contract IStudentVote is StudentVote {
 
             cls.proposals[proposalId].id = proposalId;
             cls.proposals[proposalId].description = _description;
-
+            cls.proposals[proposalId].teacherProposalId = _teacherProposalId;
             for (uint256 j = 0; j < _votedIds.length; j++) {
                 if (_votedIds[j] != 0) {
                     cls.proposals[proposalId].votedIds.push(_votedIds[j]);
@@ -337,5 +340,12 @@ contract IStudentVote is StudentVote {
             classes[classId].proposals[proposalId].votedIds,
             classes[classId].proposals[proposalId].voteforID
         );
+    }
+
+    function getTeacherProposalId(        
+        uint256 classId,
+        uint256 proposalId
+    ) public view returns (uint256){
+        return classes[classId].proposals[proposalId].teacherProposalId;
     }
 }

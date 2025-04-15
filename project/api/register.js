@@ -461,8 +461,7 @@ async function initializeData() {
     // await contract.setAllAgentCourseSuitability(2, [43,76,70,47,24,36,32,45,16,34]);
     await contract.setAllAgentCourseSuitability(2, [100,100,100,100,100,100,100,100,100,100]);
     await contract.setAgentValue(2,1200);
-
-
+    
     // 注册班级
     console.log("Registering classes...");
     await switchAcount(8);

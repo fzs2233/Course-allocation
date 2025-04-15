@@ -691,7 +691,7 @@ async function voteForProposal(){
         let currentAddress = await currentSigner.getAddress();
         await agentVote(currentAddress, proposalId);
     }else if(currentType === 'Class'){
-        console.log(`班级不允许投票`)
+      console.log(`班级不允许投票`)
     }
 
 }
