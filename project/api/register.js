@@ -452,12 +452,14 @@ async function initializeData() {
     console.log("Registering agents...");
     await switchAcount(6);
     await registerAgent("agent_1", accounts[6]);
-    await contract.setAllAgentCourseSuitability(1, [75,74,68,27,48,34,37,42,46,14]);
+    // await contract.setAllAgentCourseSuitability(1, [75,74,68,27,48,34,37,42,46,14]);
+    await contract.setAllAgentCourseSuitability(1, [100,100,100,100,100,100,100,100,100,100]);
     await contract.setAgentValue(1,1000);
 
     await switchAcount(7);
     await registerAgent("agent_2", accounts[7]);
-    await contract.setAllAgentCourseSuitability(2, [43,76,70,47,24,36,32,45,16,34]);
+    // await contract.setAllAgentCourseSuitability(2, [43,76,70,47,24,36,32,45,16,34]);
+    await contract.setAllAgentCourseSuitability(2, [100,100,100,100,100,100,100,100,100,100]);
     await contract.setAgentValue(2,1200);
 
 

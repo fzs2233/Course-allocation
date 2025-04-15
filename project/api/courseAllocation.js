@@ -330,9 +330,9 @@ async function getAgentCostPerformance(targetAgentId) { //获取某个智能体�
     }
 }
 
-// 获取最不重要的智能体课程
+// 获取智能体最不擅长的智能体课程
 async function getLeastSuitableAgentCourse() {
-    let leastSuitableCourseId = 0;
+    let leastSuitableCourseId = -1;
     let minSuitability = 1000000;
     let course;
     let courseIds = await contract.getCourseIds();
@@ -340,26 +340,27 @@ async function getLeastSuitableAgentCourse() {
     for (let i = 0; i < courseIds.length; i++) {
         let courseId = courseIds[i];
         course = await contract.courses(courseId)
-        if (course.isAgentSuitable) {
-            let AssignedAgentCourses = await contract.getCoursesAssignedAgent(courseId);
-            let suitability = 10000;
-            if (AssignedAgentCourses.length == 1) {
-                let agentId = AssignedAgentCourses[0];
-                agentId = agentId.toNumber();
-                suitability = await contract.getAgentSuitability(agentId, courseId);
-                suitability = suitability.toNumber();
-            }else if(AssignedAgentCourses.length > 1){
-                return {
-                    code: -1,
-                    message: "课程 " + courseId + " 拥有者超过一个"
-                }
-            }
-            
-            if (suitability < minSuitability) {
-                minSuitability = suitability;
-                leastSuitableCourseId = courseId;
+        let AssignedAgentCourses = await contract.getCoursesAssignedAgent(courseId);
+        if (AssignedAgentCourses.length == 0) {
+            continue;
+        }
+        let suitability = 10000;
+        if (AssignedAgentCourses.length == 1) {
+            let agentId = AssignedAgentCourses[0];
+            agentId = agentId.toNumber();
+            suitability = await contract.getAgentSuitability(agentId, courseId);
+            suitability = suitability.toNumber();
+        }else if(AssignedAgentCourses.length > 1){
+            return {
+                code: -1,
+                message: "课程 " + courseId + " 拥有者超过一个"
             }
         }
+        if (suitability < minSuitability) {
+            minSuitability = suitability;
+            leastSuitableCourseId = courseId;
+        }
+        
     }
 
     return {
@@ -428,10 +429,12 @@ async function checkAndCreateProposalForTeacher(){
     }
     // console.log(`candidateCourse: ${candidateCourse}`)
     // 没有再获取智能体的课程
+    
     if(candidateCourse == -1) {
         candidateCourse = await getLeastSuitableAgentCourse();
         candidateCourse = candidateCourse.data;
     }
+    // console.log(`candidateCourse: ${candidateCourse}`)
 
     if(teacherWithoutCourse.length == 1 && candidateCourse != -1) {
         // 只有一个没有课程的老师，直接分配
@@ -510,11 +513,20 @@ async function assignCourseToTeacherWithoutCourse(courseId, teacherId) {
         }
     }
     if(assignedTeacher.length == 1){
-        await removeTeacherCourse(teacherId, courseId);
-    }else{
-        await removeAgentCourse(teacherId, courseId);
+        let result = await removeTeacherCourse(assignedTeacher[0], courseId);
+        if (result.code!== 0) {
+            console.log(result.message);
+        }
+    }else if(assignedAgent.length == 1){
+        let result = await removeAgentCourse(assignedAgent[0], courseId);
+        if (result.code!== 0) {
+            console.log(result.message);
+        }
     }
-    await AssignedTeacherReallyCourse(teacherId, courseId);
+    let result = await AssignedTeacherReallyCourse(teacherId, courseId);
+    if (result.code!== 0) {
+        console.log(result.message);
+    }
     
     return{
         code: 0,
@@ -544,7 +556,10 @@ async function endProposalAndAssignCourseforWithoutteacher(proposalId) {
 
     if (maxVoteTeachers.length === 1) {
         // 如果只有一个最大票数的老师，分配课程
-        await assignCourseToTeacherWithoutCourse(courseId, maxVoteTeachers[0]);
+        const result = await assignCourseToTeacherWithoutCourse(courseId, maxVoteTeachers[0]);
+        if (result.code !== 0) {
+            console.log(result.message);
+        }
         console.log("Course assigned successfully");
 
         return {
@@ -726,7 +741,7 @@ async function createConflictProposal() {
     }else if(candidateId.length === 0){
         return{
             code: 0,
-            message: `所有的候选老师都已经拥有两门课程了，这门课程无法创建冲突提案，课程 ${selectedCourseId} 被置为未分配状态`
+            message: `没有冲突或者所有的候选老师都已经拥有两门课程了，这门课程无法创建冲突提案，课程 ${selectedCourseId} 被置为未分配老师状态`
         }
     }
     let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateId, 9);//7老师+2班级
@@ -780,7 +795,7 @@ async function agentVote(agentAddress, proposalId){
     for(let candidateIndex = 0; candidateIndex < voteIds.length; candidateIndex++){
         let candidateId = voteIds[candidateIndex];
         let currentScore = (await getCompareScore(candidateId, courseId, scoreType)).data;
-        // console.log(max_Score, currentScore, chooseId)
+        console.log(max_Score, currentScore, chooseId)
         if(currentScore > max_Score){
             max_Score = currentScore;
             chooseId = candidateId;
@@ -1112,7 +1127,8 @@ async function getCompareScore(teacherId, courseId, scoreType){
         let suitability = await contract.getTeacherSuitability(teacherId, courseId);
         suitability = suitability.toNumber();
         let CostEffectiveness = suitability/salary;
-        // console.log(`计算出来的分数为 ${CostEffectiveness}`)
+        console.log(teacherId, courseId)
+        console.log(`计算出来的分数为 ${CostEffectiveness}`)
         return {
             code: 0,
             message: "Cost-effectiveness",
