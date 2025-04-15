@@ -606,7 +606,7 @@ contract ICourseAllocation {
             courses[courseId].assignedAgentId.pop();
         } else {
             // 如果没有找到课程 ID，可以抛出一个错误或者进行其他处理
-            revert("Course not found");
+            // revert("Course not found"); 不进行处理
         }
     }
 

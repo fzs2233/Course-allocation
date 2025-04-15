@@ -383,18 +383,25 @@ async function loginWithIdentity(identityType, ids, userName, message) {
 
 async function initializeData() {
     const accounts = await web3.eth.getAccounts();
+    
     // 初始化课程
     console.log("Initializing courses...");
-    await initializeCourse("c1", 3);
-    await initializeCourse("c2", 7);
-    await initializeCourse("c3", 1);
-    await initializeCourse("c4", 9);
-    await initializeCourse("c5", 5);
-    await initializeCourse("c6", 2);
-    await initializeCourse("c7", 8);
-    await initializeCourse("c8", 4);
-    await initializeCourse("c9", 6);
-    await initializeCourse("c10", 10);
+    const courseCount = await contract.courseCount();
+    if (courseCount == 0) {
+        await initializeCourse("c1", 3);
+        await initializeCourse("c2", 7);
+        await initializeCourse("c3", 1);
+        await initializeCourse("c4", 9);
+        await initializeCourse("c5", 5);
+        await initializeCourse("c6", 2);
+        await initializeCourse("c7", 8);
+        await initializeCourse("c8", 4);
+        await initializeCourse("c9", 6);
+        await initializeCourse("c10", 10);
+    }else {
+        console.log("Courses already initialized. Skipping...");
+    }
+    
     // 注册教师
     console.log("Registering teachers...");
     await switchAcount(1);
