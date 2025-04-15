@@ -330,7 +330,7 @@ async function getAgentCostPerformance(targetAgentId) { //获取某个智能体�
     }
 }
 
-// 获取最不重要的智能体课程
+// 获取智能体最不擅长的智能体课程
 async function getLeastSuitableAgentCourse() {
     let leastSuitableCourseId = -1;
     let minSuitability = 1000000;
@@ -517,11 +517,21 @@ async function assignCourseToTeacherWithoutCourse(courseId, teacherId) {
         }
     }
     if(assignedTeacher.length == 1){
-        await removeTeacherCourse(teacherId, courseId);
-    }else{
-        await removeAgentCourse(teacherId, courseId);
+        let result = await removeTeacherCourse(assignedTeacher[0], courseId);
+         if (result.code!== 0) {
+             console.log(result.message);
+         }
+     }else if(assignedAgent.length == 1){
+         let result = await removeAgentCourse(assignedAgent[0], courseId);
+         if (result.code!== 0) {
+             console.log(result.message);
+         }
+     }
+     let result = await AssignedTeacherReallyCourse(teacherId, courseId);
+     if (result.code!== 0) {
+         console.log(result.message);
     }
-    await AssignedTeacherReallyCourse(teacherId, courseId);
+
     
     return{
         code: 0,
@@ -551,7 +561,10 @@ async function endProposalAndAssignCourseforWithoutteacher(proposalId) {
 
     if (maxVoteTeachers.length === 1) {
         // 如果只有一个最大票数的老师，分配课程
-        await assignCourseToTeacherWithoutCourse(courseId, maxVoteTeachers[0]);
+        const result = await assignCourseToTeacherWithoutCourse(courseId, maxVoteTeachers[0]);
+         if (result.code !== 0) {
+             console.log(result.message);
+         }
         console.log("Course assigned successfully");
 
         return {
@@ -660,6 +673,7 @@ async function removeAgentCourse(agentId, courseId){    // 获取教师已分配
     let courses = await contract.getAgentAssignedCourses(agentId);
     courses = courses.map(id => id.toNumber());
 
+    courseId = Number(courseId);
     // 判断 courseId 是否在 courses 数组中
     if (!courses.includes(courseId)) {
         // console.log(`Course ${courseId} is not assigned to agent ${agentId}`);
@@ -668,8 +682,9 @@ async function removeAgentCourse(agentId, courseId){    // 获取教师已分配
             message: `Course ${courseId} not Assigned to agent ${agentId}`,
         };
     }
-    await contract.removeAgentAssignedCourses(agentId, courseId);
     await contract.removeCourseAssignedAgentId(courseId, agentId);
+    await contract.removeAgentAssignedCourses(agentId, courseId);
+
 
     return {
         code: 0,

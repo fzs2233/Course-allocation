@@ -512,9 +512,13 @@ async function checkCourseImportance() {
     let assignments = [];
     for (let i = 0; i < courseIds.length; i++) {
         let importance = Number(await contract.getCourseImportance(courseIds[i])); // 查看课程重要程度
+        let suit1 = Number(await contract.getAgentSuitability(1,courseIds[i])); // 查看智能体对课程的适合程度
+        let suit2 = Number(await contract.getAgentSuitability(2,courseIds[i])); // 查看智能体对课程的适合程度
         assignments.push({
             "课程ID": courseIds[i],
-            "重要程度": importance
+            "重要程度": importance,
+             "suit1": suit1,
+             "suit2": suit2
         })
     }
     console.log('\n目前课程的重要程度:');
