@@ -332,7 +332,7 @@ async function getAgentCostPerformance(targetAgentId) { //获取某个智能体�
 
 // 获取最不重要的智能体课程
 async function getLeastSuitableAgentCourse() {
-    let leastSuitableCourseId = 0;
+    let leastSuitableCourseId = -1;
     let minSuitability = 1000000;
     let course;
     let courseIds = await contract.getCourseIds();
@@ -340,26 +340,28 @@ async function getLeastSuitableAgentCourse() {
     for (let i = 0; i < courseIds.length; i++) {
         let courseId = courseIds[i];
         course = await contract.courses(courseId)
-        if (course.isAgentSuitable) {
-            let AssignedAgentCourses = await contract.getCoursesAssignedAgent(courseId);
-            let suitability = 10000;
-            if (AssignedAgentCourses.length == 1) {
-                let agentId = AssignedAgentCourses[0];
-                agentId = agentId.toNumber();
-                suitability = await contract.getAgentSuitability(agentId, courseId);
-                suitability = suitability.toNumber();
-            }else if(AssignedAgentCourses.length > 1){
-                return {
-                    code: -1,
-                    message: "课程 " + courseId + " 拥有者超过一个"
-                }
-            }
-            
-            if (suitability < minSuitability) {
-                minSuitability = suitability;
-                leastSuitableCourseId = courseId;
+        let AssignedAgentCourses = await contract.getCoursesAssignedAgent(courseId);
+         if (AssignedAgentCourses.length == 0) {
+             continue;
+         }
+         let suitability = 10000;
+         if (AssignedAgentCourses.length == 1) {
+             let agentId = AssignedAgentCourses[0];
+             agentId = agentId.toNumber();
+             suitability = await contract.getAgentSuitability(agentId, courseId);
+             suitability = suitability.toNumber();
+         }else if(AssignedAgentCourses.length > 1){
+             return {
+                 code: -1,
+                 message: "课程 " + courseId + " 拥有者超过一个"
             }
         }
+                
+        if (suitability < minSuitability) {
+            minSuitability = suitability;
+            leastSuitableCourseId = courseId;
+        }
+        
     }
 
     return {
@@ -443,15 +445,20 @@ async function checkAndCreateProposalForTeacher(){
     }
     
     let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", candidateCourse, teacherWithoutCourse, 9);//7老师+2班级
-    let txClass = await classContract.createProposal("createProposal", candidateCourse, teacherWithoutCourse);
+
     let receipt = await tx.wait();
-    let receiptClass = await txClass.wait();
+  
     const event = receipt.events.find(event => event.event === "ProposalCreated");
-    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
+
     let { proposalId, description } = event.args;
+    proposalId = proposalId.toNumber();
+     
+    // 创建班级提案
+    let txClass = await classContract.createProposal("createProposal", candidateCourse, teacherWithoutCourse, proposalId);
+    let receiptClass = await txClass.wait();
+    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
     let { classProposalId, classDescription } = eventClass.args;
-    proposalId = Number(proposalId);
-    classProposalId = Number(classProposalId);
+    classProposalId = classProposalId.toNumber();
     return {
         code: 0,
         message: "成功为没有课程的老师创建提案",
@@ -726,19 +733,29 @@ async function createConflictProposal() {
     }else if(candidateId.length === 0){
         return{
             code: 0,
-            message: `所有的候选老师都已经拥有两门课程了，这门课程无法创建冲突提案，课程 ${selectedCourseId} 被置为未分配状态`
+            message: `没有冲突或者所有的候选老师都已经拥有两门课程了，这门课程无法创建冲突提案，课程 ${selectedCourseId} 被置为未分配老师状态`
         }
     }
     let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateId, 9);//7老师+2班级
-    let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateId);
+ 
     let receipt = await tx.wait();
-    let receiptClass = await txClass.wait();
+
     const event = receipt.events.find(event => event.event === "ProposalCreated");
-    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
+
     let { proposalId, description } = event.args;
-    let { classProposalId, classDescription } = eventClass.args;
+
     proposalId = proposalId.toNumber();
+
+        
+     // 创建班级提案
+     let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateId, proposalId);
+     let receiptClass = await txClass.wait();
+     const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
+     let { classProposalId, classDescription } = eventClass.args;
+     
     classProposalId = classProposalId.toNumber();
+
+    
     return {
         code: 0,
         message: `Create Conflict Proposal successfully, Proposal Id: ${proposalId}`,
@@ -780,7 +797,7 @@ async function agentVote(agentAddress, proposalId){
     for(let candidateIndex = 0; candidateIndex < voteIds.length; candidateIndex++){
         let candidateId = voteIds[candidateIndex];
         let currentScore = (await getCompareScore(candidateId, courseId, scoreType)).data;
-         // console.log(max_Score, currentScore, chooseId)
+        console.log(max_Score, currentScore, chooseId)
          if(currentScore > max_Score){
              max_Score = currentScore;
             chooseId = candidateId;
@@ -858,17 +875,24 @@ async function endConfictProposal(proposalId) {
     }
 }
 
-// 假设的重新创建提案函数
+// 重新创建提案函数
 async function createNewProposal(selectedCourseId, candidateId) {
     let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateId, 9);//7老师+2班级
-    let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateId);
+
     let receipt = await tx.wait();
-    let receiptClass = await txClass.wait();
+
     const event = receipt.events.find(event => event.event === "ProposalCreated");
-    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
+
     let { proposalId, description } = event.args;
-    let { classProposalId, classDescription } = eventClass.args;
+
     proposalId = proposalId.toNumber();
+        
+     // 创建班级提案
+     let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateId, proposalId);
+     let receiptClass = await txClass.wait();
+     const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
+     let { classProposalId, classDescription } = eventClass.args;
+     
     classProposalId = classProposalId.toNumber();
     return {
         code: 0,
@@ -1188,15 +1212,21 @@ async function proposalForCoursesWithoutAssigned(){
     candidateTeacher = candidateTeacher.map(id => id.toNumber());
     // 创建提案
     let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateTeacher, 9);//7老师+2班级
-    let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateTeacher);
+
     let receipt = await tx.wait();
-    let receiptClass = await txClass.wait();
+
     const event = receipt.events.find(event => event.event === "ProposalCreated");
-    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
+
     let { proposalId, description } = event.args;
+    proposalId = proposalId.toNumber();
+     
+    // 创建班级提案
+    let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateTeacher, proposalId);
+    let receiptClass = await txClass.wait();
+    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
     let { classProposalId, classDescription } = eventClass.args;
-    proposalId = Number(proposalId);
-    classProposalId = Number(classProposalId);
+
+    classProposalId = classProposalId.toNumber();
     return {
         code: 0,
         message: "成功为没有老师的课程创建提案",
