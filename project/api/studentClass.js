@@ -94,7 +94,7 @@ async function endClassProposal(classAddr, proposalId) {
         teacherIdsVoteCount[index].toNumber() === maxVotes
     ).map(id => id.toNumber());
 
-    let teacherProposalId = await classContract.getTeacherProposalId();
+    let teacherProposalId = await classContract.getTeacherProposalId(classId,proposalId);
     teacherProposalId = teacherProposalId.toNumber();
 
     if (maxVoteTeachers.length === 1) {

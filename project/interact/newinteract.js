@@ -720,7 +720,7 @@ async function endProposal(){
     if(proposalType === 'endConfilct'){
         console.log(await endConfictProposal(proposalId));  // 结束冲突提案
     }else if(proposalType === 'endClass'){
-        await endClassProposal_interact(proposalId); 
+        console.log(await endClassProposal_interact(proposalId)); 
     }else{
         console.log(await endProposalAndAssignCourseforWithoutteacher(proposalId));
     }
