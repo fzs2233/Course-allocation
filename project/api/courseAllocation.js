@@ -670,9 +670,9 @@ async function removeTeacherCourse(teacherId, courseId){
 async function removeAgentCourse(agentId, courseId){    // 获取教师已分配的课程
     let courses = await contract.getAgentAssignedCourses(agentId);
     courses = courses.map(id => id.toNumber());
-    console.log(courses);
+    courseId = Number(courseId);
     // 判断 courseId 是否在 courses 数组中
-    await contract.removeCourseAssignedAgentId(courseId, agentId);
+    
     if (!courses.includes(courseId)) {
         // console.log(`Course ${courseId} is not assigned to agent ${agentId}`);
         return {
@@ -680,9 +680,9 @@ async function removeAgentCourse(agentId, courseId){    // 获取教师已分配
             message: `Course ${courseId} not Assigned to agent ${agentId}`,
         };
     }
+    await contract.removeCourseAssignedAgentId(courseId, agentId);
     await contract.removeAgentAssignedCourses(agentId, courseId);
     
-
     return {
         code: 0,
         message: `Course ${courseId} removed from agent ${agentId} successfully`,
