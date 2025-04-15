@@ -812,7 +812,7 @@ async function agentVote(agentAddress, proposalId){
     for(let candidateIndex = 0; candidateIndex < voteIds.length; candidateIndex++){
         let candidateId = voteIds[candidateIndex];
         let currentScore = (await getCompareScore(candidateId, courseId, scoreType)).data;
-        console.log(max_Score, currentScore, chooseId)
+        //console.log(max_Score, currentScore, chooseId)
          if(currentScore > max_Score){
              max_Score = currentScore;
             chooseId = candidateId;

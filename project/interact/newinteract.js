@@ -103,7 +103,7 @@ async function mainMenu() {
       { name: '查看并保存课程的重要程度', value: 'saveImportance' },
       { name: '教师给智能体对课程的适合程度打分', value: 'setTeacherSuitabilityForAllCourses' },
       { name: '查看并保存智能体对课程的适合程度', value: 'saveAverageSuitabilityInteract' },
-      { name: '查看课程重要程度', value: 'checkCourseImportance' }, 
+      { name: '查看课程重要程度和智能体对课程的适合程度', value: 'checkCourseImportance' }, 
       { name: '初始化课程分配', value: 'initAllocation' },
       { name: '🔍查看课程分配情况', value: 'viewAssignments' },
       { name: '🔄转移课程所有权', value: 'transferCourse' },
@@ -517,8 +517,8 @@ async function checkCourseImportance() {
         assignments.push({
             "课程ID": courseIds[i],
             "重要程度": importance,
-             "suit1": suit1,
-             "suit2": suit2
+             "智能体1对课程的适合程度": suit1,
+             "智能体2对课程的适合程度": suit2
         })
     }
     console.log('\n目前课程的重要程度:');
