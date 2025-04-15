@@ -95,8 +95,10 @@ async function endClassProposal(classAddr, proposalId) {
     ).map(id => id.toNumber());
 
     if (maxVoteTeachers.length === 1) {
+        let teacherProposalId = await classContract.getTeacherProposalId();
+        teacherProposalId = teacherProposalId.toNumber();
         // 如果只有一个最大票数的老师，执行投票
-        await voteContract.voteChooseTeacher(classAddr, proposalId, maxVoteTeachers[0]);
+        await voteContract.voteChooseTeacher(classAddr, teacherProposalId, maxVoteTeachers[0]);
 
         return {
             code: 0,
