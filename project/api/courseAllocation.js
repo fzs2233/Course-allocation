@@ -447,15 +447,18 @@ async function checkAndCreateProposalForTeacher(){
     }
     
     let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", candidateCourse, teacherWithoutCourse, 9);//7老师+2班级
-    let txClass = await classContract.createProposal("createProposal", candidateCourse, teacherWithoutCourse);
     let receipt = await tx.wait();
-    let receiptClass = await txClass.wait();
     const event = receipt.events.find(event => event.event === "ProposalCreated");
-    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
     let { proposalId, description } = event.args;
+    proposalId = proposalId.toNumber();
+    
+    // 创建班级提案
+    let txClass = await classContract.createProposal("createProposal", candidateCourse, teacherWithoutCourse, proposalId);
+    let receiptClass = await txClass.wait();
+    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
     let { classProposalId, classDescription } = eventClass.args;
-    proposalId = Number(proposalId);
-    classProposalId = Number(classProposalId);
+    
+    classProposalId = classProposalId.toNumber();
     return {
         code: 0,
         message: "成功为没有课程的老师创建提案",
@@ -865,17 +868,20 @@ async function endConfictProposal(proposalId) {
     }
 }
 
-// 假设的重新创建提案函数
+// 重新创建提案函数
 async function createNewProposal(selectedCourseId, candidateId) {
     let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateId, 9);//7老师+2班级
-    let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateId);
     let receipt = await tx.wait();
-    let receiptClass = await txClass.wait();
     const event = receipt.events.find(event => event.event === "ProposalCreated");
-    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
     let { proposalId, description } = event.args;
-    let { classProposalId, classDescription } = eventClass.args;
     proposalId = proposalId.toNumber();
+    
+    // 创建班级提案
+    let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateId, proposalId);
+    let receiptClass = await txClass.wait();
+    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
+    let { classProposalId, classDescription } = eventClass.args;
+    
     classProposalId = classProposalId.toNumber();
     return {
         code: 0,
@@ -1205,15 +1211,18 @@ async function proposalForCoursesWithoutAssigned(){
     candidateTeacher = candidateTeacher.map(id => id.toNumber());
     // 创建提案
     let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateTeacher, 9);//7老师+2班级
-    let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateTeacher);
     let receipt = await tx.wait();
-    let receiptClass = await txClass.wait();
     const event = receipt.events.find(event => event.event === "ProposalCreated");
-    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
     let { proposalId, description } = event.args;
+    proposalId = proposalId.toNumber();
+    
+    // 创建班级提案
+    let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateTeacher, proposalId);
+    let receiptClass = await txClass.wait();
+    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
     let { classProposalId, classDescription } = eventClass.args;
-    proposalId = Number(proposalId);
-    classProposalId = Number(classProposalId);
+    
+    classProposalId = classProposalId.toNumber();
     return {
         code: 0,
         message: "成功为没有老师的课程创建提案",

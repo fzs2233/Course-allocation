@@ -93,10 +93,9 @@ async function endClassProposal(classAddr, proposalId) {
     const maxVoteTeachers = teacherIds.filter((teacherId, index) => 
         teacherIdsVoteCount[index].toNumber() === maxVotes
     ).map(id => id.toNumber());
-
+    let teacherProposalId = await classContract.getTeacherProposalId();
+    teacherProposalId = teacherProposalId.toNumber();
     if (maxVoteTeachers.length === 1) {
-        let teacherProposalId = await classContract.getTeacherProposalId();
-        teacherProposalId = teacherProposalId.toNumber();
         // 如果只有一个最大票数的老师，执行投票
         await voteContract.voteChooseTeacher(classAddr, teacherProposalId, maxVoteTeachers[0]);
 
@@ -107,7 +106,7 @@ async function endClassProposal(classAddr, proposalId) {
     } else {
         // 如果有多个最大票数的老师，重新创建提案
         // 假设有一个createNewProposal函数
-        let result = await createNewClassProposal(courseId, maxVoteTeachers);
+        let result = await createNewClassProposal(courseId, maxVoteTeachers, teacherProposalId);
         console.log(result)
         return {
             code: 1,
@@ -116,9 +115,9 @@ async function endClassProposal(classAddr, proposalId) {
     }
 }
 
-// 假设的重新创建提案函数
-async function createNewClassProposal(selectedCourseId, candidateId) {
-    let tx = await classContract.createProposal("createProposal", selectedCourseId, candidateId);
+// 重新创建提案函数
+async function createNewClassProposal(selectedCourseId, candidateId, teacherProposalId) {
+    let tx = await classContract.createProposal("createProposal", selectedCourseId, candidateId, teacherProposalId);
     let receipt = await tx.wait();
     const event = receipt.events.find(event => event.event === "ProposalCreated");
     let { classProposalId, description } = event.args;
