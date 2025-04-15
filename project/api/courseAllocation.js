@@ -738,6 +738,7 @@ async function createConflictProposal() {
     let { proposalId, description } = event.args;
     let { classProposalId, classDescription } = eventClass.args;
     proposalId = proposalId.toNumber();
+    classProposalId = classProposalId.toNumber();
     return {
         code: 0,
         message: `Create Conflict Proposal successfully, Proposal Id: ${proposalId}`,
@@ -761,28 +762,32 @@ async function teacherVote(teacherAddress, proposalId, voteForId){
 
 // 智能体投票
 async function agentVote(agentAddress, proposalId){
-    // 计算每个老师的性价比
-    let [voteIds, voteForId] = await voteContract.getVotedIds(proposalId);
+    // 计算每个老师的分数
+    let [voteIds, courseId] = await voteContract.getVotedIds(proposalId);
     voteIds = voteIds.map(id => id.toNumber());
-
-    let max_Cost_effectiveness = 0;
+    courseId = Number(courseId);
+     // console.log(voteIds)
+    let max_Score = 0;
     let chooseId = 0;
+    let scoreType = await contract.ScoreTypeChioce();
+     let scoreTypePrint;
+     if(scoreType === "Cost-effectiveness"){
+         scoreTypePrint = "性价比"
+     }else if(scoreType === "Suitability&Preference"){
+         scoreTypePrint = "能力意愿的加权分数"
+     }
+
     for(let candidateIndex = 0; candidateIndex < voteIds.length; candidateIndex++){
         let candidateId = voteIds[candidateIndex];
-        let candidate = await contract.teachers(candidateId);
-        let value = candidate.value;
-        value = value.toNumber();
-
-        let suitability = await contract.getTeacherSuitability(candidateId, voteForId);
-        let Cost_effectiveness = suitability/value;
-
-        if(Cost_effectiveness > max_Cost_effectiveness){
-            max_Cost_effectiveness = Cost_effectiveness;
+        let currentScore = (await getCompareScore(candidateId, courseId, scoreType)).data;
+         // console.log(max_Score, currentScore, chooseId)
+         if(currentScore > max_Score){
+             max_Score = currentScore;
             chooseId = candidateId;
         }
     }
-
-    voteContract.voteChooseTeacher(agentAddress, proposalId, chooseId);
+    console.log(`检测您为智能体，已为您选择${scoreTypePrint}最高的教师 ${chooseId} 进行投票`)
+    await voteContract.voteChooseTeacher(agentAddress, proposalId, chooseId);
     let agentId = await contract.addressToAgentId(agentAddress);
     return {
         code: 0,

@@ -94,28 +94,28 @@ const {
 async function mainMenu() {
     const choices = [
       { name: '一键初始化数据', value: 'initializeData'},
-      { name: '切换用户', value: 'switchUser'},
+      { name: '🔑切换用户', value: 'switchUser'},
       { name: '注册教师/智能体/班级/学生', value: 'register'}, 
-      { name: '创建确定规则的提案', value: 'createTeacherProposal' },
+      { name: '📝创建确定规则的提案', value: 'createTeacherProposal' },
       { name: '教师投票', value: 'init_teacherVote' },
-      { name: '执行教师提案', value: 'executeTeacherProposal' },
+      { name: '🛑执行教师提案', value: 'executeTeacherProposal' },
       { name: '教师给课程的重要程度打分', value: 'setImportance' },
       { name: '查看并保存课程的重要程度', value: 'saveImportance' },
       { name: '教师给智能体对课程的适合程度打分', value: 'setTeacherSuitabilityForAllCourses' },
       { name: '查看并保存智能体对课程的适合程度', value: 'saveAverageSuitabilityInteract' },
       { name: '查看课程重要程度', value: 'checkCourseImportance' }, 
       { name: '初始化课程分配', value: 'initAllocation' },
-      { name: '查看课程分配情况', value: 'viewAssignments' },
-      { name: '查看课程冲突情况', value: 'checkCourseConflicts' },
-      { name: '转移课程所有权', value: 'transferCourse' },
-      { name: '冲突提案前的预处理', value: 'preprocessConflictCourses' },
-      { name: '创建冲突提案', value: 'createConflictProposal' },
-      { name: '为没有课程的老师创建提案', value: 'checkAndCreateProposalForTeacher' },
-      { name: '为没有老师的课程创建提案', value: 'proposalForCoursesWithoutAssigned' },
-      { name: '为提案投票', value: 'voteForProposal' },
-      { name: '结束提案投票', value: 'endProposal' },
+      { name: '🔍查看课程分配情况', value: 'viewAssignments' },
+      { name: '🔄转移课程所有权', value: 'transferCourse' },
+      { name: '⚡查看课程冲突情况', value: 'checkCourseConflicts' },
+      { name: '⚡冲突提案前的预处理', value: 'preprocessConflictCourses' },
+      { name: '⚡创建冲突提案', value: 'createConflictProposal' },
+      { name: '📝为没有课程的老师创建提案', value: 'checkAndCreateProposalForTeacher' },
+      { name: '📝为没有老师的课程创建提案', value: 'proposalForCoursesWithoutAssigned' },
+      { name: '📥为提案投票', value: 'voteForProposal' },
+      { name: '🛑结束提案投票', value: 'endProposal' },
       { name: '查询教师性价比', value: 'teacherCost' },
-      { name: '给学生考试分数', value: 'giveExamineScore'},
+      { name: '录入学生考试分数', value: 'giveExamineScore'},
       { name: '学生打分', value: 'studentGiveScore'},
       { name: '打印学生考试和评价分数', value: 'printStudentExamAndEvaluateScore' },
       { name: '总结班级学生打分', value:'endClassStudentGiveScore'},
@@ -684,7 +684,6 @@ async function voteForProposal(){
             console.log(await studentVote(currentAddress, proposalId, choice));
         }
     }else if(currentType === 'Agent'){
-      console.log(`检测您为智能体，已为您选择性价比最高的教师进行投票`)
       let currentAddress = await currentSigner.getAddress();
       await agentVote(currentAddress, proposalId);
     }else if(currentType === 'Class'){
@@ -701,8 +700,8 @@ async function endProposal(){
         message: '请输入您要结束的提案类型:',
         choices: [
             {name: "结束冲突提案", value: 'endConfilct'},
-            {name: "结束为没课老师分配课程的提案", value: 'endWithoutCourse'},
-            {name: "结束为没有老师的课程分配老师的提案", value: 'endWithoutTeacher'},
+            {name: "结束为没有课程的教师发起的提案", value: 'endWithoutCourse'},
+            {name: "结束为没有教师的课程发起的提案", value: 'endWithoutTeacher'},
             {name: "结束班级提案", value: 'endClass'},
         ]
       }
