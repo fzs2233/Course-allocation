@@ -454,7 +454,6 @@ async function checkAndCreateProposalForTeacher(){
     let receiptClass = await txClass.wait();
     const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
     let { classProposalId, classDescription } = eventClass.args;
-    
     classProposalId = classProposalId.toNumber();
     return {
         code: 0,
@@ -558,9 +557,9 @@ async function endProposalAndAssignCourseforWithoutteacher(proposalId) {
     if (maxVoteTeachers.length === 1) {
         // 如果只有一个最大票数的老师，分配课程
         const result = await assignCourseToTeacherWithoutCourse(courseId, maxVoteTeachers[0]);
-        if (result.code !== 0) {
-            console.log(result.message);
-        }
+         if (result.code !== 0) {
+             console.log(result.message);
+         }
         console.log("Course assigned successfully");
 
         return {
@@ -680,7 +679,8 @@ async function removeAgentCourse(agentId, courseId){    // 获取教师已分配
     }
     await contract.removeCourseAssignedAgentId(courseId, agentId);
     await contract.removeAgentAssignedCourses(agentId, courseId);
-    
+
+
     return {
         code: 0,
         message: `Course ${courseId} removed from agent ${agentId} successfully`,
@@ -747,18 +747,25 @@ async function createConflictProposal() {
         }
     }
     let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateId, 9);//7老师+2班级
+ 
     let receipt = await tx.wait();
+
     const event = receipt.events.find(event => event.event === "ProposalCreated");
+
     let { proposalId, description } = event.args;
+
     proposalId = proposalId.toNumber();
-    
-    // 创建班级提案
-    let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateId, proposalId);
-    let receiptClass = await txClass.wait();
-    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
-    let { classProposalId, classDescription } = eventClass.args;
-    
+
+        
+     // 创建班级提案
+     let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateId, proposalId);
+     let receiptClass = await txClass.wait();
+     const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
+     let { classProposalId, classDescription } = eventClass.args;
+     
     classProposalId = classProposalId.toNumber();
+
+    
     return {
         code: 0,
         message: `Create Conflict Proposal successfully, Proposal Id: ${proposalId}`,
@@ -786,23 +793,23 @@ async function agentVote(agentAddress, proposalId){
     let [voteIds, courseId] = await voteContract.getVotedIds(proposalId);
     voteIds = voteIds.map(id => id.toNumber());
     courseId = Number(courseId);
-    // console.log(voteIds)
+     // console.log(voteIds)
     let max_Score = 0;
     let chooseId = 0;
     let scoreType = await contract.ScoreTypeChioce();
-    let scoreTypePrint;
-    if(scoreType === "Cost-effectiveness"){
-        scoreTypePrint = "性价比"
-    }else if(scoreType === "Suitability&Preference"){
-        scoreTypePrint = "能力意愿的加权分数"
-    }
-    
+     let scoreTypePrint;
+     if(scoreType === "Cost-effectiveness"){
+         scoreTypePrint = "性价比"
+     }else if(scoreType === "Suitability&Preference"){
+         scoreTypePrint = "能力意愿的加权分数"
+     }
+
     for(let candidateIndex = 0; candidateIndex < voteIds.length; candidateIndex++){
         let candidateId = voteIds[candidateIndex];
         let currentScore = (await getCompareScore(candidateId, courseId, scoreType)).data;
-        console.log(max_Score, currentScore, chooseId)
-        if(currentScore > max_Score){
-            max_Score = currentScore;
+        //console.log(max_Score, currentScore, chooseId)
+         if(currentScore > max_Score){
+             max_Score = currentScore;
             chooseId = candidateId;
         }
     }
@@ -881,17 +888,21 @@ async function endConfictProposal(proposalId) {
 // 重新创建提案函数
 async function createNewProposal(selectedCourseId, candidateId) {
     let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateId, 9);//7老师+2班级
+
     let receipt = await tx.wait();
+
     const event = receipt.events.find(event => event.event === "ProposalCreated");
+
     let { proposalId, description } = event.args;
+
     proposalId = proposalId.toNumber();
-    
-    // 创建班级提案
-    let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateId, proposalId);
-    let receiptClass = await txClass.wait();
-    const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
-    let { classProposalId, classDescription } = eventClass.args;
-    
+        
+     // 创建班级提案
+     let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateId, proposalId);
+     let receiptClass = await txClass.wait();
+     const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
+     let { classProposalId, classDescription } = eventClass.args;
+     
     classProposalId = classProposalId.toNumber();
     return {
         code: 0,
@@ -1219,17 +1230,19 @@ async function proposalForCoursesWithoutAssigned(){
     candidateTeacher = candidateTeacher.map(id => id.toNumber());
     // 创建提案
     let tx = await voteContract.createChooseTeacherProposal("create Conflict Proposal", selectedCourseId, candidateTeacher, 9);//7老师+2班级
+
     let receipt = await tx.wait();
+
     const event = receipt.events.find(event => event.event === "ProposalCreated");
+
     let { proposalId, description } = event.args;
     proposalId = proposalId.toNumber();
-    
+     
     // 创建班级提案
     let txClass = await classContract.createProposal("createProposal", selectedCourseId, candidateTeacher, proposalId);
     let receiptClass = await txClass.wait();
     const eventClass = receiptClass.events.find(event => event.event === "ProposalCreated");
     let { classProposalId, classDescription } = eventClass.args;
-    
     classProposalId = classProposalId.toNumber();
     return {
         code: 0,

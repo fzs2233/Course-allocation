@@ -70,7 +70,7 @@ contract TeacherVote is Vote {
         _proposalOptions[suitabilityProposalId] = options;
 
         // 初始化合并提案
-        proposalCount++;
+
         proposals[proposalCount] = ProposalBase({
             courseId: courseId,
             suitabilityProposalId: suitabilityProposalId,
@@ -84,6 +84,7 @@ contract TeacherVote is Vote {
             courseId,
             suitabilityProposalId
         );
+        proposalCount++;
         return proposalCount;
     }
 
@@ -177,8 +178,8 @@ contract TeacherVote is Vote {
 
         string memory Choice;
         if (winningOption == 2) {
-            Choice = "Cost-effectiveness";
-        } else Choice = "Suitability&Preference";
+            Choice = "Suitability&Preference";
+        } else Choice = "Cost-effectiveness";
 
         // 更新课程状态
         courseAllocation.setScoreType(Choice);
