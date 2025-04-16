@@ -143,7 +143,6 @@ async function init_AgentCourses() {
         else if (suitableAgents.length === 2) {
             let maxCostEffectiveness = 0;
             let selectedAgentId = 0;
-
             // 选择性价比最高的智能体
             for (const { agentId, suitability } of suitableAgents) {
                 let agent = await contract.agents(agentId);
@@ -158,7 +157,6 @@ async function init_AgentCourses() {
             }
             let agentId=0;
             agentId = selectedAgentId;
-
             // 分配给性价比最高的智能体
             if (agentId > 0) {
                 await contract.addAgentAssignedCourses(agentId, courseId);
@@ -1098,10 +1096,8 @@ async function preprocessConflictCourses() {
                             courseId: courseId,
                             score: currentScore
                         });
-
                         // 按照 score 降序排序
                         coursesWithScores.sort((a, b) => b.score - a.score);
-
                         // 选出最大的两个 courseId
                         const topTwoCourses = coursesWithScores.slice(0, 2).map(item => item.courseId);
                         for(let courseId of topTwoCourses){
