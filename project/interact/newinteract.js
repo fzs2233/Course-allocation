@@ -65,7 +65,8 @@ const {
 const {
     initializeData,
     switchUser,
-    register
+    register,
+    getTeacherCourseSuitabilityByPython
 } = require("../api/register.js");
 
 const {
@@ -94,6 +95,7 @@ const {
 async function mainMenu() {
     const choices = [
       { name: '一键初始化数据', value: 'initializeData'},
+      { name: '画像评分算法计算老师对课程的适合程度', value: 'getTeacherCourseSuitabilityByPython'},
       { name: '🔑切换用户', value: 'switchUser'},
       { name: '注册教师/智能体/班级/学生', value: 'register'}, 
       { name: '📝创建确定规则的提案', value: 'createTeacherProposal' },
@@ -140,6 +142,11 @@ async function mainMenu() {
       case'initializeData':
           await initializeData();
           break;
+      case'getTeacherCourseSuitabilityByPython':
+            let addr = await currentSigner.getAddress();
+            let teacherId = (await contract.addressToTeacherId(addr)).toNumber();
+            await getTeacherCourseSuitabilityByPython(teacherId);
+            break;
       case'switchUser':
           // console.log(contract)
           let userResult = await switchUser();

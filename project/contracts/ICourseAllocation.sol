@@ -6,6 +6,8 @@ contract ICourseAllocation {
     struct Teacher {
         uint256 id;
         string name;
+        string[] researchDrection;
+        uint256[] paperCount;
         address addr;
         uint256[] assignedCourses;
         uint256[] reallyAssignedCourses;
@@ -191,6 +193,22 @@ contract ICourseAllocation {
         teachers[teacherId].assignedCourses.push(_assignedCourses);
     }
 
+    // 添加教师研究方向
+    function addTeacherResearchDirection(
+        uint256 teacherId,
+        string calldata _researchDirection
+    ) public {
+        teachers[teacherId].researchDrection.push(_researchDirection);
+    }
+
+    // 添加教师研究方向对应的论文数量
+    function addTeacherPaperCount(
+        uint256 teacherId,
+        uint256 _paperCount
+    ) public {
+        teachers[teacherId].paperCount.push(_paperCount);
+    }
+
     // 设置教师已分配课程
     function addTeacherReallyAssignedCourses(
         uint256 teacherId,
@@ -232,6 +250,59 @@ contract ICourseAllocation {
             // 如果没有找到课程 ID，可以抛出一个错误或者进行其他处理
             revert("Course not found");
         }
+    }
+
+    // 移除教师研究方向与论文数量
+    function removeTeacherResearchDirection(
+        uint256 teacherId,
+        string calldata _researchDirection
+    ) public {
+        bool found = false;
+        uint256 indexToRemove;
+
+        // 遍历数组，找到课程 ID 的位置
+        for (
+            uint256 i = 0;
+            i < teachers[teacherId].researchDrection.length;
+            i++
+        ) {
+            if (compareStrings(teacherId, i , _researchDirection)) {
+                found = true;
+                indexToRemove = i;
+                break;
+            }
+        }
+
+        // 如果找到了课程 ID
+        if (found) {
+            // 将要移除的研究方向的元素替换为数组中最后一个元素
+            teachers[teacherId].researchDrection[indexToRemove] = teachers[
+                teacherId
+            ].researchDrection[teachers[teacherId].researchDrection.length - 1];
+            // 移除数组中的最后一个元素
+            teachers[teacherId].researchDrection.pop();
+
+            // 将要移除的论文数量的元素替换为数组中最后一个元素
+            teachers[teacherId].paperCount[indexToRemove] = teachers[
+                teacherId
+            ].paperCount[teachers[teacherId].paperCount.length - 1];
+            // 移除数组中的最后一个元素
+            teachers[teacherId].paperCount.pop();
+
+        } else {
+            // 如果没有找到课程 ID，可以抛出一个错误或者进行其他处理
+            revert("Reacher Direction not found");
+        }
+    }
+
+    // 比较字符串是否相等
+    function compareStrings(uint256 teacherId, uint256 index, string calldata inputString) public view returns (bool) {
+        // 将存储在 storage 和 calldata 中的字符串转换为 memory
+        bytes32 storedHash = keccak256(abi.encodePacked(teachers[teacherId].researchDrection[index]));
+        bytes32 inputHash = keccak256(abi.encodePacked(inputString));
+
+        // 比较哈希值
+        return storedHash == inputHash;
     }
 
     // 移除教师已分配课程
@@ -606,7 +677,7 @@ contract ICourseAllocation {
             courses[courseId].assignedAgentId.pop();
         } else {
             // 如果没有找到课程 ID，可以抛出一个错误或者进行其他处理
-            revert("Course not found"); 
+            revert("Course not found");
         }
     }
 
@@ -674,6 +745,20 @@ contract ICourseAllocation {
         uint256 _teacherId
     ) public view returns (uint256[] memory) {
         return teachers[_teacherId].reallyAssignedCourses;
+    }
+
+    // 获取老师的研究方向
+    function getTeacherResearchDirection(
+        uint256 _teacherId
+    ) public view returns (string[] memory) {
+        return teachers[_teacherId].researchDrection;
+    }
+
+    // 获取老师的论文数量
+    function getTeacherPaperCount(
+        uint256 _teacherId
+    ) public view returns (uint256[] memory) {
+        return teachers[_teacherId].paperCount;
     }
 
     // 获取智能体分配的课程

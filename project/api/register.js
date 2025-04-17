@@ -33,6 +33,10 @@ let voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
 let classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
 let teacherVoteContract = new ethers.Contract(teacherVoteAddress, teacherVoteABI, currentSigner);
 
+const {
+    sendMultipleData
+} = require("../api/api_py.js");
+
 // 创建课程
 async function initializeCourse(name, Importance) {
     let courseCount = await contract.courseCount();
@@ -382,141 +386,180 @@ async function loginWithIdentity(identityType, ids, userName, message) {
 
 
 async function initializeData() {
-    const accounts = await web3.eth.getAccounts();
-    
-    // 初始化课程
-    console.log("Initializing courses...");
-    const courseCount = await contract.courseCount();
-     if (courseCount == 0) {
-         await initializeCourse("c1", 3);
-         await initializeCourse("c2", 7);
-         await initializeCourse("c3", 1);
-         await initializeCourse("c4", 9);
-         await initializeCourse("c5", 5);
-         await initializeCourse("c6", 2);
-         await initializeCourse("c7", 8);
-         await initializeCourse("c8", 4);
-         await initializeCourse("c9", 6);
-         await initializeCourse("c10", 10);
-     }else {
-         console.log("Courses already initialized. Skipping...");
-     }
+        const accounts = await web3.eth.getAccounts();
+        // 初始化课程
+        console.log("Initializing courses...");
+        const courseCount = await contract.courseCount();
+        if (courseCount == 0) {
+            await initializeCourse("计算机网络", 3);
+            await initializeCourse("数据结构", 7);
+            await initializeCourse("操作系统", 1);
+            await initializeCourse("数据库原理", 9);
+            await initializeCourse("人工智能", 5);
+            await initializeCourse("机器学习", 2);
+            await initializeCourse("计算机图形学", 8);
+            await initializeCourse("编译原理", 4);
+            await initializeCourse("软件工程", 6);
+            await initializeCourse("计算机体系结构", 10);
+        }else {
+            console.log("Courses already initialized. Skipping...");
+        }
      
 
-       // 注册教师
-       console.log("Registering teachers...");
-       await switchAcount(1);
-       await registerTeacher("teacher_1", accounts[1]);
-       await contract.setTeacherValue(1, 800);
-       await contract.setTeacherSuitabilityWeight(1,1);
-       await contract.setTeacherTransferCourseCoins(1, 6);
-       await contract.setAllTeacherCourseSuitability(1, [26,44,65,88,40,37,79,92,14,87]);
-       await contract.setAllTeacherCoursePreferences(1, [35,54,76,80,93,48,64,17,86,70]);
-   
-       await switchAcount(2);
-       await registerTeacher("teacher_2", accounts[2]);
-       await contract.setTeacherValue(2, 1000);
-       await contract.setTeacherSuitabilityWeight(2,2);
-       await contract.setTeacherTransferCourseCoins(2, 6);
-       await contract.setAllTeacherCourseSuitability(2, [51,32,53,34,85,26,37,48,55,43]);
-       await contract.setAllTeacherCoursePreferences(2, [35,74,17,95,57,23,88,46,64,60]);
-   
-       await switchAcount(3);
-       await registerTeacher("teacher_3", accounts[3]);
-       await contract.setTeacherValue(3, 1500);
-       await contract.setTeacherSuitabilityWeight(3,3);
-       await contract.setTeacherTransferCourseCoins(3, 6);
-       await contract.setAllTeacherCourseSuitability(3, [32,31,54,43,68,27,44,72,58,30]);
-       await contract.setAllTeacherCoursePreferences(3, [51,32,83,14,95,76,27,70,45,67]);
-   
-       await switchAcount(4);
-       await registerTeacher("teacher_4", accounts[4]);
-       await contract.setTeacherSuitabilityWeight(4,4);
-       await contract.setTeacherValue(4, 1200);
-       await contract.setTeacherTransferCourseCoins(4, 6);
-       await contract.setAllTeacherCourseSuitability(4, [43,24,35,36,67,18,39,80,61,33]);
-       await contract.setAllTeacherCoursePreferences(4, [22,63,44,85,66,87,38,79,57,60]);
-   
-       await switchAcount(5);
-       await registerTeacher("teacher_5", accounts[5]);
-       await contract.setTeacherSuitabilityWeight(5,5);
-       await contract.setTeacherValue(5, 1100);
-       await contract.setTeacherTransferCourseCoins(5, 6);
-       await contract.setAllTeacherCourseSuitability(5, [22,43,44,35,100,37,31,32,33,34]);
-       await contract.setAllTeacherCoursePreferences(5, [43,14,75,35,46,67,28,59,59,79]);
-   
-       // 注册智能体
-       console.log("Registering agents...");
-       await switchAcount(6);
-       await registerAgent("agent_1", accounts[6]);
-       await contract.setAllAgentCourseSuitability(1, [85,94,68,27,48,34,37,42,46,14]);
-       await contract.setAgentValue(1,1000);
-   
-       await switchAcount(7);
-       await registerAgent("agent_2", accounts[7]);
-       await contract.setAllAgentCourseSuitability(2, [43,86,90,47,24,36,32,45,16,34]);
-       await contract.setAgentValue(2,1200);
+        // 注册教师
+        console.log("Registering teachers...");
+        await switchAcount(1);
+        await registerTeacher("teacher_1", accounts[1]);
+        await contract.setTeacherValue(1, 800);
+        await contract.setTeacherSuitabilityWeight(1,1);
+        await contract.setTeacherTransferCourseCoins(1, 6);
+        // await contract.setAllTeacherCourseSuitability(1, [26,44,65,88,40,37,79,92,14,87]);
+        // await contract.setAllTeacherCoursePreferences(1, [35,54,76,80,93,48,64,17,86,70]);
 
-    // 注册班级
-    console.log("Registering classes...");
-    await switchAcount(8);
-    await registerClass("class_1", accounts[8]);
-    console.log("班级1注册完毕");
+        await switchAcount(2);
+        await registerTeacher("teacher_2", accounts[2]);
+        await contract.setTeacherValue(2, 1000);
+        await contract.setTeacherSuitabilityWeight(2,2);
+        await contract.setTeacherTransferCourseCoins(2, 6);
+        // await contract.setAllTeacherCourseSuitability(2, [51,32,53,34,85,26,37,48,55,43]);
+        // await contract.setAllTeacherCoursePreferences(2, [35,74,17,95,57,23,88,46,64,60]);
 
-    await switchAcount(10);
-    await registerStudent(1, "student_1", accounts[10]);
-    console.log("student_1 (class_1) 注册完毕");
+        await switchAcount(3);
+        await registerTeacher("teacher_3", accounts[3]);
+        await contract.setTeacherValue(3, 1500);
+        await contract.setTeacherSuitabilityWeight(3,3);
+        await contract.setTeacherTransferCourseCoins(3, 6);
+        // await contract.setAllTeacherCourseSuitability(3, [32,31,54,43,68,27,44,72,58,30]);
+        // await contract.setAllTeacherCoursePreferences(3, [51,32,83,14,95,76,27,70,45,67]);
 
-    await switchAcount(11);
-    await registerStudent(1, "student_2", accounts[11]);
-    console.log("student_2 (class_1) 注册完毕");
+        await switchAcount(4);
+        await registerTeacher("teacher_4", accounts[4]);
+        await contract.setTeacherSuitabilityWeight(4,4);
+        await contract.setTeacherValue(4, 1200);
+        await contract.setTeacherTransferCourseCoins(4, 6);
+        // await contract.setAllTeacherCourseSuitability(4, [43,24,35,36,67,18,39,80,61,33]);
+        // await contract.setAllTeacherCoursePreferences(4, [22,63,44,85,66,87,38,79,57,60]);
+
+        await switchAcount(5);
+        await registerTeacher("teacher_5", accounts[5]);
+        await contract.setTeacherSuitabilityWeight(5,5);
+        await contract.setTeacherValue(5, 1100);
+        await contract.setTeacherTransferCourseCoins(5, 6);
+        // await contract.setAllTeacherCourseSuitability(5, [22,43,44,35,100,37,31,32,33,34]);
+        // await contract.setAllTeacherCoursePreferences(5, [43,14,75,35,46,67,28,59,59,79]);
     
-    await switchAcount(12);
-    await registerStudent(1, "student_3", accounts[12]);
-    console.log("student_3 (class_1) 注册完毕");
+        // 教师1
+        await contract.addTeacherResearchDirection(1, '大规模视频分析与理解');
+        await contract.addTeacherPaperCount(1, 5);
+        await contract.addTeacherResearchDirection(1, '视频风格迁移');
+        await contract.addTeacherPaperCount(1, 3);
+        await contract.addTeacherResearchDirection(1, '计算机视觉');
+        await contract.addTeacherPaperCount(1, 4);
 
-    await switchAcount(13);
-    await registerStudent(1, "student_4", accounts[13]);
-    console.log("student_4 (class_1) 注册完毕");
+        // 教师2
+        await contract.addTeacherResearchDirection(2, '统计机器学习');
+        await contract.addTeacherPaperCount(2, 6);
+        await contract.addTeacherResearchDirection(2, '信息检索');
+        await contract.addTeacherPaperCount(2, 5);
+        await contract.addTeacherResearchDirection(2, '自然语言处理');
+        await contract.addTeacherPaperCount(2, 4);
 
-    await switchAcount(14);
-    await registerStudent(1, "student_5", accounts[14]);
-    console.log("student_5 (class_1) 注册完毕");
+        // 教师3
+        await contract.addTeacherResearchDirection(3, '人工智能');
+        await contract.addTeacherPaperCount(3, 7);
+        await contract.addTeacherResearchDirection(3, '机器学习');
+        await contract.addTeacherPaperCount(3, 8);
+        await contract.addTeacherResearchDirection(3, '数据挖掘');
+        await contract.addTeacherPaperCount(3, 5);
 
-    await switchAcount(9);
-    await registerClass("class_2", accounts[9]);
-    console.log("班级2注册完毕");
+        // 教师4
+        await contract.addTeacherResearchDirection(4, '机器学习基础理论');
+        await contract.addTeacherPaperCount(4, 9);
+        await contract.addTeacherResearchDirection(4, '高效算法');
+        await contract.addTeacherPaperCount(4, 6);
+        await contract.addTeacherResearchDirection(4, '应用研究');
+        await contract.addTeacherPaperCount(4, 5);
 
-    await switchAcount(15);
-    await registerStudent(2, "student_6", accounts[15]);
-    console.log("student_6 (class_2) 注册完毕");
+        // 教师5
+        await contract.addTeacherResearchDirection(5, '自然语言处理');
+        await contract.addTeacherPaperCount(5, 10);
+        await contract.addTeacherResearchDirection(5, '机器学习');
+        await contract.addTeacherPaperCount(5, 7);
+        await contract.addTeacherResearchDirection(5, '社会与人文计算');
+        await contract.addTeacherPaperCount(5, 5);
 
-    await switchAcount(16);
-    await registerStudent(2, "student_7", accounts[16]);
-    console.log("student_7 (class_2) 注册完毕");
+        // 注册智能体
+        console.log("Registering agents...");
+        await switchAcount(6);
+        await registerAgent("agent_1", accounts[6]);
+        await contract.setAllAgentCourseSuitability(1, [85,94,68,27,48,34,37,42,46,14]);
+        await contract.setAgentValue(1,1000);
     
-    await switchAcount(17);
-    await registerStudent(2, "student_8", accounts[17]);
-    console.log("student_8 (class_2) 注册完毕");
+        await switchAcount(7);
+        await registerAgent("agent_2", accounts[7]);
+        await contract.setAllAgentCourseSuitability(2, [43,86,90,47,24,36,32,45,16,34]);
+        await contract.setAgentValue(2,1200);
 
-    await switchAcount(18);
-    await registerStudent(2, "student_9", accounts[18]);
-    console.log("student_9 (class_2) 注册完毕");
-    
-    await switchAcount(19);
-    await registerStudent(2, "student_10", accounts[19]);
-    console.log("student_10 (class_2) 注册完毕");
-    
-    console.log("Registering supervisors...");
-    await switchAcount(20);
-    await registerSupervisor("supervisor_1", accounts[20]);
-    console.log("supervisor_1 注册完毕");
+        // 注册班级
+        console.log("Registering classes...");
+        await switchAcount(8);
+        await registerClass("class_1", accounts[8]);
+        console.log("班级1注册完毕");
 
-    await switchAcount(21);
-    await registerSupervisor("supervisor_2", accounts[21]);
-    console.log("supervisor_2 注册完毕");
+        await switchAcount(10);
+        await registerStudent(1, "student_1", accounts[10]);
+        console.log("student_1 (class_1) 注册完毕");
 
-    await switchAcount(0);
+        await switchAcount(11);
+        await registerStudent(1, "student_2", accounts[11]);
+        console.log("student_2 (class_1) 注册完毕");
+        
+        await switchAcount(12);
+        await registerStudent(1, "student_3", accounts[12]);
+        console.log("student_3 (class_1) 注册完毕");
+
+        await switchAcount(13);
+        await registerStudent(1, "student_4", accounts[13]);
+        console.log("student_4 (class_1) 注册完毕");
+
+        await switchAcount(14);
+        await registerStudent(1, "student_5", accounts[14]);
+        console.log("student_5 (class_1) 注册完毕");
+
+        await switchAcount(9);
+        await registerClass("class_2", accounts[9]);
+        console.log("班级2注册完毕");
+
+        await switchAcount(15);
+        await registerStudent(2, "student_6", accounts[15]);
+        console.log("student_6 (class_2) 注册完毕");
+
+        await switchAcount(16);
+        await registerStudent(2, "student_7", accounts[16]);
+        console.log("student_7 (class_2) 注册完毕");
+        
+        await switchAcount(17);
+        await registerStudent(2, "student_8", accounts[17]);
+        console.log("student_8 (class_2) 注册完毕");
+
+        await switchAcount(18);
+        await registerStudent(2, "student_9", accounts[18]);
+        console.log("student_9 (class_2) 注册完毕");
+        
+        await switchAcount(19);
+        await registerStudent(2, "student_10", accounts[19]);
+        console.log("student_10 (class_2) 注册完毕");
+        
+        console.log("Registering supervisors...");
+        await switchAcount(20);
+        await registerSupervisor("supervisor_1", accounts[20]);
+        console.log("supervisor_1 注册完毕");
+
+        await switchAcount(21);
+        await registerSupervisor("supervisor_2", accounts[21]);
+        console.log("supervisor_2 注册完毕");
+
+        await switchAcount(0);
 }
 
 async function switchAcount(Index){
@@ -526,9 +569,72 @@ async function switchAcount(Index){
     classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
 }
 
+async function getTeacherCourseSuitabilityByPython(teacherId){
+    // 获取教师研究方向
+    let reseacherDirection = await contract.getTeacherResearchDirection(teacherId);
+    //获取教师每个方向的论文数量
+    let paperCount = await contract.getTeacherPaperCount(teacherId);
+    // 获取教师的课程ID
+    let courseIds = await contract.getCourseIds();
+    courseIds = courseIds.map(id => id.toNumber());
+    // 获取所有的课程名字
+    let courseName = [];
+    // 上个学期的课程评分
+    let courseScore = [];
+    for(let index = 0; index < courseIds.length; index++){
+        let course = await contract.courses(courseIds[index]);
+        courseName.push(course.name)
+        let totalcourseScore = (await contract.courseScores(courseIds[index])).totalScore;
+        totalcourseScore = Number(totalcourseScore);
+        if(totalcourseScore == 0) totalcourseScore = 100;
+        courseScore.push(totalcourseScore)
+    }
+    paperCount = paperCount.map(id => id.toNumber());
+    // 获取教师对所有课程的适合程度
+    let result = await sendMultipleData(courseName, reseacherDirection, paperCount);
+
+    for (const key in result) {
+        if (result.hasOwnProperty(key)) {
+            // 将字符串转换为浮点数
+            const floatValue = parseFloat(result[key]);
+            // 检查是否为有效数字
+            if (!isNaN(floatValue)) {
+                // 转换为整数（这里使用 Math.floor 向下取整）
+                result[key] = Math.floor(floatValue);
+            }
+        }
+    }
+    // console.log(courseName)
+    // console.log(result)
+    // 按照 courseName 的顺序排列 result
+    const orderedResults = [];
+    for (const course of courseName) {
+    if (result.hasOwnProperty(course)) {
+        orderedResults.push(result[course]);
+    } else {
+        console.error(`课程 "${course}" 在 result 中不存在`);
+    }
+    }
+
+    // console.log(orderedResults);
+    // console.log(courseScore)
+    let table = {}
+    for(let index = 0; index < orderedResults.length; index++){
+        orderedResults[index] = Math.floor(0.8 * orderedResults[index] + 0.2 * courseScore[index]);
+        table[courseName[index]] = orderedResults[index];
+    }
+    await contract.setAllTeacherCourseSuitability(teacherId, orderedResults);
+    console.table(table);
+    return {
+        code: 0,
+        message: `已经通过画像评分算法计算得到教师 ${teacherId} 对课程的适合程度，并保存`
+    }
+}
+
 module.exports = {
     initializeData,
     switchUser,
     initializeCourse,
     register,
+    getTeacherCourseSuitabilityByPython,
 }
