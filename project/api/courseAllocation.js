@@ -513,7 +513,7 @@ async function assignCourseToTeacherWithoutCourse(courseId, teacherId) {
         }
     }
     if(assignedTeacher.length == 1){
-        let result = await removeTeacherCourse(assignedTeacher[0], courseId);
+        let result = await removeTeacherCourse(assignedTeacher[0], courseId); // 这里只是删除了老师表面的课程，并没有删除老师真实有的课程
         if (result.code!== 0) {
             console.log(result.message);
         }
@@ -545,7 +545,7 @@ async function endProposalAndAssignCourseforWithoutteacher(proposalId) {
         老师ID: Number(teacherId),
         票数: Number(teacherIdsVoteCount[index])
     }));
-    // console.table(tableData);
+    console.table(tableData);
     // 找出最大票数
     const maxVotes = Math.max(...teacherIdsVoteCount.map(v => v.toNumber()));
     
@@ -578,7 +578,7 @@ async function AssignedTeacherCourse(teacherId, courseId){
     // 获取教师已分配的课程
     let courses = await contract.getTeacherAssignedCourses(teacherId);
     courses = courses.map(id => id.toNumber());
-
+    courseId = Number(courseId);
     // 判断 courseId 是否在 courses 数组中
     if (courses.includes(courseId)) {
         // console.log(`Course ${courseId} is assigned to teacher ${teacherId}`);
@@ -600,7 +600,7 @@ async function AssignedTeacherReallyCourse(teacherId, courseId){
     // 获取教师已分配的课程
     let courses = await contract.getTeacherReallyAssignedCourses(teacherId);
     courses = courses.map(id => id.toNumber());
-
+    courseId = Number(courseId);
     // 判断 courseId 是否在 courses 数组中
     if (courses.includes(courseId)) {
         // console.log(`Course ${courseId} is assigned to teacher ${teacherId}`);
@@ -622,7 +622,7 @@ async function AssignedAgentCourse(agentId, courseId){
     // 获取教师已分配的课程
     let courses = await contract.getAgentAssignedCourses(agentId);
     courses = courses.map(id => id.toNumber());
-
+    courseId = Number(courseId);
     // 判断 courseId 是否在 courses 数组中
     if (courses.includes(courseId)) {
         // console.log(`Course ${courseId} is assigned to agent ${agentId}`);
@@ -645,7 +645,7 @@ async function removeTeacherCourse(teacherId, courseId){
     // 获取教师已分配的课程
     let courses = await contract.getTeacherAssignedCourses(teacherId);
     courses = courses.map(id => id.toNumber());
-
+    courseId = Number(courseId);
     // 判断 courseId 是否在 courses 数组中
     if (!courses.includes(courseId)) {
         // console.log(`Course ${courseId} is not assigned to teacher ${teacherId}`);
