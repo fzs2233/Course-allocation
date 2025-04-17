@@ -32,7 +32,7 @@ contract TeacherVote is Vote {
         uint256 indexed courseId,
         uint256 suitabilityProposalId
     );
-    event ProposalExecuted(uint256 indexed proposalId, string Choice);
+    event ProposalExecuted(uint256 indexed proposalId, string Choice, uint256 winningOption);
 
     modifier onlyTeacher() {
         require(
@@ -84,7 +84,7 @@ contract TeacherVote is Vote {
             courseId,
             suitabilityProposalId
         );
-        proposalCount++;
+        proposalCount++;        
         return proposalCount;
     }
 
@@ -174,7 +174,7 @@ contract TeacherVote is Vote {
         require(!p.executed, "Already executed");
 
         // 获取投票结果
-        (uint256 winningOption, ) = endVote(p.suitabilityProposalId);
+        (uint256 winningOption, ) = endVote(proposalId);
 
         string memory Choice;
         if (winningOption == 2) {
@@ -185,7 +185,7 @@ contract TeacherVote is Vote {
         courseAllocation.setScoreType(Choice);
 
         p.executed = true;
-        emit ProposalExecuted(proposalId, Choice);
+        emit ProposalExecuted(proposalId, Choice, winningOption);
     }
 
     function endVote(
@@ -194,7 +194,7 @@ contract TeacherVote is Vote {
         ProposalBase storage p = proposals[_proposalId];
 
         // 计算最终的投票选项：如果同意投票数大于反对投票数，选择 "适合"
-        uint256 winningOption = (p.agreeCount > p.disagreeCount) ? 2 : 1; // 2 代表适合，1 代表不适合  1性价比 2suit preference
+        uint256 winningOption = (p.agreeCount > p.disagreeCount) ? 1 : 2; // 2 代表适合，1 代表不适合  1性价比 2suit preference
         return (winningOption, p.agreeCount + p.disagreeCount); // 返回选项和总票数
     }
 

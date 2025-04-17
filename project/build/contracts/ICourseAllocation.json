@@ -45069,12 +45069,12 @@
     "5777": {
       "events": {},
       "links": {},
-      "address": "0x9A05bb999a6505381A4aF499e67731F0Ab1C29ba",
-      "transactionHash": "0x91cc05ec886752083fa8bc6c99d0e63046b7acbe28344a2b914c6e58cb5b955e"
+      "address": "0xe192c51Df7fb2Fe05d5F4504108511d766F9da81",
+      "transactionHash": "0x5ba5ea0d26dbe7ffddee347c47f145d57dcca4ac5a1ab45cecd5db30b1fd9d05"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2025-04-17T08:52:55.416Z",
+  "updatedAt": "2025-04-17T10:14:48.536Z",
   "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",
