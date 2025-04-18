@@ -7711,7 +7711,7 @@
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 2903,
+                      "id": 2892,
                       "mutability": "mutable",
                       "name": "classId",
                       "nameLocation": "6386:7:1",

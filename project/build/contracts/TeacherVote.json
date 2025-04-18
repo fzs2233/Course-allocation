@@ -21441,8 +21441,8 @@
                         "referencedDeclaration": 3882,
                         "src": "6699:6:2",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_string_memory_ptr",
-                          "typeString": "string memory"
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
                         }
                       },
                       "nodeType": "Assignment",
@@ -21453,20 +21453,20 @@
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
-                        "kind": "string",
+                        "kind": "number",
                         "lValueRequested": false,
                         "nodeType": "Literal",
                         "src": "6708:20:2",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_stringliteral_cddaf3c549516bbd659c8c3f75168308324d522316907cea65c2c65840af8931",
-                          "typeString": "literal_string \"Cost-effectiveness\""
+                          "typeIdentifier": "t_rational_1_by_1",
+                          "typeString": "int_const 1"
                         },
-                        "value": "Cost-effectiveness"
+                        "value": "1"
                       },
                       "src": "6699:29:2",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_string_memory_ptr",
-                        "typeString": "string memory"
+                        "typeIdentifier": "t_bool",
+                        "typeString": "bool"
                       }
                     },
                     "id": 3895,
@@ -21513,10 +21513,10 @@
                             "nodeType": "Literal",
                             "src": "6657:24:2",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_stringliteral_7767fc165140ac3738151d6325c072fc91927d19a3f6b5559514175a220b61ab",
-                              "typeString": "literal_string \"Suitability&Preference\""
+                              "typeIdentifier": "t_stringliteral_cddaf3c549516bbd659c8c3f75168308324d522316907cea65c2c65840af8931",
+                              "typeString": "literal_string \"Cost-effectiveness\""
                             },
-                            "value": "Suitability&Preference"
+                            "value": "Cost-effectiveness"
                           },
                           "src": "6648:33:2",
                           "typeDescriptions": {
@@ -21964,7 +21964,7 @@
                             }
                           },
                           "nodeType": "BinaryOperation",
-                          "operator": ">",
+                          "operator": ">=",
                           "rightExpression": {
                             "expression": {
                               "id": 3936,
@@ -22578,7 +22578,61 @@
                     "id": 3957,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "7512:7:2",
+                    "src": "7517:7:2",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 3748,
+                  "mutability": "mutable",
+                  "name": "disagree",
+                  "nameLocation": "7540:8:2",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3771,
+                  "src": "7532:16:2",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 3747,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "7532:7:2",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 3750,
+                  "mutability": "mutable",
+                  "name": "total",
+                  "nameLocation": "7558:5:2",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3771,
+                  "src": "7550:13:2",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 3749,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "7550:7:2",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
