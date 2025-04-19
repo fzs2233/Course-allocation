@@ -177,9 +177,11 @@ contract TeacherVote is Vote {
         (uint256 winningOption, ) = endVote(proposalId);
 
         string memory Choice;
-        if (winningOption == 2) {
+        if (winningOption == 1) {
+            Choice = "Cost-effectiveness";
+        } else if (winningOption == 2) {
             Choice = "Suitability&Preference";
-        } else Choice = "Cost-effectiveness";
+        }
 
         // 更新课程状态
         courseAllocation.setScoreType(Choice);
@@ -194,7 +196,7 @@ contract TeacherVote is Vote {
         ProposalBase storage p = proposals[_proposalId];
 
         // 计算最终的投票选项：如果同意投票数大于反对投票数，选择 "适合"
-        uint256 winningOption = (p.agreeCount > p.disagreeCount) ? 1 : 2; // 2 代表适合，1 代表不适合  1性价比 2suit preference
+        uint256 winningOption = (p.agreeCount >= p.disagreeCount) ? 1 : 2; // 2 代表适合，1 代表不适合  2性价比 1suit preference
         return (winningOption, p.agreeCount + p.disagreeCount); // 返回选项和总票数
     }
 
