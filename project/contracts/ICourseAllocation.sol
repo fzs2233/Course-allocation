@@ -43,6 +43,7 @@ contract ICourseAllocation {
         uint256 importance;
         uint256[] assignedTeacherId;
         uint256[] assignedAgentId;
+        uint256 courseDifficulty;
     }
 
     struct CourseScore {
@@ -54,6 +55,7 @@ contract ICourseAllocation {
         mapping(uint256 => uint256) giveScoreTeacherIdExists;
         uint256[] supervisorScores;
         mapping(uint256 => uint256) giveScoreSupervisorIdExists;
+        uint256 machineScore; // 机器评分
     }
     // 选择性价比或者加权分
     string public ScoreTypeChioce;
@@ -580,6 +582,16 @@ contract ICourseAllocation {
     // 设置课程重要性
     function setCourseImportance(uint256 courseId, uint256 _importance) public {
         courses[courseId].importance = _importance;
+    }
+
+    // 设置课程难度
+    function setCourseDifficulty(uint256 courseId, uint256 _courseDifficulty) public {
+        courses[courseId].courseDifficulty = _courseDifficulty;
+    }
+
+    // 设置机器评分
+    function setmachineScore(uint256 courseId, uint256 _machineScore) public {
+        courseScores[courseId].machineScore = _machineScore;
     }
 
     // 管理员设置课程重要程度
