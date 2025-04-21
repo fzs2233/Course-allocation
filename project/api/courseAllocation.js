@@ -1109,6 +1109,7 @@ async function preprocessConflictCourses() {
                         });
                         // 按照 score 降序排序
                         coursesWithScores.sort((a, b) => b.score - a.score);
+                        console.log(coursesWithScores);
                         // 选出最大的两个 courseId
                         const topTwoCourses = coursesWithScores.slice(0, 2).map(item => item.courseId);
                         for(let courseId of topTwoCourses){

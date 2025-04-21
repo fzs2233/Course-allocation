@@ -32,7 +32,48 @@ await contract.setAllTeacherCourseSuitability(4, [73,64,65,66,97,68,79,80,81,63]
 await contract.setAllTeacherCoursePreferences(4, [82,63,64,85,66,87,78,79,87,60]);
 
 await contract.setAllTeacherCourseSuitability(5, [62,83,84,75,100,77,71,72,73,74]);
-await contract.setAllTeacherCoursePreferences(5, [73,64,75,75,76,67,68,59,59,79]);
+await contract.setAllTeacherCoursePreferences(5, [73,64,75,75,76,67,68,79,79,89]);
+
+
+await contract.setAllAgentCourseSuitability(1, [75,79,72,51,68,63,70,76,66,50]);
+await contract.setAllAgentCourseSuitability(2, [66,48,53,50,57,54,51,57,58,59]);
+
+
+// 老师意愿低
+await contract.setAllTeacherCourseSuitability(1, [60,72,82,94,70,68,89,96,57,93]);
+await contract.setAllTeacherCoursePreferences(1, [55,54,46,20,53,48,44,40,46,40]);
+
+await contract.setAllTeacherCourseSuitability(2, [71,62,73,64,85,66,77,88,95,73]);
+await contract.setAllTeacherCoursePreferences(2, [35,44,47,55,47,43,48,46,44,40]);
+
+await contract.setAllTeacherCourseSuitability(3, [62,61,74,73,68,77,64,72,58,70]);
+await contract.setAllTeacherCoursePreferences(3, [31,42,43,34,55,46,47,40,45,37]);
+
+await contract.setAllTeacherCourseSuitability(4, [73,64,65,66,97,68,79,80,81,63]);
+await contract.setAllTeacherCoursePreferences(4, [42,33,24,45,26,27,28,39,47,10]);
+
+await contract.setAllTeacherCourseSuitability(5, [62,83,84,75,100,77,71,72,73,74]);
+await contract.setAllTeacherCoursePreferences(5, [43,34,45,45,46,37,38,49,49,49]);
+
+
+await contract.setAllAgentCourseSuitability(1, [75,79,72,51,68,63,70,76,66,50]);
+await contract.setAllAgentCourseSuitability(2, [66,48,53,50,57,54,51,57,58,59]);
+
+// 智能体都没有课程，只有两位老师在不同课程意愿和能力高，其他老师意愿低
+await contract.setAllTeacherCourseSuitability(1, [80,81,82,94,70,68,89,96,57,93]);
+await contract.setAllTeacherCoursePreferences(1, [95,94,66,62,93,48,44,40,46,40]);
+
+await contract.setAllTeacherCourseSuitability(2, [71,62,73,64,85,86,87,88,95,73]);
+await contract.setAllTeacherCoursePreferences(2, [35,44,47,55,47,83,88,66,64,80]);
+
+await contract.setAllTeacherCourseSuitability(3, [62,61,74,73,68,77,64,72,58,70]);
+await contract.setAllTeacherCoursePreferences(3, [31,42,43,34,55,46,47,40,45,37]);
+
+await contract.setAllTeacherCourseSuitability(4, [73,64,65,66,97,68,79,80,81,63]);
+await contract.setAllTeacherCoursePreferences(4, [42,33,24,45,26,27,28,39,47,10]);
+
+await contract.setAllTeacherCourseSuitability(5, [62,83,84,75,100,77,71,72,73,74]);
+await contract.setAllTeacherCoursePreferences(5, [43,34,45,45,46,37,38,49,49,49]);
 
 
 await contract.setAllAgentCourseSuitability(1, [75,79,72,51,68,63,70,76,66,50]);

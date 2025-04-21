@@ -190,7 +190,20 @@ contract ICourseAllocation {
         uint256 teacherId,
         uint256 _assignedCourses
     ) public {
-        teachers[teacherId].assignedCourses.push(_assignedCourses);
+        bool found = false;
+        for (uint256 i = 0; i < teachers[teacherId].assignedCourses.length; i++) {
+            // require(
+            //     teachers[teacherId].assignedCourses[i] != _assignedCourses,
+            //     "Course already assigned"
+            // ); 
+            if(teachers[teacherId].assignedCourses[i] == _assignedCourses){
+               found = true;
+               break; 
+            }
+        }
+        if(!found) {
+            teachers[teacherId].assignedCourses.push(_assignedCourses);
+        }
     }
 
     // 添加教师研究方向
@@ -214,7 +227,20 @@ contract ICourseAllocation {
         uint256 teacherId,
         uint256 _assignedCourses
     ) public {
-        teachers[teacherId].reallyAssignedCourses.push(_assignedCourses);
+        bool found = false;
+        for (uint256 i = 0; i < teachers[teacherId].reallyAssignedCourses.length; i++) {
+            // require(
+            //     teachers[teacherId].reallyAssignedCourses[i]!= _assignedCourses,
+            //     "Course already assigned"
+            // ); 
+            if(teachers[teacherId].reallyAssignedCourses[i] == _assignedCourses){
+                found = true;
+                break;
+            }
+        }
+        if(!found) {
+            teachers[teacherId].reallyAssignedCourses.push(_assignedCourses); 
+        }
     }
 
     // 移除教师已分配课程
@@ -470,7 +496,20 @@ contract ICourseAllocation {
         uint256 agentId,
         uint256 _assignedCourses
     ) public {
-        agents[agentId].assignedCourses.push(_assignedCourses);
+        bool found = false;
+        for (uint256 i = 0; i < agents[agentId].assignedCourses.length; i++) {
+            // require(
+            //     agents[agentId].assignedCourses[i]!= _assignedCourses,
+            //     "Course already assigned"
+            // );
+            if(agents[agentId].assignedCourses[i] == _assignedCourses){
+               found = true;
+               break; 
+            } 
+        }
+        if(!found) {
+            agents[agentId].assignedCourses.push(_assignedCourses); 
+        }
     }
 
     // 移除智能体已分配课程
@@ -605,7 +644,20 @@ contract ICourseAllocation {
         uint256 courseId,
         uint256 _teacherId
     ) public {
-        courses[courseId].assignedTeacherId.push(_teacherId);
+        bool found = false;
+        for (uint256 i = 0; i < courses[courseId].assignedTeacherId.length; i++) {
+            // require(
+            //     courses[courseId].assignedTeacherId[i]!= _teacherId,
+            //     "Teacher already assigned"
+            // );
+            if (courses[courseId].assignedTeacherId[i] == _teacherId) {
+                found = true;
+                break; 
+            }
+        }
+        if(!found) {
+            courses[courseId].assignedTeacherId.push(_teacherId); 
+        }
     }
 
     // 添加课程分配的智能体ID
@@ -613,7 +665,20 @@ contract ICourseAllocation {
         uint256 courseId,
         uint256 _agentId
     ) public {
-        courses[courseId].assignedAgentId.push(_agentId);
+        bool found = false;
+        for (uint256 i = 0; i < courses[courseId].assignedAgentId.length; i++) {
+            // require(
+            //     courses[courseId].assignedAgentId[i]!= _agentId,
+            //     "Agent already assigned"
+            // );
+            if (courses[courseId].assignedAgentId[i] == _agentId) {
+                found = true;
+                break;
+            } 
+        }
+        if(!found) {
+            courses[courseId].assignedAgentId.push(_agentId); 
+        }
     }
 
     // 移除课程已分配的老师
