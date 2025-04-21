@@ -567,6 +567,29 @@ async function machineRating(){
 
 }
 
+async function machineRating_auto(courseId){
+    let studentIds = await classContract.getStudentIds();
+    studentIds = studentIds.map(id => id.toNumber());
+    
+    // 获取所有学生的成绩
+    let courseScores = [];
+    for(let studentId of studentIds){
+        let score = Number(await classContract.getStudentCourseScore(studentId, courseId));
+        courseScores.push(score);
+    }
+    // console.log(courseScores)
+    // 获取课程难度
+    let courseDifficulty = Number((await contract.courses(courseId)).courseDifficulty);
+    let machineRate = await getMachineRatingPython(courseScores, courseDifficulty);
+    await contract.setmachineScore(courseId, machineRate);
+    // console.log(`The machine rating for course ${courseId} is ${machineRate}`)
+    return {
+        code: 0,
+        message: `The machine rating for course ${courseId} is ${machineRate}`
+    }
+
+}
+
 module.exports = {
     giveScoreByTeacher,
     giveScoreByAgentSelf,
@@ -576,6 +599,7 @@ module.exports = {
     calculateCourseTotalScore,
     switchCurrentSigner_courseScore,
     examineScore,
-    machineRating
+    machineRating,
+    machineRating_auto
 };
 // main();

@@ -90,6 +90,25 @@ async function init_teacherVote() {
     console.log(`教师投票成功：提案ID ${answer.proposalId}`);
 }
 
+async function init_teacherVote_auto(proposalId, isSuitable) {
+
+    // 获取当前账户地址
+    const addr = await currentSigner.getAddress();
+    const teacherId = await contract.addressToTeacherId(addr);
+    console.log("当前账户地址:", addr);
+    console.log("对应教师ID:", teacherId.toString());
+
+    // 提交投票：只提交提案ID和选项（1或0）
+    const tx = await teacherVoteContract.submitCombinedVote(
+        proposalId, 
+        isSuitable,  // 投票选项 1 或 0
+        GAS_CONFIG
+    );
+    await tx.wait();
+
+    console.log(`教师投票成功：提案ID ${proposalId}`);
+}
+
 let teacherScores = {};
 async function setTeacherSuitabilityForAllCourses(
     _teacherId,
@@ -244,11 +263,35 @@ async function executeProposal() {
     }
 }
 
+async function executeProposal_auto(proposalId) {
+    await teacherVoteContract.setCourseAllocation(contractAddress);
+    const tx = await teacherVoteContract.executeProposal(proposalId, GAS_CONFIG);
+    await tx.wait();
+
+    console.log(`提案 ${proposalId} 已成功结束`);
+
+    // 展示提案投票统计信息
+    try {
+        const [agree, disagree, total] = await teacherVoteContract.getVoteDetails(proposalId);
+        const choice = await contract.ScoreTypeChioce();
+        console.log("提案投票结果:");
+        console.log(`选择Cost-effectiveness的人数: ${agree.toString()}`);
+        console.log(`选择Suitability&Preference的人数: ${disagree.toString()}`);
+        console.log(`参与投票人数: ${total.toString()}`);
+
+        console.log(`最终选择按照：${choice}的规则`);
+    } catch (err) {
+        console.error("提案信息读取失败:", err.message);
+    }
+}
+
 
 module.exports = {
     createProposal,
     init_teacherVote,
+    init_teacherVote_auto,
     executeProposal,
+    executeProposal_auto,
     switchCurrentSigner_test1,
     setTeacherSuitabilityForAllCourses,
     saveAverageSuitability,

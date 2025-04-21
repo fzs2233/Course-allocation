@@ -228,6 +228,24 @@ async function register(){
     return [Name, registerType];
 }
 
+async function register_auto(registerType, Name, classId){
+    let addr = await currentSigner.getAddress();
+    // console.log(addr);
+    if(registerType === 'Student') {
+        await registerStudent(classId, Name, addr);
+    }else if(registerType === 'Teacher'){
+        await registerTeacher(Name, addr);
+    }else if(registerType === 'Agent'){
+        await registerAgent(Name, addr);
+    }else if(registerType === 'Class'){
+        await registerClass(Name, addr);
+    }else if(registerType === 'Supervisor'){
+        await registerSupervisor(Name, addr);
+    }
+    currentName = Name;
+    return [Name, registerType];
+}
+
 async function switchUser(){
     
     const { userType } = await inquirer.prompt([
@@ -265,6 +283,102 @@ async function switchUser(){
             }
         ]);
     }
+    userId = userId.userId;
+    userName = userName.userName;
+    // 按身份类型进行验证
+    if (userType === 'Teacher') {
+        let teacherIds = await contract.getTeacherIds();
+        teacherIds = teacherIds.map( id => id.toNumber() );
+        const [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName] = await loginWithIdentity('Teacher', teacherIds, userName, '切换为教师');
+        if(!nowCurrentSigner){
+            console.log('不存在这个老师')
+            return {
+                code:-1,
+                message: "不存在这个老师"
+            }
+        }
+        [currentSigner, contract, voteContract, classContract, currentName] = [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]
+
+    } else if (userType === 'Agent') {
+        let agentIds = await contract.getAgentIds();
+        agentIds = agentIds.map( id => id.toNumber() );
+        const [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]  = await loginWithIdentity('Agent', agentIds, userName, '切换为智能体');
+        if(!nowCurrentSigner){
+            console.log('不存在这个智能体')
+            return {
+                code:-1,
+                message: "不存在这个智能体"
+            }
+        }
+        [currentSigner, contract, voteContract, classContract, currentName] = [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]
+
+    } else if (userType === 'Class') {
+        let classIds = await classContract.getClassIds();
+        classIds = classIds.map( id => id.toNumber() );
+        const [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]  = await loginWithIdentity('Class', classIds, userName, '切换为班级');
+        if(!nowCurrentSigner){
+            console.log('不存在这个班级')
+            return {
+                code:-1,
+                message: "不存在这个班级"
+            }
+        }
+        [currentSigner, contract, voteContract, classContract, currentName] = [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]
+
+    } else if (userType === 'Student') {
+        let studentIds = await classContract.getStudentIds();
+        studentIds = studentIds.map( id => id.toNumber() );
+        const [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]  = await loginWithIdentity('Student', studentIds, userName, '切换为学生');
+        if(!nowCurrentSigner){
+            console.log('不存在这个学生')
+            return {
+                code:-1,
+                message: "不存在这个学生"
+            }
+        }
+        [currentSigner, contract, voteContract, classContract, currentName] = [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]
+
+    } else if(userType === 'Supervisor'){
+        let supervisorIds = await contract.getSupervisorIds();
+        supervisorIds = supervisorIds.map( id => Number(id) );
+        const [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]  = await loginWithIdentity('Supervisor', supervisorIds, userName, '切换为督导');
+        if(!nowCurrentSigner){
+            console.log('不存在这个督导')
+            return {
+                code:-1,
+                message: "不存在这个督导"
+            } 
+        }
+    } else if(userType === 'Supervisor'){
+        let supervisorIds = await contract.getSupervisorIds();
+        supervisorIds = supervisorIds.map( id => Number(id) );
+        const [ nowCurrentSigner,nowContract,nowVoteContract,nowClassContract,nowCurrentName]  = await loginWithIdentity('Supervisor', supervisorIds, userName, '切换为督导');
+        if(!nowCurrentSigner){
+            console.log('不存在这个督导')
+            return {
+                code:-1,
+                message: "不存在这个督导"
+            } 
+        }
+    } else {
+        currentSigner = provider.getSigner(userId);
+        contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
+        voteContract = new ethers.Contract(voteAddress, voteABI, currentSigner);
+        classContract = new ethers.Contract(classContractAddress, classABI, currentSigner);
+        currentName = `account_${userId}`
+    }
+    let currentAddress = await currentSigner.getAddress();
+    return{
+        code: 0,
+        currentAddress: currentAddress,
+        currentName: currentName,
+        currentType: userType
+    }
+}
+
+async function switchUser_auto(userType, userName, userId){
+    let userName = "user";
+    let userId = -1;
     userId = userId.userId;
     userName = userName.userName;
     // 按身份类型进行验证
@@ -645,7 +759,9 @@ async function getTeacherCourseSuitabilityByPython(teacherId){
 module.exports = {
     initializeData,
     switchUser,
+    switchUser_auto,
     initializeCourse,
     register,
+    register_auto,
     getTeacherCourseSuitabilityByPython,
 }
