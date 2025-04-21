@@ -34,7 +34,7 @@ let classContract = new ethers.Contract(classContractAddress, classABI, currentS
 let teacherVoteContract = new ethers.Contract(teacherVoteAddress, teacherVoteABI, currentSigner);
 
 const {
-    sendMultipleData
+    getTeacherProfessionalCompetence
 } = require("../api/api_py.js");
 
 // 创建课程
@@ -404,7 +404,7 @@ async function initializeData() {
         }else {
             console.log("Courses already initialized. Skipping...");
         }
-     
+    
 
        // 注册教师
        console.log("Registering teachers...");
@@ -561,6 +561,15 @@ async function initializeData() {
         await registerSupervisor("supervisor_2", accounts[21]);
         console.log("supervisor_2 注册完毕");
 
+        // 直接给课程1分数
+        let studentIds = await classContract.getStudentIds();
+        scores = [60,90,76,90,80,70,50,68,98,100]
+        studentIds = studentIds.map(id => id.toNumber());
+        for (let i = 0; i < scores.length; i++) {
+            await classContract.setStudentCourseScore(studentIds[i], 1, scores[i]);
+        }
+        await contract.setCourseDifficulty(1,8);
+
         await switchAcount(0);
 }
 
@@ -593,7 +602,7 @@ async function getTeacherCourseSuitabilityByPython(teacherId){
     }
     paperCount = paperCount.map(id => id.toNumber());
     // 获取教师对所有课程的适合程度
-    let result = await sendMultipleData(courseName, reseacherDirection, paperCount);
+    let result = await getTeacherProfessionalCompetence(courseName, reseacherDirection, paperCount);
 
     for (const key in result) {
         if (result.hasOwnProperty(key)) {

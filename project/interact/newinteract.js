@@ -88,7 +88,8 @@ const {
     giveScoreBySupervisor,
     calculateCourseTotalScore,
     switchCurrentSigner_courseScore,
-    examineScore
+    examineScore,
+    machineRating
 } = require("../api/courseScore.js");
 
 /* 交互菜单系统 */
@@ -124,6 +125,7 @@ async function mainMenu() {
       { name: '老师互评', value:'teacherGiveScore'},
      // { name: '智能体自评', value:'agentGiveScore'},
       { name: '督导评分', value:'supervisorGiveScore'},
+      { name: '机器评分', value:'machineRating'},
       { name: '计算课程总分数', value: 'calculateTotalScore' },
       { name: '打印所有课程的总分数', value: 'printAllScore' },
       { name: '退出', value: 'exit' }
@@ -242,6 +244,9 @@ async function mainMenu() {
           break;
       case 'supervisorGiveScore':
           await supervisorGiveScore();
+          break;
+      case 'machineRating':
+          console.log(await machineRating());
           break;
       case 'calculateTotalScore':
           await calculateTotalScore();

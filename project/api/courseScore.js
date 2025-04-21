@@ -1,6 +1,7 @@
 const { ethers } = require("ethers");
 const fs = require("fs");
 require('dotenv').config({ path: './interact/.env' });
+const inquirer = require('inquirer');
 const Web3 = require("web3");
 const web3 = new Web3("http://127.0.0.1:7545");
 
@@ -32,6 +33,10 @@ const scoreMax = 100;
 const {
     printAssignments,
 } = require("../api/courseAllocation.js");
+
+const {
+    getMachineRatingPython
+} = require("../api/api_py.js");
 
 // 老师互评,一次把除自己外所有课程的分数都填好
 async function giveScoreByTeacher(teacherAddress, courseIds, scores) {
@@ -530,6 +535,38 @@ async function main() {
         console.log(`课程 ${courseIds[i]} 的总评分: ${totalScore}`); 
     }
 }
+
+async function machineRating(){
+    let { courseId } = await inquirer.prompt([
+        {
+          type: 'number',
+          name: 'courseId',
+          message: `请输入课程ID:`,
+        }
+    ])
+
+    let studentIds = await classContract.getStudentIds();
+    studentIds = studentIds.map(id => id.toNumber());
+    
+    // 获取所有学生的成绩
+    let courseScores = [];
+    for(let studentId of studentIds){
+        let score = Number(await classContract.getStudentCourseScore(studentId, courseId));
+        courseScores.push(score);
+    }
+    // console.log(courseScores)
+    // 获取课程难度
+    let courseDifficulty = Number((await contract.courses(courseId)).courseDifficulty);
+    let machineRate = await getMachineRatingPython(courseScores, courseDifficulty);
+    await contract.setmachineScore(courseId, machineRate);
+    // console.log(`The machine rating for course ${courseId} is ${machineRate}`)
+    return {
+        code: 0,
+        message: `The machine rating for course ${courseId} is ${machineRate}`
+    }
+
+}
+
 module.exports = {
     giveScoreByTeacher,
     giveScoreByAgentSelf,
@@ -538,6 +575,7 @@ module.exports = {
     giveScoreBySupervisor,
     calculateCourseTotalScore,
     switchCurrentSigner_courseScore,
-    examineScore
+    examineScore,
+    machineRating
 };
 // main();
