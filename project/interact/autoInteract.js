@@ -671,7 +671,7 @@ async function handleTransferCourse(courseId,targetId) {
     }
 }
 
-async function voteForProposal(proposalId,choice = -1){
+async function voteForProposal(proposalId,choice=-1){
     // const {proposalId} = await inquirer.prompt([
     //     {
     //     type: 'number',

@@ -377,8 +377,6 @@ async function switchUser(){
 }
 
 async function switchUser_auto(userType, userName, userId){
-    userId = -1;
-
     // 按身份类型进行验证
     if (userType === 'Teacher') {
         let teacherIds = await contract.getTeacherIds();
