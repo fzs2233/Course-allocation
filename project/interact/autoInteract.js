@@ -671,7 +671,7 @@ async function handleTransferCourse(courseId,targetId) {
     }
 }
 
-async function voteForProposal(proposalId,choice){
+async function voteForProposal(proposalId,choice = -1){
     // const {proposalId} = await inquirer.prompt([
     //     {
     //     type: 'number',
@@ -694,15 +694,19 @@ async function voteForProposal(proposalId,choice){
         // ]);
         let currentAddress = await currentSigner.getAddress();
         if(currentType === 'Teacher'){
-            console.log(await teacherVote(currentAddress, proposalId, choice));
+            return(await teacherVote(currentAddress, proposalId, choice));
         }else{
-            console.log(await studentVote(currentAddress, proposalId, choice));
+            return(await studentVote(currentAddress, proposalId, choice));
         }
     }else if(currentType === 'Agent'){
       let currentAddress = await currentSigner.getAddress();
-      await agentVote(currentAddress, proposalId);
+      return(await agentVote(currentAddress, proposalId));
     }else if(currentType === 'Class'){
       console.log(`班级不允许投票`)
+      return{
+        code: -1,
+        message: `班级不允许投票`
+      }
     }
 
 }
@@ -731,14 +735,15 @@ async function endProposal(proposalType, proposalId){
     if(proposalType === 'endConfilct'){
         console.log(await endConfictProposal(proposalId));  // 结束冲突提案
     }else if(proposalType === 'endClass'){
-        console.log(await endClassProposal_interact(proposalId)); 
+        await endClassProposal_interact(proposalId); 
     }else{
         console.log(await endProposalAndAssignCourseforWithoutteacher(proposalId));
     }
 }
 
 
-async function switchCurrentSigner_newinteract(newAddress, newCurrentName){
+async function switchCurrentSigner_newinteract(userType, newAddress, newCurrentName){
+    currentType = userType;
     currentSigner = provider.getSigner(newAddress);
     currentName = newCurrentName;
     contract = new ethers.Contract(contractAddress, contractABI, currentSigner);
@@ -829,3 +834,9 @@ async function save_AverageImportance() {
 
 }
 
+module.exports = {
+    switchCurrentSigner_newinteract,
+    checkCourseImportance,
+    voteForProposal,
+    endProposal
+};
