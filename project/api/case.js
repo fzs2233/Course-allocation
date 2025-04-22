@@ -78,3 +78,6 @@ await contract.setAllTeacherCoursePreferences(5, [43,34,45,45,46,37,38,49,49,49]
 
 await contract.setAllAgentCourseSuitability(1, [75,79,72,51,68,63,70,76,66,50]);
 await contract.setAllAgentCourseSuitability(2, [66,48,53,50,57,54,51,57,58,59]);
+
+// 学生考试分数，学生打分，老师互评，督导打分，机器评分
+// examineScore()

@@ -275,6 +275,9 @@ async function calculateCourseTotalScore(courseId) {
         teacherScoreAvg += Number(teacherScores[i]);
     }
     teacherScoreAvg /= teacherScores.length!== 0? teacherScores.length : 1;
+    // 计算机器评分
+    let machineScore = (await contract.courseScores(courseId)).machineScore;
+    machineScore = Number(machineScore);
     // 计算班级的平均分数
     let classScoreAvg = 0;
     let classCount = 0;
@@ -294,7 +297,7 @@ async function calculateCourseTotalScore(courseId) {
     }
     supervisorScoreAvg /= supervisorScores.length !== 0 ? supervisorScores.length : 1;
     // 计算总加权后分数
-    let totalScore = teacherScoreAvg * 0.2 + classScoreAvg * 0.4 + supervisorScoreAvg * 0.4;
+    let totalScore = teacherScoreAvg * 0.2 + classScoreAvg * 0.3 + supervisorScoreAvg * 0.3 + machineScore * 0.2;
     let typeId = 0;
     let suitAfter = 0;
     // 通过分数改变适合程度
@@ -302,22 +305,22 @@ async function calculateCourseTotalScore(courseId) {
         let teacherId = AssignedTeacher[0];
         let suitOriginal = await contract.getTeacherSuitability(teacherId, courseId);
         suitAfter = suitOriginal * 0.5 + totalScore * 0.5; // 范围0-100
-        suitAfter = Math.round(suitAfter);
-        totalScore = Math.round(totalScore);
-        await contract.setCourseTotalScore(courseId, totalScore);
-        // await contract.setTeacherCourseSuitability(teacherId, courseId, suitAfter);
+        let suitAfter_1 = Math.round(suitAfter);
+        let totalScore_1 = Math.round(totalScore);
+        await contract.setCourseTotalScore(courseId, totalScore_1);
+        // await contract.setTeacherCourseSuitability(teacherId, courseId, suitAfter_1);
         typeId = teacherId;
     }else {
         let agentId = AssignedAgent[0];
         let suitOriginal = await contract.getAgentSuitability(agentId, courseId);
         suitAfter = suitOriginal * 0.5 + totalScore * 0.5; // 范围0-100
-        suitAfter = Math.round(suitAfter);
-        totalScore = Math.round(totalScore);
-        await contract.setCourseTotalScore(courseId, totalScore);
-        // await contract.setAgentCourseSuitability(agentId, courseId, suitAfter);
+        let suitAfter_1 = Math.round(suitAfter);
+        let totalScore_1 = Math.round(totalScore);
+        await contract.setCourseTotalScore(courseId, totalScore_1);
+        // await contract.setAgentCourseSuitability(agentId, courseId, suitAfter_1);
         typeId = agentId;
     }
-    console.log(`classScoreAvg:${classScoreAvg.toFixed(2)}, supervisorScoreAvg:${supervisorScoreAvg.toFixed(2)}, teacherScoreAvg:${teacherScoreAvg.toFixed(2)}, totalScore:${totalScore.toFixed(2)}, suitAfter:${suitAfter.toFixed(2)}`)
+    console.log(`classScoreAvg:${classScoreAvg.toFixed(2)}, supervisorScoreAvg:${supervisorScoreAvg.toFixed(2)}, teacherScoreAvg:${teacherScoreAvg.toFixed(2)}, machineScore:${machineScore.toFixed(2)}, totalScore:${totalScore.toFixed(2)}, suitAfter:${suitAfter.toFixed(2)}`)
     return {
         code: 0,
         message: `课程Id:${courseId}  ${type}Id:${typeId}  适合程度:${suitAfter}`,

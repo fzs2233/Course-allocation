@@ -107,6 +107,7 @@ async function mainMenu() {
       { name: '教师给智能体对课程的适合程度打分', value: 'setTeacherSuitabilityForAllCourses' },
       { name: '查看并保存智能体对课程的适合程度', value: 'saveAverageSuitabilityInteract' },
       { name: '查看课程重要程度和智能体对课程的适合程度', value: 'checkCourseImportance' }, 
+      { name: '查看教师对课程的适合程度', value: 'checkTeacherSuitability' },
       { name: '初始化课程分配', value: 'initAllocation' },
       { name: '🔍查看课程分配情况', value: 'viewAssignments' },
       { name: '🔄转移课程所有权', value: 'transferCourse' },
@@ -190,6 +191,9 @@ async function mainMenu() {
         break;
       case 'checkCourseImportance':
           await checkCourseImportance();
+          break;
+      case 'checkTeacherSuitability':
+          await checkTeacherSuitability();
           break;
       case 'initAllocation':
           await handleInitAllocation();
@@ -313,7 +317,8 @@ async function endClassStudentGiveScore() {
 async function teacherGiveScore() {
     // 调用前记得先切换教师账户,而且记得先打印分配情况，看老师有几门课
     let addr = await currentSigner.getAddress();
-    let teacherId = await contract.addressToTeacherId(addr); // 老师id
+    let teacherId = Number(await contract.addressToTeacherId(addr)); // 老师id
+    
     if (teacherId === 0) {
         console.log("当前账户不是教师");
         return;
@@ -433,6 +438,8 @@ async function printAllScore() {
 
         let teacherScore = await contract.getTeacherScores(courseIds[i]); // 互评分数
         teacherScore = teacherScore.map(Number);
+        let machineScore = courseScores.machineScore; // 机器评分
+        machineScore = Number(machineScore);
         let classScore = await contract.getCourseClassScores(courseIds[i]); // 班级评分
         classScore = classScore.map(Number);
         let supervisorScore = await contract.getCourseSupervisorScores(courseIds[i]); // 督导评分
@@ -478,6 +485,7 @@ async function printAllScore() {
             "分配对象": assignedTo.join(' | '),
             "学生平均分": studentScoresAvg,
             "老师或智能体互评分": teacherScore.join(', '),
+            "机器评分": machineScore,
             "班级评分": classScore.join(', '),
             "督导评分": supervisorScore.join(', '),
             "总分": totalScore,
@@ -532,6 +540,28 @@ async function checkCourseImportance() {
              "智能体1对课程的适合程度": suit1,
              "智能体2对课程的适合程度": suit2
         })
+    }
+    console.log('\n目前课程的重要程度:');
+    console.table(assignments); // 打印表格
+}
+
+async function checkTeacherSuitability() {
+    let courseIds = await contract.getCourseIds();
+    courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    let teacherIds = await contract.getTeacherIds();
+    teacherIds = teacherIds.map(id => Number(id)); // 转换为数字数组
+    let assignments = [];
+    for (let i = 0; i < courseIds.length; i++) {
+        let suit;
+        let object = {};
+        object["课程ID"] = courseIds[i];
+        let course = await contract.courses(courseIds[i]);
+        object["课程名称"] = course.name;
+        for (let j = 0; j < teacherIds.length; j++) {
+            suit = Number(await contract.getTeacherSuitability(teacherIds[j],courseIds[i])); // 查看教师对课程的适合程度
+            object["教师" + teacherIds[j] + " suit"] = suit;
+        }
+        assignments.push(object);
     }
     console.log('\n目前课程的重要程度:');
     console.table(assignments); // 打印表格
