@@ -433,6 +433,8 @@ async function printAllScore() {
 
         let teacherScore = await contract.getTeacherScores(courseIds[i]); // 互评分数
         teacherScore = teacherScore.map(Number);
+        let machineScore = courseScores.machineScore; // 机器评分
+        machineScore = Number(machineScore);
         let classScore = await contract.getCourseClassScores(courseIds[i]); // 班级评分
         classScore = classScore.map(Number);
         let supervisorScore = await contract.getCourseSupervisorScores(courseIds[i]); // 督导评分
@@ -478,6 +480,7 @@ async function printAllScore() {
             "分配对象": assignedTo.join(' | '),
             "学生平均分": studentScoresAvg,
             "老师或智能体互评分": teacherScore.join(', '),
+            "机器评分": machineScore,
             "班级评分": classScore.join(', '),
             "督导评分": supervisorScore.join(', '),
             "总分": totalScore,
@@ -835,8 +838,24 @@ async function save_AverageImportance() {
 }
 
 module.exports = {
-    switchCurrentSigner_newinteract,
+    studentGiveScore,
+    endClassStudentGiveScore,
+    teacherGiveScore,
+    agentGiveScore,
+    supervisorGiveScore,
+    calculateTotalScore,
+    printAllScore,
+    printStudentExamAndEvaluateScore,
     checkCourseImportance,
+    giveExamineScore,
+    handleInitAllocation,
+    handleCostPerformance,
+    handleTransferCourse,
     voteForProposal,
-    endProposal
+    endProposal,
+    switchCurrentSigner_newinteract,
+    setSuitabilityForAllCoursesInteract,
+    saveAverageSuitabilityInteract,
+    set_ImportanceForAllCourses,
+    save_AverageImportance
 };
