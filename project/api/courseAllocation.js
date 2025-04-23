@@ -61,6 +61,7 @@ async function init_TeacherCourses() {
             }
         }
     }
+    console.log("教师课程初分配完成");
 
     let transferCourseNumbers = await contract.transferCourseNumbers();
     transferCourseNumbers = transferCourseNumbers.toNumber();
@@ -165,7 +166,7 @@ async function init_AgentCourses() {
             }
         }
     }
-
+    console.log("智能体课程初分配完成");
     return allocationResults;
 }
 
@@ -1005,7 +1006,7 @@ async function transferCourse(courseId, targetId) {
         if (targetPerf <= currentPerf) {
             return{
                 code: -1,
-                message: `目标${scoreTypePrint}需大于当前值（当前: ${currentPerf.toFixed(2)}, 目标: ${targetPerf.toFixed(2)}）`
+                message: `目标${scoreTypePrint}需大于当前老师分数（当前: ${currentPerf.toFixed(2)}, 目标: ${targetPerf.toFixed(2)}） 无法转移课程`
             }
         }
 
@@ -1030,7 +1031,7 @@ async function transferCourse(courseId, targetId) {
         let transferCourseNumbers = await contract.transferCourseNumbers();
         transferCourseNumbers = transferCourseNumbers.toNumber();
         transferCourseNumbers++;
-        console.log(`给课次数: ${transferCourseNumbers}`)
+        console.log(`第${transferCourseNumbers}次给课`)
         await contract.settransferCourseNumbers(transferCourseNumbers);
         // 返回转移情况
         return { 

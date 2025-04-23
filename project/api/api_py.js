@@ -59,7 +59,7 @@ async function getMachineRatingPython(courseScore, courseDifficulty) {
             courseDifficulty: courseDifficulty
         };
 
-        url = 'http://127.0.0.1:1088/api/machineRating'
+        url = 'http://127.0.0.1:1089/api/machineRating'
         const result = await httpRequest(url, 'POST', data);
         // console.log(result.data);
         return result.data

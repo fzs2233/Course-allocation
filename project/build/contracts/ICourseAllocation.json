@@ -47891,12 +47891,12 @@
     "5777": {
       "events": {},
       "links": {},
-      "address": "0xFe6dd23d6Cf9811704bCcCbA5091Cf485d534e9d",
-      "transactionHash": "0x2f0c0d85dcf3c3b25f75315aa4e87738775ef0bd40876530b2c8d64491a0c94e"
+      "address": "0xE5132d06F8033d885601C2377Ed935e8b54eDd62",
+      "transactionHash": "0x4f1eb3fac9830391ce13e8af35d3ed796d819ecc073fbf88264a6a4b88013e2e"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2025-04-22T13:36:34.772Z",
+  "updatedAt": "2025-04-23T08:47:34.339Z",
   "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",

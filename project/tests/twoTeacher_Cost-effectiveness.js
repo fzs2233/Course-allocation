@@ -403,6 +403,16 @@ async function main() {
     await init_AgentCourses();
     // 初始化教师课程分配
     await init_TeacherCourses();
+    // 换课
+    await switchThisUser('Teacher', 'teacher_1');
+    await handleTransferCourse(1, 3);
+    await handleTransferCourse(2, 4);
+    await handleTransferCourse(3, 5);
+    await switchThisUser('Teacher', 'teacher_2');   
+    await handleTransferCourse(6, 3);
+    await handleTransferCourse(7, 4);
+    await handleTransferCourse(8, 5);
+
     // 查看课程分配情况
     await printAssignments();
     // 检查课程冲突

@@ -115,7 +115,13 @@ const {
 } = require("../interact/autoInteract.js");
 
 async function main(){
-    await printAllScore();
+    // for(let i = 1; i <= 10; i++){
+    //     console.log(await machineRating_auto(i));
+        
+    // }
+    // await calculateTotalScore();
+    // await printAllScore();
+
 }
 
 main();

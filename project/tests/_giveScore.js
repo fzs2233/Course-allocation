@@ -200,6 +200,10 @@ async function main() {
     await supervisorGiveScore([80, 80, 80, 80, 80, 80, 80, 80, 80, 80]);
     await switchThisUser("Supervisor", "supervisor_2");
     await supervisorGiveScore([70, 70, 70, 70, 70, 70, 70, 70, 70, 70]);
+
+    for(let i = 1; i <= 10; i++){
+        console.log(await machineRating_auto(i));
+    }
     
     await calculateTotalScore();
     await printAllScore();

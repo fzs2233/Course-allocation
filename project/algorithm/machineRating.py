@@ -94,4 +94,4 @@ def process_data():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=1088)
+    app.run(debug=True, port=1089)
