@@ -665,9 +665,11 @@ async function handleTransferCourse(courseId,targetId) {
         
         console.log(result.message);
         if (result.performanceImprovement) {
-        console.log(`${result.scoreTypePrint}提升: ${result.performanceImprovement}`);
-        console.log(result.senderCoins);
-        console.log(result.targetCoins);
+            console.log(`${result.scoreTypePrint}提升: ${result.performanceImprovement}`);
+            console.log(result.senderCoins);
+            console.log(result.targetCoins);
+            // 打印课程分配情况
+            await printAssignments();
         }
     } catch (error) {
         console.error('转移失败:', error.message);

@@ -1006,15 +1006,13 @@ async function transferCourse(courseId, targetId) {
         if (targetPerf <= currentPerf) {
             return{
                 code: -1,
-                message: `目标${scoreTypePrint}需大于当前老师分数（当前: ${currentPerf.toFixed(2)}, 目标: ${targetPerf.toFixed(2)}） 无法转移课程`
+                message: `目标老师${targetId}的${scoreTypePrint}需大于当前老师${senderTeacherId}分数（当前: ${currentPerf.toFixed(2)}, 目标: ${targetPerf.toFixed(2)}） 无法转移课程`
             }
         }
 
         // 执行转移
         if (senderTeacherId !== 0) {
             await removeTeacherCourse(senderTeacherId, courseId);
-        } else {
-            await removeAgentCourse(senderAgentId, courseId);
         }
         await AssignedTeacherCourse(targetId, courseId);
 
@@ -1036,7 +1034,7 @@ async function transferCourse(courseId, targetId) {
         // 返回转移情况
         return { 
             code: 0, 
-            message: `课程 ${courseId} 已从 ${senderTeacherId || senderAgentId} 转移至教师 ${targetId}`,
+            message: `课程 ${courseId} 已从 ${senderTeacherId} 转移至教师 ${targetId}`,
             performanceImprovement: (targetPerf - currentPerf).toFixed(2),
             targetSuitability: targetSuitability,
             senderCoins: `给课老师的换课剩余币数量: ${senderCoins}`,
