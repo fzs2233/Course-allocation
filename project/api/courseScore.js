@@ -126,7 +126,7 @@ async function examineScore(courseId, scores) {
     for (let i = 0; i < scores.length; i++) {
         await classContract.setStudentCourseScore(studentIds[i], courseId, scores[i]);
         thisStudentCourseScore = await classContract.getStudentCourseScore(studentIds[i], courseId);
-        console.log(`学生Id:${studentIds[i]} 课程Id:${courseId} 考试分数:${thisStudentCourseScore}`);
+        // console.log(`学生Id:${studentIds[i]} 课程Id:${courseId} 考试分数:${thisStudentCourseScore}`);
     } 
     return {
         code: 0,
@@ -324,7 +324,12 @@ async function calculateCourseTotalScore(courseId) {
     return {
         code: 0,
         message: `课程Id:${courseId}  ${type}Id:${typeId}  适合程度:${suitAfter}`,
-        data: suitAfter
+        data: suitAfter,
+        classScoreAvg: classScoreAvg.toFixed(2),
+        supervisorScoreAvg: supervisorScoreAvg.toFixed(2),
+        teacherScoreAvg: teacherScoreAvg.toFixed(2),
+        machineScore: machineScore.toFixed(2),
+        totalScore: totalScore.toFixed(2),
     };
 }
 

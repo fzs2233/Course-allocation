@@ -413,13 +413,35 @@ async function supervisorGiveScore(numbers) {
 async function calculateTotalScore() {
     let courseIds = await contract.getCourseIds();
     courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    let suitAfter = []
+    let classScoreAvg = []
+    let supervisorScoreAvg = []
+    let teacherScoreAvg = []
+    let machineScore = []
+    let totalScore = []
     for (let i = 0; i < courseIds.length; i++) {
         let result = await calculateCourseTotalScore(courseIds[i]); // 计算课程总分
+        suitAfter.push(result.data)
+        classScoreAvg.push(result.classScoreAvg)
+        supervisorScoreAvg.push(result.supervisorScoreAvg)
+        teacherScoreAvg.push(result.teacherScoreAvg)
+        machineScore.push(result.machineScore)
+        totalScore.push(result.totalScore)
         if (result.code === -1) {
           console.log(result.message); // 打印错误信息
           break; // 退出循环
         } 
     }
+    let tableData = courseIds.map((courseId, index) => ({
+        '课程ID': courseId,
+        'classScoreAvg': classScoreAvg[index],
+        'supervisorScoreAvg': supervisorScoreAvg[index],
+        'teacherScoreAvg': teacherScoreAvg[index],
+        'machineScore': machineScore[index],
+        'totalScore': totalScore[index],
+        'suitAfter': suitAfter[index],
+    }));
+    console.table(tableData)
 }
 
 async function printAllScore() {

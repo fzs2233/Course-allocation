@@ -92,8 +92,11 @@ async function autoVote_conflictProposal(proposal){
             console.log(await voteForProposal(proposalId, chooseId));
         }else{
             let length = proposal.candidateTeacherId.length;
-            let random_chioce = Math.floor(Math.random() * length);
-            console.log(await voteForProposal(proposalId, proposal.candidateTeacherId[random_chioce]));
+            let random_choice;
+            do {
+                random_choice = Math.floor(Math.random() * length);
+            } while (proposal.candidateTeacherId[random_choice] == chooseId);
+            console.log(await voteForProposal(proposalId, proposal.candidateTeacherId[random_choice]));
         }
     }
     for (let i = 1; i <= 2; i++) {
@@ -378,9 +381,9 @@ async function initData(){
 }
 
 async function main() {
-    // await initializeData();
+    await initializeData();
     await switchThisUser('Teacher', 'teacher_1');
-    // await initData();
+    await initData();
     console.log(await getTeacherCourseSuitabilityByPython(1));
     console.log(await getTeacherCourseSuitabilityByPython(2));
     console.log(await getTeacherCourseSuitabilityByPython(3));
