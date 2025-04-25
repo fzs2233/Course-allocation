@@ -204,6 +204,36 @@ async function setImportanceForAllCourses(
         Scores[_teacherId].push(score);
     }
 }
+let DifficultyScores = {};
+async function setDifficultyForAllCourses(
+    _teacherId,
+    _courseIds,  // 多门课程的 ID 数组
+    _difficulties  // 每门课程的适合度评分数组
+) {
+    // 验证课程和评分数组的长度
+    if (_courseIds.length !== _difficulties.length) {
+        console.log("课程ID数组和重要程度数组长度不匹配");
+        return;
+    }
+
+    // 存储每个教师的评分
+    for (let i = 0; i < _courseIds.length; i++) {
+        let score = _difficulties[i];
+
+        // 确保适合度评分在0到100之间
+        if (score < 0 || score > 100) {
+            console.log("课程难度评分无效");
+            return;
+        }
+
+        // 将评分存储在 teacherScores 中
+        if (!DifficultyScores[_teacherId]) {
+            DifficultyScores[_teacherId] = [];
+        }
+
+        DifficultyScores[_teacherId].push(score);
+    }
+}
 
 async function saveAverageImportance(_courseIds) {
     const numTeachers = 5;  // 假设五个老师为智能体评分
@@ -231,6 +261,35 @@ async function saveAverageImportance(_courseIds) {
     const tx = await contract.setAllCourseImportance(averageimportances);
     await tx.wait();
     console.log(`已保存所有课程重要程度评分`);
+}
+
+// 保存所有课程的困难程度
+async function saveAverageDifficulty(_courseIds) {
+    const numTeachers = 5;  // 假设五个老师为智能体评分
+    const averagedifficulties = [];
+
+    // 计算每门课程的平均评分
+    for (let j = 0; j < _courseIds.length; j++) {
+        let totaldifficulty = 0;
+
+        for (let teacherId = 1; teacherId <= numTeachers; teacherId++) {
+            let scores = DifficultyScores[teacherId];
+            if (scores && scores[j] !== undefined) {
+                totaldifficulty += scores[j];  // 累加每个老师对课程的评分
+            }
+            
+        }
+        // 计算评分
+        const averagedifficulty = totaldifficulty / numTeachers;
+        const flooredDifficulty = Math.floor(averagedifficulty);
+        averagedifficulties.push(flooredDifficulty);
+    }
+
+    // 使用 setAllAgentCourseSuitability 函数保存评分
+    console.table(averagedifficulties);
+    const tx = await contract.setAllCourseDifficulty(averagedifficulties);
+    await tx.wait();
+    console.log(`已保存所有课程困难程度评分`);
 }
 
 // End proposal
@@ -296,5 +355,7 @@ module.exports = {
     setTeacherSuitabilityForAllCourses,
     saveAverageSuitability,
     setImportanceForAllCourses,
-    saveAverageImportance
+    setDifficultyForAllCourses,
+    saveAverageImportance,
+    saveAverageDifficulty
 };

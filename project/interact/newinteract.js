@@ -77,7 +77,9 @@ const {
   setTeacherSuitabilityForAllCourses,
   saveAverageSuitability,
   setImportanceForAllCourses,
-  saveAverageImportance
+  setDifficultyForAllCourses,
+  saveAverageImportance,
+  saveAverageDifficulty
 } = require("../api/test1.js");
 
 const {
@@ -99,11 +101,14 @@ async function mainMenu() {
       { name: '画像评分算法计算老师对课程的适合程度', value: 'getTeacherCourseSuitabilityByPython'},
       { name: '🔑切换用户', value: 'switchUser'},
       { name: '注册教师/智能体/班级/学生', value: 'register'}, 
+      { name: '教师输入对课程的意愿', value: 'setTeacherPerference'}, 
       { name: '📝创建确定规则的提案', value: 'createTeacherProposal' },
       { name: '教师投票', value: 'init_teacherVote' },
       { name: '🛑执行教师提案', value: 'executeTeacherProposal' },
       { name: '教师给课程的重要程度打分', value: 'setImportance' },
       { name: '查看并保存课程的重要程度', value: 'saveImportance' },
+      { name: '教师给课程的困难程度打分', value: 'setDifficulty' },
+      { name: '查看并保存课程的困难程度', value: 'saveDifficulty' },
       { name: '教师给智能体对课程的适合程度打分', value: 'setTeacherSuitabilityForAllCourses' },
       { name: '查看并保存智能体对课程的适合程度', value: 'saveAverageSuitabilityInteract' },
       { name: '查看课程重要程度和智能体对课程的适合程度', value: 'checkCourseImportance' }, 
@@ -142,127 +147,167 @@ async function mainMenu() {
     ]);
 
     switch (action) {
-      case'initializeData':
-          await initializeData();
-          break;
-      case'getTeacherCourseSuitabilityByPython':
-            let addr = await currentSigner.getAddress();
-            let teacherId = (await contract.addressToTeacherId(addr)).toNumber();
-            await getTeacherCourseSuitabilityByPython(teacherId);
+        case'initializeData':
+            await initializeData();
             break;
-      case'switchUser':
-          // console.log(contract)
-          let userResult = await switchUser();
-          if(userResult.code === 0){
-              currentName = userResult.currentName;
-              currentType = userResult.currentType;
-              let currentAddress = userResult.currentAddress;
-              await switchCurrentSigner_newinteract(currentAddress, currentName);
-              await switchCurrentSigner_studentClass(currentAddress, currentName);
-              await switchCurrentSigner_courseAllocation(currentAddress, currentName);
-              await switchCurrentSigner_test1(currentAddress);
-              await switchCurrentSigner_courseScore(currentAddress);
-          }
+        case'getTeacherCourseSuitabilityByPython':
+                let addr = await currentSigner.getAddress();
+                let teacherId = (await contract.addressToTeacherId(addr)).toNumber();
+                await getTeacherCourseSuitabilityByPython(teacherId);
+                break;
+        case'switchUser':
+            // console.log(contract)
+            let userResult = await switchUser();
+            if(userResult.code === 0){
+                currentName = userResult.currentName;
+                currentType = userResult.currentType;
+                let currentAddress = userResult.currentAddress;
+                await switchCurrentSigner_newinteract(currentAddress, currentName);
+                await switchCurrentSigner_studentClass(currentAddress, currentName);
+                await switchCurrentSigner_courseAllocation(currentAddress, currentName);
+                await switchCurrentSigner_test1(currentAddress);
+                await switchCurrentSigner_courseScore(currentAddress);
+            }
 
-          break;
-      case'register':
-          [currentName, currentType] = await register();
-          break;
-      case 'createTeacherProposal':
-        await createProposal();
-        break;
-      case 'init_teacherVote':
-        await init_teacherVote();
-        break;
-      case 'setImportance':
-        await set_ImportanceForAllCourses();
-        break;
-      case 'saveImportance':
-        await save_AverageImportance();
-        break;
-      case 'setTeacherSuitabilityForAllCourses':
-        await setSuitabilityForAllCoursesInteract();
-        break;
-      case 'saveAverageSuitabilityInteract':
-        await saveAverageSuitabilityInteract();
-        break;
-      case 'executeTeacherProposal':
-        await executeProposal();
-        break;
-      case 'checkCourseImportance':
-          await checkCourseImportance();
-          break;
-      case 'checkTeacherSuitability':
-          await checkTeacherSuitability();
-          break;
-      case 'initAllocation':
-          await handleInitAllocation();
-          break;
-      case 'viewAssignments':
-          await printAssignments();
-          break;
-      case 'checkCourseConflicts':
-          console.log(await checkCourseConflicts());
-          break;
-      case 'preprocessConflictCourses':
-          await preprocessConflictCourses();
-          break;
-      case 'createConflictProposal':
-          console.log(await createConflictProposal());
-          break;
-      case 'checkAndCreateProposalForTeacher':
-          console.log(await checkAndCreateProposalForTeacher());
-          break;
-      case 'proposalForCoursesWithoutAssigned':
-          console.log(await proposalForCoursesWithoutAssigned());
-          break;
-      case 'voteForProposal':
-          await voteForProposal();
-          break;
-      case 'endProposal':
-          await endProposal();
-          break;
-      case 'teacherCost':
-          await handleCostPerformance();
-          break;
-      case 'giveExamineScore':
-          await giveExamineScore();
-          break;
-      case 'transferCourse':
-          await handleTransferCourse();
-          break;
-      case 'studentGiveScore':
-          await studentGiveScore();
-          break;
-      case 'printStudentExamAndEvaluateScore':
-          await printStudentExamAndEvaluateScore();
-          break;
-      case'endClassStudentGiveScore':
-          await endClassStudentGiveScore();
-          break;
-      case 'teacherGiveScore':
-          await teacherGiveScore();
-          break;
-      case 'agentGiveScore':
-          await agentGiveScore();
-          break;
-      case 'supervisorGiveScore':
-          await supervisorGiveScore();
-          break;
-      case 'machineRating':
-          console.log(await machineRating());
-          break;
-      case 'calculateTotalScore':
-          await calculateTotalScore();
-          break;
-      case 'printAllScore':
-          await printAllScore();
-          break;
-      case 'exit':
-          process.exit();
+            break;
+        case'register':
+            [currentName, currentType] = await register();
+            break;
+        case'setTeacherPerference':
+            await setTeacherPerference();
+            break;
+        case 'createTeacherProposal':
+            await createProposal();
+            break;
+        case 'init_teacherVote':
+            await init_teacherVote();
+            break;
+        case 'setImportance':
+            await set_ImportanceForAllCourses();
+            break;
+        case 'saveImportance':
+            await save_AverageImportance();
+            break;
+        case 'setDifficulty':
+            await set_DifficultyForAllCourses();
+            break;
+        case 'saveDifficulty':
+            await save_AverageDifficulty();
+            break;
+        case 'setTeacherSuitabilityForAllCourses':
+            await setSuitabilityForAllCoursesInteract();
+            break;
+        case 'saveAverageSuitabilityInteract':
+            await saveAverageSuitabilityInteract();
+            break;
+        case 'executeTeacherProposal':
+            await executeProposal();
+            break;
+        case 'checkCourseImportance':
+            await checkCourseImportance();
+            break;
+        case 'checkTeacherSuitability':
+            await checkTeacherSuitability();
+            break;
+        case 'initAllocation':
+            await handleInitAllocation();
+            break;
+        case 'viewAssignments':
+            await printAssignments();
+            break;
+        case 'checkCourseConflicts':
+            console.log(await checkCourseConflicts());
+            break;
+        case 'preprocessConflictCourses':
+            await preprocessConflictCourses();
+            break;
+        case 'createConflictProposal':
+            console.log(await createConflictProposal());
+            break;
+        case 'checkAndCreateProposalForTeacher':
+            console.log(await checkAndCreateProposalForTeacher());
+            break;
+        case 'proposalForCoursesWithoutAssigned':
+            console.log(await proposalForCoursesWithoutAssigned());
+            break;
+        case 'voteForProposal':
+            await voteForProposal();
+            break;
+        case 'endProposal':
+            await endProposal();
+            break;
+        case 'teacherCost':
+            await handleCostPerformance();
+            break;
+        case 'giveExamineScore':
+            await giveExamineScore();
+            break;
+        case 'transferCourse':
+            await handleTransferCourse();
+            break;
+        case 'studentGiveScore':
+            await studentGiveScore();
+            break;
+        case 'printStudentExamAndEvaluateScore':
+            await printStudentExamAndEvaluateScore();
+            break;
+        case'endClassStudentGiveScore':
+            await endClassStudentGiveScore();
+            break;
+        case 'teacherGiveScore':
+            await teacherGiveScore();
+            break;
+        case 'agentGiveScore':
+            await agentGiveScore();
+            break;
+        case 'supervisorGiveScore':
+            await supervisorGiveScore();
+            break;
+        case 'machineRating':
+            console.log(await machineRating());
+            break;
+        case 'calculateTotalScore':
+            await calculateTotalScore();
+            break;
+        case 'printAllScore':
+            await printAllScore();
+            break;
+        case 'exit':
+            process.exit();
     }
 
     mainMenu(); // 循环显示菜单
+}
+
+// 教师输入自己对所有课程的意愿
+async function setTeacherPerference(){
+
+    let courseIds = await contract.getCourseIds();
+    courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    const { numbers } = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'numbers',
+          message: `请输入${courseIds.length}个0-100的对课程的意愿（以英文逗号分隔）:`,
+          filter: (input) => {  // 处理输入格式
+            return input.split(',')
+                        .map(item => item.trim())  // 移除空格
+                        .map(Number);  // 转为数字
+          },
+          validate: (input) => {  // 验证输入有效性
+            if (input.length !== courseIds.length) return `请输入 ${courseIds.length} 个数字`;
+            const isValid = input.every(num => !isNaN(num)) && input.every(num => num >= 0 && num <= 100);
+            return isValid || '请输入有效的数字（如 1,2,3）';
+          }
+        }
+      ])
+    let teacherId = await contract.addressToTeacherId(await currentSigner.getAddress());
+    await contract.setAllTeacherCoursePreferences(teacherId, numbers);
+    console.log(`已经成功设置教师${teacherId} 对所有课程的意愿！`)
+    return {
+        code: 0,
+        message: `已经成功设置教师${teacherId} 对所有课程的意愿！`
+    }
 }
 
 // 学生自己评分，一次性给所有课程评分
@@ -860,6 +905,43 @@ async function save_AverageImportance() {
 
 }
 
+
+// 为所有课程设置困难程度程度评分
+async function set_DifficultyForAllCourses() {
+    // 获取当前用户的教师ID（无需手动输入）
+    let teacherId = await contract.addressToTeacherId(await currentSigner.getAddress());
+
+    // 确保当前账户是教师
+    if (teacherId == 0) {
+        console.log("当前账户不是教师");
+        return;
+    }
+
+    const { agentId, Difficulties } = await inquirer.prompt([
+        {
+            type: 'input',
+            name: 'Difficulties',
+            message: '请输入困难程度评分（以英文逗号分隔）:',
+            filter: (input) => input.split(',').map(score => Number(score))
+        }
+    ]);
+
+    // 固定课程ID 1,2,3,4,5,6,7,8,9,10
+    const courseIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    // 调用设置适合度评分的函数
+    await setDifficultyForAllCourses(teacherId,  courseIds, Difficulties);
+    console.log('✅ 已为所有课程设置难度');
+}
+
+// 计算并保存平均困难程度评分
+async function save_AverageDifficulty() {
+
+    const courseIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    await saveAverageDifficulty(courseIds);
+
+}
 
 // 启动交互
 console.log('=== 课程分配管理系统 ===');

@@ -293,12 +293,17 @@ async function main() {
     await supervisorGiveScore([70, 70, 70, 70, 70, 70, 70, 70, 70, 70]);
     printtable(courseIds, [70, 70, 70, 70, 70, 70, 70, 70, 70, 70], '课程评分', 2, '督导')
 
+    let machineRatings = []
     for(let i = 1; i <= 10; i++){
-        console.log(await machineRating_auto(i));
+        machineRatings.push((await machineRating_auto(i)).machineRate);
     }
-    
-    await calculateTotalScore();
+    let table = courseIds.map((courseId, index) => ({
+        '课程ID': courseId,
+        '机器评分': machineRatings[index]
+    }))
+    console.table(table)
     await printAllScore();
+    await calculateTotalScore();
 }
 
 main()

@@ -320,7 +320,7 @@ async function calculateCourseTotalScore(courseId) {
         // await contract.setAgentCourseSuitability(agentId, courseId, suitAfter_1);
         typeId = agentId;
     }
-    console.log(`classScoreAvg:${classScoreAvg.toFixed(2)}, supervisorScoreAvg:${supervisorScoreAvg.toFixed(2)}, teacherScoreAvg:${teacherScoreAvg.toFixed(2)}, machineScore:${machineScore.toFixed(2)}, totalScore:${totalScore.toFixed(2)}, suitAfter:${suitAfter.toFixed(2)}`)
+    // console.log(`classScoreAvg:${classScoreAvg.toFixed(2)}, supervisorScoreAvg:${supervisorScoreAvg.toFixed(2)}, teacherScoreAvg:${teacherScoreAvg.toFixed(2)}, machineScore:${machineScore.toFixed(2)}, totalScore:${totalScore.toFixed(2)}, suitAfter:${suitAfter.toFixed(2)}`)
     return {
         code: 0,
         message: `课程Id:${courseId}  ${type}Id:${typeId}  适合程度:${suitAfter}`,
@@ -593,7 +593,8 @@ async function machineRating_auto(courseId){
     // console.log(`The machine rating for course ${courseId} is ${machineRate}`)
     return {
         code: 0,
-        message: `The machine rating for course ${courseId} is ${machineRate}`
+        message: `The machine rating for course ${courseId} is ${machineRate}`,
+        machineRate: machineRate
     }
 
 }

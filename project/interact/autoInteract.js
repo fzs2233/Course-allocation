@@ -77,7 +77,9 @@ const {
   setTeacherSuitabilityForAllCourses,
   saveAverageSuitability,
   setImportanceForAllCourses,
-  saveAverageImportance
+  setDifficultyForAllCourses,
+  saveAverageImportance,
+  saveAverageDifficulty
 } = require("../api/test1.js");
 
 const {
@@ -104,6 +106,8 @@ async function mainMenu() {
       { name: '🛑执行教师提案', value: 'executeTeacherProposal' },
       { name: '教师给课程的重要程度打分', value: 'setImportance' },
       { name: '查看并保存课程的重要程度', value: 'saveImportance' },
+      { name: '教师给课程的困难程度打分', value: 'setDifficulty' },
+      { name: '查看并保存课程的困难程度', value: 'saveDifficulty' },
       { name: '教师给智能体对课程的适合程度打分', value: 'setTeacherSuitabilityForAllCourses' },
       { name: '查看并保存智能体对课程的适合程度', value: 'saveAverageSuitabilityInteract' },
       { name: '查看课程重要程度和智能体对课程的适合程度', value: 'checkCourseImportance' }, 
@@ -178,6 +182,12 @@ async function mainMenu() {
         break;
       case 'saveImportance':
         await save_AverageImportance();
+        break;
+     case 'setDifficulty':
+        await set_DifficultyForAllCourses();
+        break;
+      case 'saveDifficulty':
+        await save_AverageDifficulty();
         break;
       case 'setTeacherSuitabilityForAllCourses':
         await setSuitabilityForAllCoursesInteract();
@@ -261,6 +271,36 @@ async function mainMenu() {
     mainMenu(); // 循环显示菜单
 }
 
+async function setTeacherPerference(numbers){
+
+    let courseIds = await contract.getCourseIds();
+    courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    // const { numbers } = await inquirer.prompt([
+    //     {
+    //       type: 'input',
+    //       name: 'numbers',
+    //       message: `请输入${courseIds.length}个0-100的对课程的意愿（以英文逗号分隔）:`,
+    //       filter: (input) => {  // 处理输入格式
+    //         return input.split(',')
+    //                     .map(item => item.trim())  // 移除空格
+    //                     .map(Number);  // 转为数字
+    //       },
+    //       validate: (input) => {  // 验证输入有效性
+    //         if (input.length !== courseIds.length) return `请输入 ${courseIds.length} 个数字`;
+    //         const isValid = input.every(num => !isNaN(num)) && input.every(num => num >= 0 && num <= 100);
+    //         return isValid || '请输入有效的数字（如 1,2,3）';
+    //       }
+    //     }
+    //   ])
+    let teacherId = await contract.addressToTeacherId(await currentSigner.getAddress());
+    await contract.setAllTeacherCoursePreferences(teacherId, numbers);
+    console.log(`已经成功设置教师${teacherId} 对所有课程的意愿！`)
+    return {
+        code: 0,
+        message: `已经成功设置教师${teacherId} 对所有课程的意愿！`
+    }
+}
+
 // 学生自己评分，一次性给所有课程评分
 async function studentGiveScore(numbers) {
     // 调用之前记得先转换为学生账户
@@ -302,10 +342,16 @@ async function endClassStudentGiveScore() {
         }
     }
     if (result.code === 0) {
+        classScores = []
         for (let i = 0; i < courseIds.length; i++) {
-            let classScores = await contract.getCourseClassScores(courseIds[i]); // 班级评分
-            console.log(`课程 ${courseIds[i]} 的班级评分: ${classScores}`); // 打印班级评分
+            classScores.push( (await contract.getCourseClassScores(courseIds[i])).map(id => Number(id)) ); // 班级评分
+            // console.log(`课程 ${courseIds[i]} 的班级评分: ${classScores}`); // 打印班级评分
         }
+        let table = classScores.map((score, index) => ({
+            '课程ID': courseIds[index],
+            '班级评分': score
+        }))
+        console.table(table)
     }
 }
 
@@ -500,9 +546,9 @@ async function printAllScore() {
         assignments.push({
             "课程ID": courseIds[i],
             "分配对象": assignedTo.join(' | '),
-            "学生平均分": studentScoresAvg,
             "老师或智能体互评分": teacherScore.join(', '),
             "机器评分": machineScore,
+            "学生平均成绩": studentScoresAvg,
             "班级评分": classScore.join(', '),
             "督导评分": supervisorScore.join(', '),
             "总分": totalScore,
@@ -861,6 +907,44 @@ async function save_AverageImportance() {
 
 }
 
+
+// 为所有课程设置困难程度程度评分
+async function set_DifficultyForAllCourses(Difficulties) {
+    // 获取当前用户的教师ID（无需手动输入）
+    let teacherId = await contract.addressToTeacherId(await currentSigner.getAddress());
+
+    // 确保当前账户是教师
+    if (teacherId == 0) {
+        console.log("当前账户不是教师");
+        return;
+    }
+
+    // const { agentId, Difficulties } = await inquirer.prompt([
+    //     {
+    //         type: 'input',
+    //         name: 'Difficulties',
+    //         message: '请输入重要程度评分（以英文逗号分隔）:',
+    //         filter: (input) => input.split(',').map(score => Number(score))
+    //     }
+    // ]);
+
+    // 固定课程ID 1,2,3,4,5,6,7,8,9,10
+    const courseIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    // 调用设置适合度评分的函数
+    await setDifficultyForAllCourses(teacherId,  courseIds, Difficulties);
+    console.log('✅ 已为所有课程设置难度');
+}
+
+// 计算并保存平均困难程度评分
+async function save_AverageDifficulty() {
+
+    const courseIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    await saveAverageDifficulty(courseIds);
+
+}
+
 module.exports = {
     studentGiveScore,
     endClassStudentGiveScore,
@@ -881,5 +965,6 @@ module.exports = {
     setSuitabilityForAllCoursesInteract,
     saveAverageSuitabilityInteract,
     set_ImportanceForAllCourses,
+    set_DifficultyForAllCourses,
     save_AverageImportance
 };

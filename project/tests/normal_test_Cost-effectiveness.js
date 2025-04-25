@@ -89,7 +89,7 @@ async function autoVote_conflictProposal(proposal){
     for (let i = 1; i <= 5; i++) {
         await switchThisUser('Teacher', `teacher_${i}`);
         if(i == 1 || i ==3 || i==5){
-            console.log(await voteForProposal(proposalId, chooseId));
+            await voteForProposal(proposalId, chooseId);
         }else{
             let length = proposal.candidateTeacherId.length;
             let random_choice;
@@ -136,7 +136,7 @@ async function autoVote_conflictProposal(proposal){
             
             // 投票并更新票数统计
             const voteResult = await voteForProposal(classProposalId, randomChoice);
-            console.log(voteResult);
+            // console.log(voteResult);
         
             // 更新票数统计
             voteCounts[randomChoice]++;

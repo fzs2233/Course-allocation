@@ -651,6 +651,24 @@ contract ICourseAllocation {
         }
     }
 
+    // 管理员设置全部课程难度
+    function setAllCourseDifficulty(uint256[] memory _difficulties) public {
+        require(
+            _difficulties.length == courseIds.length,
+            "must update all course suitability"
+        );
+        // 更新课程适合度
+        for (
+            uint256 courseIndex = 0;
+            courseIndex < courseIds.length;
+            courseIndex++
+        ) {
+            courses[courseIds[courseIndex]].courseDifficulty = _difficulties[
+                courseIndex
+            ];
+        }
+    }
+
     // 添加课程分配的教师ID
     function addCourseAssignedTeacherId(
         uint256 courseId,
