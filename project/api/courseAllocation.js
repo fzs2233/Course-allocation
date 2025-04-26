@@ -211,6 +211,141 @@ async function printAssignments() { //查看目前的课程分配情况
     return assignments;
 }
 
+async function printAssignments_gains() { //查看目前的课程分配情况
+    const courseIds = (await contract.getCourseIds()).map(id => id.toNumber());
+    const assignments = [];
+
+    let scoreType = await contract.ScoreTypeChioce();
+    let scoreTypePrint='';
+    if (scoreType === "Cost-effectiveness") {
+        scoreTypePrint = "性价比";
+    } else if (scoreType === "Suitability&Preference") {
+        scoreTypePrint = "能力意愿的加权分数";
+    }
+
+    let overCourseIds = [];
+    let onlyOneAssign = new Map();
+    let suitTotal = 0;
+    let costTotal = 0;
+    let totalScore = 0; // 总体性价比
+
+    // 串行处理所有课程
+    for (const courseId of courseIds) {
+        const [teachers, agents] = await Promise.all([
+            contract.getCoursesAssignedTeacher(courseId),
+            contract.getCoursesAssignedAgent(courseId)
+        ]);
+
+        // 检查无冲突条件
+        if (teachers.length === 1 && agents.length === 0) {
+            const teacherId = teachers[0].toNumber();
+            // console.log(`courseId: ${courseId} TeacherId: ${teacherId}`)
+            if (!onlyOneAssign.has(teacherId)) {
+                onlyOneAssign.set(teacherId, []);
+            }
+            let courseOneAssign = onlyOneAssign.get(teacherId);
+            if (courseOneAssign.length < 2) {
+                courseOneAssign.push(courseId);
+                onlyOneAssign.set(teacherId, courseOneAssign);
+            }else {
+                // 获取当前课程的 score
+                let currentScore = (await getCompareScore(teacherId, courseId, scoreType)).data;
+
+                // 获取所有现有课程的 score 并存储
+                const coursesWithScores = [];
+                for (const existCourseId of courseOneAssign) {
+                    let courseScore = (await getCompareScore(teacherId, existCourseId, scoreType)).data;
+                    coursesWithScores.push({
+                        courseId: existCourseId,
+                        score: courseScore
+                    });
+                }
+
+                // 添加当前课程到列表中
+                coursesWithScores.push({
+                    courseId: courseId,
+                    score: currentScore
+                });
+                // 按照 score 降序排序
+                coursesWithScores.sort((a, b) => b.score - a.score);
+                console.log(coursesWithScores);
+                // 选出最大的性价比并记录courseId
+                console.log(`课程${coursesWithScores[0].courseId}的${scoreTypePrint}置为0`);
+                overCourseIds.push(coursesWithScores[0].courseId);
+                courseOneAssign = [];
+                courseOneAssign.push(coursesWithScores[1].courseId);
+                courseOneAssign.push(coursesWithScores[2].courseId);
+                onlyOneAssign.set(teacherId, courseOneAssign);
+            }
+        }
+    }
+
+    for (const courseId of courseIds) {
+        // 获取课程基础信息（id, name, importance）
+        const course = await contract.courses(courseId);
+        const courseName = course[1];
+        const importance = course[2].toNumber();
+
+        // 获取分配的教师和智能体ID
+        const assignedTeachers = (await contract.getCoursesAssignedTeacher(courseId)).map(t => t.toNumber());
+        const assignedAgents = (await contract.getCoursesAssignedAgent(courseId)).map(a => a.toNumber());
+        
+        let gain = 0;
+        let cost = 1500;
+
+        if (!overCourseIds.includes(courseId) && assignedTeachers.length + assignedAgents.length == 1) {
+            if (assignedTeachers.length == 1) {
+                gain = (await getCompareScore(assignedTeachers[0], courseId, scoreType)).data;
+                cost = (await contract.teachers(assignedTeachers[0])).value.toNumber();
+                suitTotal += (await contract.getTeacherSuitability(assignedTeachers[0], courseId)).toNumber();
+            } else if (assignedAgents.length == 1) {
+                gain = (await getCompareScore(assignedAgents[0], courseId, scoreType)).data;
+                cost = (await contract.agents(assignedAgents[0])).value.toNumber();
+                suitTotal += (await contract.getAgentSuitability(assignedAgents[0], courseId)).toNumber();
+            }
+        }
+        // 计算总薪资
+        costTotal += cost;
+        totalScore += gain;
+        // 构建分配信息
+        let assignedTo = [];
+        if (assignedTeachers.length > 0) {
+            assignedTo.push(`教师: ${assignedTeachers.join(', ')}`);
+        }
+        if (assignedAgents.length > 0) {
+            assignedTo.push(`智能体: ${assignedAgents.join(', ')}`);
+        }
+        if (assignedTo.length === 0) {
+            assignedTo.push('Unassigned');
+        }
+        
+        assignments.push({
+            "课程ID": courseId,
+            "课程名": courseName,
+            "课程重要程度": importance,
+            "分配对象": assignedTo.join(' | '),
+            [scoreTypePrint]:gain,
+            "薪资":cost
+        });
+    }
+    // 打印表格
+    console.log('\n目前课程的分配情况:');
+    console.table(assignments);
+    
+    let totalCostEffectiveness;
+    if (scoreType === "Cost-effectiveness") {
+        totalCostEffectiveness = suitTotal / costTotal;
+        let averageCostEffectiveness = totalScore / assignments.length;
+        console.log(`总体${scoreTypePrint}:`, totalCostEffectiveness);
+        console.log(`${scoreTypePrint}均值:`, averageCostEffectiveness);
+    }else if (scoreType === "Suitability&Preference") {
+        totalCostEffectiveness = totalScore / assignments.length;
+        console.log(`${scoreTypePrint}均值:`, totalCostEffectiveness);
+    }
+    
+    return assignments;
+}
+
 /**
  * 获取指定教师的课程性价比数据（适合度/工资）
  * @param {number} targetTeacherId - 要查询的教师ID
@@ -1300,6 +1435,7 @@ module.exports = {
     getTeacherCostPerformance,
     getAgentCostPerformance,
     printAssignments,
+    printAssignments_gains,
     transferCourse, // 给课
     checkCourseConflicts, // 查看课程冲突情况
     preprocessConflictCourses, // 冲突提案前的预处理

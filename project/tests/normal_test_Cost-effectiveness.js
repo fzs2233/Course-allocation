@@ -264,6 +264,7 @@ const {
     getTeacherCostPerformance,
     getAgentCostPerformance,
     printAssignments,
+    printAssignments_gains,
     transferCourse,
     checkCourseConflicts,
     preprocessConflictCourses,
@@ -332,6 +333,8 @@ const {
     setSuitabilityForAllCoursesInteract,
     saveAverageSuitabilityInteract,
     set_ImportanceForAllCourses,
+    set_DifficultyForAllCourses,
+    save_AverageDifficulty,
     save_AverageImportance
 } = require("../interact/autoInteract.js");
 
@@ -389,13 +392,51 @@ async function main() {
     console.log(await getTeacherCourseSuitabilityByPython(3));
     console.log(await getTeacherCourseSuitabilityByPython(4));
     console.log(await getTeacherCourseSuitabilityByPython(5));
+    // 设置课程重要程度
+    await set_ImportanceForAllCourses([1,7,1,10,5,2,8,4,8,10]);
+    await set_DifficultyForAllCourses([7,7,2,7,5,9,8,4,8,10]);
+    await switchThisUser('Teacher', 'teacher_2');
+    await set_ImportanceForAllCourses([3,9,1,9,7,1,7,6,6,10]);
+    await set_DifficultyForAllCourses([8,9,5,4,4,10,7,6,6,8]);
+    await switchThisUser('Teacher', 'teacher_3');
+    await set_ImportanceForAllCourses([4,6,1,8,5,2,7,3,5,10]);
+    await set_DifficultyForAllCourses([8,6,3,6,6,10,9,3,5,8]);
+    await switchThisUser('Teacher', 'teacher_4');
+    await set_ImportanceForAllCourses([5,8,1,9,5,4,8,4,4,10]);
+    await set_DifficultyForAllCourses([8,8,4,5,2,7,5,5,4,8]);
+    await switchThisUser('Teacher', 'teacher_5');
+    await set_ImportanceForAllCourses([2,5,1,9,3,1,10,3,7,10]);
+    await set_DifficultyForAllCourses([9,5,6,8,3,9,6,2,7,6]);
+    await save_AverageImportance();
+    await save_AverageDifficulty();
+    
+    // 设置智能体适合程度
+    await switchThisUser('Teacher', 'teacher_1');
+    await setSuitabilityForAllCoursesInteract(1, [79,75,76,87,72,59,74,72,70,46]);
+    await setSuitabilityForAllCoursesInteract(2, [66,48,53,50,87,54,51,57,79,69]);
+    await switchThisUser('Teacher', 'teacher_2');
+    await setSuitabilityForAllCoursesInteract(1, [85,89,82,90,78,73,80,66,76,70]);
+    await setSuitabilityForAllCoursesInteract(2, [70,52,57,54,91,50,47,53,75,65]);
+    await switchThisUser('Teacher', 'teacher_3');
+    await setSuitabilityForAllCoursesInteract(1, [75,79,72,91,68,63,70,76,66,50]);
+    await setSuitabilityForAllCoursesInteract(2, [56,38,43,40,77,64,61,67,89,79]);
+    await switchThisUser('Teacher', 'teacher_4');
+    await setSuitabilityForAllCoursesInteract(1, [71,83,68,95,64,67,66,80,62,54]);
+    await setSuitabilityForAllCoursesInteract(2, [76,58,63,60,97,44,41,47,69,59]);
+    await switchThisUser('Teacher', 'teacher_5');
+    await setSuitabilityForAllCoursesInteract(1, [65,69,62,92,58,53,60,86,56,30]);
+    await setSuitabilityForAllCoursesInteract(2, [62,44,49,46,83,58,55,61,83,73]);
+
+    await saveAverageSuitabilityInteract(1);
+    await saveAverageSuitabilityInteract(2);
+
     await checkCourseImportance();
 
-    // 确定规则为能力和意愿加权
-    await switchThisUser('Teacher', 'teacher_1');
+    // 确定规则为性价比
+    await switchThisUser('Teacher', 'teacher_2');
     await createProposal();
     await init_teacherVote_auto(0, 1);
-    await switchThisUser('Teacher', 'teacher_2');
+    await switchThisUser('Teacher', 'teacher_1');
     await init_teacherVote_auto(0, 0);
     await switchThisUser('Teacher', 'teacher_3');
     await init_teacherVote_auto(0, 1);
@@ -421,9 +462,10 @@ async function main() {
     // 检查课程冲突
     await checkCourseConflicts(); // 没有冲突
     // 预处理冲突课程
+    await printAssignments_gains();
     await preprocessConflictCourses();
 
-    await printAssignments();
+    await printAssignments_gains();
 
     for(let k = 1; k <= 3; k++){
         // 为没有课程的老师创建提案
@@ -431,10 +473,12 @@ async function main() {
         console.log(proposal);
         await autoVote_conflictProposal(proposal);
 
-        await switchThisUser('Teacher', `teacher_1`);
+        await switchThisUser('Teacher', `teacher_2`);
         await endProposal(`endConfilct`, proposal.proposalId);
-        await printAssignments();
+        await printAssignments_gains();
     }
+
+    // await printAssignments_gains();
 
     for(let k = 1; k <= 1; k++){
         // 为没有课程的老师创建提案
@@ -444,10 +488,10 @@ async function main() {
 
         await switchThisUser('Teacher', `teacher_1`);
         await endProposal(`other`, proposal.proposalId);
-        await printAssignments();
+        await printAssignments_gains();
     }
     console.log(await checkAndCreateProposalForTeacher());
-    await printAssignments();
+    await printAssignments_gains();
 
     for(let k = 1; k <= 1; k++){
         // 为没有课程的老师创建提案
@@ -455,9 +499,9 @@ async function main() {
         console.log(proposal);
         await autoVote_coursesWithoutTeacher(proposal);
 
-        await switchThisUser('Teacher', `teacher_1`);
+        await switchThisUser('Teacher', `teacher_3`);
         await endProposal(`other`, proposal.proposalId);
-        await printAssignments();
+        await printAssignments_gains();
     }
 }
 // 调用主函数

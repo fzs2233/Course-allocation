@@ -857,10 +857,7 @@ async function setSuitabilityForAllCoursesInteract(agentId, suitabilities) {
 
 
 // 计算并保存平均适合度评分
-async function saveAverageSuitabilityInteract() {
-    const { agentId } = await inquirer.prompt([
-        { type: 'number', name: 'agentId', message: '请输入智能体ID:' }
-    ]);
+async function saveAverageSuitabilityInteract(agentId) {
 
     // 固定课程ID 1,2,3,4,5,6,7,8,9,10
     const courseIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -966,5 +963,6 @@ module.exports = {
     saveAverageSuitabilityInteract,
     set_ImportanceForAllCourses,
     set_DifficultyForAllCourses,
+    save_AverageDifficulty,
     save_AverageImportance
 };

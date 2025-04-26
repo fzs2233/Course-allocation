@@ -308,7 +308,7 @@ async function calculateCourseTotalScore(courseId) {
         let suitAfter_1 = Math.round(suitAfter);
         let totalScore_1 = Math.round(totalScore);
         await contract.setCourseTotalScore(courseId, totalScore_1);
-        // await contract.setTeacherCourseSuitability(teacherId, courseId, suitAfter_1);
+        await contract.setTeacherCourseSuitability(teacherId, courseId, suitAfter_1);
         typeId = teacherId;
     }else {
         let agentId = AssignedAgent[0];
@@ -317,7 +317,7 @@ async function calculateCourseTotalScore(courseId) {
         let suitAfter_1 = Math.round(suitAfter);
         let totalScore_1 = Math.round(totalScore);
         await contract.setCourseTotalScore(courseId, totalScore_1);
-        // await contract.setAgentCourseSuitability(agentId, courseId, suitAfter_1);
+        await contract.setAgentCourseSuitability(agentId, courseId, suitAfter_1);
         typeId = agentId;
     }
     // console.log(`classScoreAvg:${classScoreAvg.toFixed(2)}, supervisorScoreAvg:${supervisorScoreAvg.toFixed(2)}, teacherScoreAvg:${teacherScoreAvg.toFixed(2)}, machineScore:${machineScore.toFixed(2)}, totalScore:${totalScore.toFixed(2)}, suitAfter:${suitAfter.toFixed(2)}`)

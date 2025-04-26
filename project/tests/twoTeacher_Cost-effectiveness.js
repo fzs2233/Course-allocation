@@ -383,6 +383,18 @@ async function main() {
     await initializeData();
     await switchThisUser('Teacher', 'teacher_1');
     await initData();
+    // 设置课程重要程度
+    await set_ImportanceForAllCourses([1,7,1,10,5,2,8,4,8,10]);
+    await switchThisUser('Teacher', 'teacher_2');
+    await set_ImportanceForAllCourses([3,9,1,9,7,1,7,6,6,10]);
+    await switchThisUser('Teacher', 'teacher_3');
+    await set_ImportanceForAllCourses([4,6,1,8,5,2,7,3,5,10]);
+    await switchThisUser('Teacher', 'teacher_4');
+    await set_ImportanceForAllCourses([5,8,1,9,5,4,8,4,4,10]);
+    await switchThisUser('Teacher', 'teacher_5');
+    await set_ImportanceForAllCourses([2,5,1,9,3,1,10,3,7,10]);
+    
+    await save_AverageImportance();
     await checkCourseImportance();
 
     // 确定规则为性价比

@@ -153,94 +153,194 @@ async function main() {
     courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
     // 创建投票结果表格
     
-    await giveExamineScore(1, [95,86,85,83,75,70,68,67,97,87]);
-    let scores = [95,86,85,83,75,70,68,67,97,87]
+    let examineScore = new Array(10).fill(0);
+    for(let i = 0; i < examineScore.length; i++){
+        // 随机生成60-100以内的数字
+        examineScore[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await giveExamineScore(1, examineScore);
+    let scores = examineScore
     printtable(courseIds, scores, '课程成绩', 1, '学生')
 
-    await giveExamineScore(2, [93,88,87,73,65,70,78,67,87,87]);
-    scores = [93,88,87,73,65,70,78,67,87,87]
+    examineScore = new Array(10).fill(0);
+    for(let i = 0; i < examineScore.length; i++){
+        // 随机生成60-100以内的数字
+        examineScore[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await giveExamineScore(2, examineScore);
+    scores = examineScore
     printtable(courseIds, scores, '课程成绩', 2, '学生')
 
-    await giveExamineScore(3, [85,76,95,73,55,40,78,87,77,67]);
-    scores = [85,76,95,73,55,40,78,87,77,67]
+    examineScore = new Array(10).fill(0);
+    for(let i = 0; i < examineScore.length; i++){
+        // 随机生成60-100以内的数字
+        examineScore[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await giveExamineScore(3, examineScore);
+    scores = examineScore
     printtable(courseIds, scores, '课程成绩', 3, '学生')
 
-    await giveExamineScore(4, [75,56,65,93,75,70,48,67,87,67]);
-    scores = [75,56,65,93,75,70,48,67,87,67]
+    examineScore = new Array(10).fill(0);
+    for(let i = 0; i < examineScore.length; i++){
+        // 随机生成60-100以内的数字
+        examineScore[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await giveExamineScore(4, examineScore);
+    scores = examineScore
     printtable(courseIds, scores, '课程成绩', 4, '学生')
 
-    await giveExamineScore(5, [75,46,55,63,65,74,62,63,91,84]);
-    scores = [75,46,55,63,65,74,62,63,91,84]
+    examineScore = new Array(10).fill(0);
+    for(let i = 0; i < examineScore.length; i++){
+        // 随机生成60-100以内的数字
+        examineScore[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await giveExamineScore(5, examineScore);
+    scores = examineScore
     printtable(courseIds, scores, '课程成绩', 5, '学生')
 
-    await giveExamineScore(6, [85,66,88,63,85,80,78,67,57,67]);
-    scores = [85,66,88,63,85,80,78,67,57,67]
+    examineScore = new Array(10).fill(0);
+    for(let i = 0; i < examineScore.length; i++){
+        // 随机生成60-100以内的数字
+        examineScore[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await giveExamineScore(6, examineScore);
+    scores = examineScore
     printtable(courseIds, scores, '课程成绩', 6, '学生')
 
-    await giveExamineScore(7, [75,86,75,73,74,60,88,67,77,65]);
-    scores = [75,86,75,73,74,60,88,67,77,65]
+    examineScore = new Array(10).fill(0);
+    for(let i = 0; i < examineScore.length; i++){
+        // 随机生成60-100以内的数字
+        examineScore[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await giveExamineScore(7, examineScore);
+    scores = examineScore
     printtable(courseIds, scores, '课程成绩', 7, '学生')
 
-    await giveExamineScore(8, [85,76,65,63,55,60,64,67,57,67]);
-    scores = [85,76,65,63,55,60,64,67,57,67]
+    examineScore = new Array(10).fill(0);
+    for(let i = 0; i < examineScore.length; i++){
+        // 随机生成60-100以内的数字
+        examineScore[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await giveExamineScore(8, examineScore);
+    scores = examineScore
     printtable(courseIds, scores, '课程成绩', 8, '学生')
 
-    await giveExamineScore(9, [73,86,85,83,85,60,68,87,77,57]);
-    scores = [73,86,85,83,85,60,68,87,77,57]
+    examineScore = new Array(10).fill(0);
+    for(let i = 0; i < examineScore.length; i++){
+        // 随机生成60-100以内的数字
+        examineScore[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await giveExamineScore(9, examineScore);
+    scores = examineScore
     printtable(courseIds, scores, '课程成绩', 9, '学生')
 
-    await giveExamineScore(10, [74,76,45,53,65,50,78,67,67,77]);
-    scores = [74,76,45,53,65,50,78,67,67,77]
+    examineScore = new Array(10).fill(0);
+    for(let i = 0; i < examineScore.length; i++){
+        // 随机生成60-100以内的数字
+        examineScore[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await giveExamineScore(10, examineScore);
+    scores = examineScore
     printtable(courseIds, scores, '课程成绩', 10, '学生')
 
+    let studentScores = new Array(10).fill(0);
+    for(let i = 0; i < studentScores.length; i++){
+        // 随机生成60-100以内的数字
+        studentScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
     await switchThisUser("Student", "student_1");
-    await studentGiveScore([95,86,85,83,75,70,68,67,97,87]);
-    scores = [95,86,85,83,75,70,68,67,97,87]
+    await studentGiveScore(studentScores);
+    scores = studentScores
     printtable(courseIds, scores, '课程评分', 1, '学生')
 
+    studentScores = new Array(10).fill(0);
+    for(let i = 0; i < studentScores.length; i++){
+        // 随机生成60-100以内的数字
+        studentScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
     await switchThisUser("Student", "student_2");
-    await studentGiveScore([93,88,87,73,65,70,78,67,87,87]);
-    scores = [93,88,87,73,65,70,78,67,87,87]
+    await studentGiveScore(studentScores);
+    scores = studentScores
     printtable(courseIds, scores, '课程评分', 2, '学生')
 
+    studentScores = new Array(10).fill(0);
+    for(let i = 0; i < studentScores.length; i++){
+        // 随机生成60-100以内的数字
+        studentScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
     await switchThisUser("Student", "student_3");
-    await studentGiveScore([85,76,95,73,55,40,78,87,77,67]);
-    scores = [85,76,95,73,55,40,78,87,77,67]
+    await studentGiveScore(studentScores);
+    scores = studentScores
     printtable(courseIds, scores, '课程评分', 3, '学生')
 
+    studentScores = new Array(10).fill(0);
+    for(let i = 0; i < studentScores.length; i++){
+        // 随机生成60-100以内的数字
+        studentScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
     await switchThisUser("Student", "student_4");
-    await studentGiveScore([75,56,65,93,75,70,48,67,87,67]);
-    scores = [75,56,65,93,75,70,48,67,87,67]
+    await studentGiveScore(studentScores);
+    scores = studentScores
     printtable(courseIds, scores, '课程评分', 4, '学生')
 
+    studentScores = new Array(10).fill(0);
+    for(let i = 0; i < studentScores.length; i++){
+        // 随机生成60-100以内的数字
+        studentScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
     await switchThisUser("Student", "student_5");
-    await studentGiveScore([75,46,55,63,65,74,62,63,91,84]);
-    scores = [75,46,55,63,65,74,62,63,91,84]
+    await studentGiveScore(studentScores);
+    scores = studentScores
     printtable(courseIds, scores, '课程评分', 5, '学生')
 
+    studentScores = new Array(10).fill(0);
+    for(let i = 0; i < studentScores.length; i++){
+        // 随机生成60-100以内的数字
+        studentScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
     await switchThisUser("Student", "student_6");
-    await studentGiveScore([85,66,88,63,85,80,78,67,57,67]);
-    scores = [85,66,88,63,85,80,78,67,57,67]
+    await studentGiveScore(studentScores);
+    scores = studentScores
     printtable(courseIds, scores, '课程评分', 6, '学生')
 
+    studentScores = new Array(10).fill(0);
+    for(let i = 0; i < studentScores.length; i++){
+        // 随机生成60-100以内的数字
+        studentScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
     await switchThisUser("Student", "student_7");
-    await studentGiveScore([75,86,75,73,74,60,88,67,77,65]);
-    scores = [75,86,75,73,74,60,88,67,77,65]
+    await studentGiveScore(studentScores);
+    scores = studentScores
     printtable(courseIds, scores, '课程评分', 7, '学生')
 
     await switchThisUser("Student", "student_8");
-    await studentGiveScore([85,76,65,63,55,60,64,67,57,67]);
-    scores = [85,76,65,63,55,60,64,67,57,67]
+    studentScores = new Array(10).fill(0);
+    for(let i = 0; i < studentScores.length; i++){
+        // 随机生成60-100以内的数字
+        studentScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await studentGiveScore(studentScores);
+    scores = studentScores
     printtable(courseIds, scores, '课程评分', 8, '学生')
 
     await switchThisUser("Student", "student_9");
-    await studentGiveScore([73,86,85,83,85,60,68,87,77,57]);
-    scores = [73,86,85,83,85,60,68,87,77,57]
+    studentScores = new Array(10).fill(0);
+    for(let i = 0; i < studentScores.length; i++){
+        // 随机生成60-100以内的数字
+        studentScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await studentGiveScore(studentScores);
+    scores = studentScores
     printtable(courseIds, scores, '课程评分', 9, '学生')
 
     await switchThisUser("Student", "student_10");
-    await studentGiveScore([74,76,45,53,65,50,78,67,67,77]);
-    scores = [74,76,45,53,65,50,78,67,67,77]
+    studentScores = new Array(10).fill(0);
+    for(let i = 0; i < studentScores.length; i++){
+        // 随机生成60-100以内的数字
+        studentScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await studentGiveScore(studentScores);
+    scores = studentScores
     printtable(courseIds, scores, '课程评分', 10, '学生')
 
 
@@ -253,45 +353,80 @@ async function main() {
     await switchThisUser("Teacher", "teacher_1");
     courses = await contract.getTeacherReallyAssignedCourses(1);
     courses = courses.map(id => Number(id));
-    let result = courseIds.filter(item => !courses.includes(item))
-    await teacherGiveScore(new Array(10 - courses.length).fill(100));
-    printtable(result, new Array(10 - courses.length).fill(100), '课程评分', 1, '教师')
+    let result = courseIds.filter(item => !courses.includes(item));
+    let teacherScores = new Array(10 - courses.length).fill(0);
+    for(let i = 0; i < teacherScores.length; i++){
+        // 随机生成60-100以内的数字
+        teacherScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await teacherGiveScore(teacherScores);
+    printtable(result, teacherScores, '课程评分', 1, '教师')
 
     await switchThisUser("Teacher", "teacher_2");
     courses = await contract.getTeacherReallyAssignedCourses(2);
     courses = courses.map(id => Number(id));
     result = courseIds.filter(item => !courses.includes(item))
-    await teacherGiveScore(new Array(10 - courses.length).fill(90));
-    printtable(result, new Array(10 - courses.length).fill(90), '课程评分', 2, '教师')
+    teacherScores = new Array(10 - courses.length).fill(0);
+    for(let i = 0; i < teacherScores.length; i++){
+        // 随机生成60-100以内的数字
+        teacherScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await teacherGiveScore(teacherScores);
+    printtable(result, teacherScores, '课程评分', 2, '教师')
 
     await switchThisUser("Teacher", "teacher_3");
     courses = await contract.getTeacherReallyAssignedCourses(3);
     courses = courses.map(id => Number(id));
     result = courseIds.filter(item => !courses.includes(item))
-    await teacherGiveScore(new Array(10 - courses.length).fill(80));
-    printtable(result, new Array(10 - courses.length).fill(80), '课程评分', 3, '教师')
+    teacherScores = new Array(10 - courses.length).fill(0);
+    for(let i = 0; i < teacherScores.length; i++){
+        // 随机生成60-100以内的数字
+        teacherScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await teacherGiveScore(teacherScores);
+    printtable(result, teacherScores, '课程评分', 3, '教师')
 
     await switchThisUser("Teacher", "teacher_4");
     courses = await contract.getTeacherReallyAssignedCourses(4);
     courses = courses.map(id => Number(id));
     result = courseIds.filter(item => !courses.includes(item))
-    await teacherGiveScore(new Array(10 - courses.length).fill(70));
-    printtable(result, new Array(10 - courses.length).fill(70), '课程评分', 4, '教师')
+    teacherScores = new Array(10 - courses.length).fill(0);
+    for(let i = 0; i < teacherScores.length; i++){
+        // 随机生成60-100以内的数字
+        teacherScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await teacherGiveScore(teacherScores);
+    printtable(result, teacherScores, '课程评分', 4, '教师')
 
     await switchThisUser("Teacher", "teacher_5");
     courses = await contract.getTeacherReallyAssignedCourses(5);
     courses = courses.map(id => Number(id));
     result = courseIds.filter(item => !courses.includes(item))
-    await teacherGiveScore(new Array(10 - courses.length).fill(60));
-    printtable(result, new Array(10 - courses.length).fill(60), '课程评分', 5, '教师')
+    teacherScores = new Array(10 - courses.length).fill(0);
+    for(let i = 0; i < teacherScores.length; i++){
+        // 随机生成60-100以内的数字
+        teacherScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await teacherGiveScore(teacherScores);
+    printtable(result, teacherScores, '课程评分', 5, '教师')
     
     await switchThisUser("Supervisor", "supervisor_1");
-    await supervisorGiveScore([80, 80, 80, 80, 80, 80, 80, 80, 80, 80]);
-    printtable(courseIds, [80, 80, 80, 80, 80, 80, 80, 80, 80, 80], '课程评分', 1, '督导')
+    let supervisorScores = new Array(10).fill(0);
+    for(let i = 0; i < supervisorScores.length; i++){
+        // 随机生成60-100以内的数字
+        supervisorScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await supervisorGiveScore(supervisorScores);
+    printtable(courseIds, supervisorScores, '课程评分', 1, '督导')
 
     await switchThisUser("Supervisor", "supervisor_2");
-    await supervisorGiveScore([70, 70, 70, 70, 70, 70, 70, 70, 70, 70]);
-    printtable(courseIds, [70, 70, 70, 70, 70, 70, 70, 70, 70, 70], '课程评分', 2, '督导')
+    supervisorScores = new Array(10).fill(0);
+    for(let i = 0; i < supervisorScores.length; i++){
+        // 随机生成60-100以内的数字
+        supervisorScores[i] = Math.floor(Math.random() * 41) + 60;
+    }
+    await supervisorGiveScore(supervisorScores);
+    printtable(courseIds, supervisorScores, '课程评分', 2, '督导')
 
     let machineRatings = []
     for(let i = 1; i <= 10; i++){
@@ -302,8 +437,9 @@ async function main() {
         '机器评分': machineRatings[index]
     }))
     console.table(table)
-    await printAllScore();
     await calculateTotalScore();
+    await printAssignments_gains();
+    await printAllScore();
 }
 
 main()

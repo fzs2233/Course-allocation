@@ -577,13 +577,13 @@ async function initializeData() {
        await registerAgent("agent_1", accounts[6]);
     //    await contract.setAllAgentCourseSuitability(1, [75,79,72,91,88,73,70,76,86,100]);
        await contract.setAllAgentCourseSuitability(1, [75,89,72,51,68,63,70,86,66,50]);
-       await contract.setAgentValue(1,1000);
+       await contract.setAgentValue(1,100);
    
        await switchAcount(7);
        await registerAgent("agent_2", accounts[7]);
     //    await contract.setAllAgentCourseSuitability(2, [86,98,93,90,87,94,91,97,88,99]); 
        await contract.setAllAgentCourseSuitability(2, [66,48,53,50,87,54,51,97,58,59]);
-       await contract.setAgentValue(2,1200);
+       await contract.setAgentValue(2,120);
     
         // 教师1
         await contract.addTeacherResearchDirection(1, '大规模视频分析与理解');

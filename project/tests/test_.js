@@ -43,6 +43,7 @@ const {
     getTeacherCostPerformance,
     getAgentCostPerformance,
     printAssignments,
+    printAssignments_gains,
     transferCourse,
     checkCourseConflicts,
     preprocessConflictCourses,
@@ -122,6 +123,20 @@ async function main(){
     // await calculateTotalScore();
     // await printAllScore();
 
+    // let courseIds = await contract.getCourseIds();
+    // courseIds = courseIds.map(id => Number(id)); // 转换为数字数组
+    // let machineRatings = []
+    // for(let i = 1; i <= 10; i++){
+    //     machineRatings.push((await machineRating_auto(i)).machineRate);
+    // }
+    // let table = courseIds.map((courseId, index) => ({
+    //     '课程ID': courseId,
+    //     '机器评分': machineRatings[index]
+    // }))
+    // console.table(table)
+    await printAllScore();
+    // await calculateTotalScore();
+    await printAssignments_gains();
 }
 
 main();
