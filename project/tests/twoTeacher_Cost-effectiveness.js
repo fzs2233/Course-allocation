@@ -262,6 +262,7 @@ const {
     getTeacherCostPerformance,
     getAgentCostPerformance,
     printAssignments,
+    printAssignments_gains,
     transferCourse,
     checkCourseConflicts,
     preprocessConflictCourses,
@@ -440,10 +441,10 @@ async function main() {
 
         await switchThisUser('Teacher', `teacher_1`);
         await endProposal(`other`, proposal.proposalId);
-        await printAssignments()
+        await printAssignments_gains();
     }
     console.log(await checkAndCreateProposalForTeacher());
-    await printAssignments()
+    await printAssignments_gains();
 
     for(let k = 1; k <= 2; k++){
         // 为没有课程的老师创建提案
@@ -453,10 +454,10 @@ async function main() {
 
         await switchThisUser('Teacher', `teacher_1`);
         await endProposal(`other`, proposal.proposalId);
-        await printAssignments()
+        await printAssignments_gains();
     }
     console.log(await proposalForCoursesWithoutAssigned());
-    await printAssignments()
+    await printAssignments_gains();
 }
 // 调用主函数
 main().catch(console.error);

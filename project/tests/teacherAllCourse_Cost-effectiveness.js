@@ -43,6 +43,7 @@ const {
     getTeacherCostPerformance,
     getAgentCostPerformance,
     printAssignments,
+    printAssignments_gains,
     transferCourse,
     checkCourseConflicts,
     preprocessConflictCourses,
@@ -265,15 +266,15 @@ async function begin(){
 
         await switchThisUser('Teacher', `teacher_1`);
         await endProposal(`endConfilct`, proposal.proposalId);
-        await printAssignments()
+        await printAssignments_gains();
     }
     await switchThisUser('Teacher', `teacher_1`);
-    let proposal = await createConflictProposal();;
+    let proposal = await createConflictProposal();
     console.log(proposal)
-    await printAssignments();
-    proposal = await createConflictProposal();;
+    await printAssignments_gains();
+    proposal = await createConflictProposal();
     console.log(proposal)
-    await printAssignments();
+    await printAssignments_gains();
 }
 begin();
 // node tests/teacherAllCourse_Cost-effectiveness.js
