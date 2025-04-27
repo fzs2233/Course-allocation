@@ -43,6 +43,7 @@ const {
     getTeacherCostPerformance,
     getAgentCostPerformance,
     printAssignments,
+    printAssignments_gains,
     transferCourse,
     checkCourseConflicts,
     preprocessConflictCourses,

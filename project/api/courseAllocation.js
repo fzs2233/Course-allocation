@@ -324,8 +324,8 @@ async function printAssignments_gains() { //查看目前的课程分配情况
             "课程名": courseName,
             "课程重要程度": importance,
             "分配对象": assignedTo.join(' | '),
-            [scoreTypePrint]:gain,
-            "薪资":cost
+            "薪资":cost,
+            [scoreTypePrint]:gain
         });
     }
     // 打印表格
@@ -1117,29 +1117,29 @@ async function transferCourse(courseId, targetId) {
                 message: `当前转移课程币的数量为 ${coins}, 无法实现转移课程`
             }
         }
-        let onlyOneTeacher = 0;
-        // 看目标是否独占两门及以上课程
-        let targetAssignedCourses = await contract.getTeacherAssignedCourses(targetId);
-        targetAssignedCourses = targetAssignedCourses.map(id => id.toNumber());
-        if (targetAssignedCourses.length >= 2) {
-            // 遍历这些课程，看有多少门课程是只有这一个老师
-            for (let course of targetAssignedCourses) {
-                let thisTeachers = await contract.getCoursesAssignedTeacher(course);
-                if (thisTeachers.length === 1) {
-                    onlyOneTeacher++;
-                    if (onlyOneTeacher >= 2) {
-                        break;
-                    }
-                }
-            }
-            if (onlyOneTeacher >= 2) {
-                return{
-                    code: -1,
-                    message: "目标老师独占两门及以上课程，无法转移课程"
-                }
-            }
-        }
-        console.log("目标老师没有独占两门及以上课程，可以转移");
+        // let onlyOneTeacher = 0;
+        // // 看目标是否独占两门及以上课程
+        // let targetAssignedCourses = await contract.getTeacherAssignedCourses(targetId);
+        // targetAssignedCourses = targetAssignedCourses.map(id => id.toNumber());
+        // if (targetAssignedCourses.length >= 2) {
+        //     // 遍历这些课程，看有多少门课程是只有这一个老师
+        //     for (let course of targetAssignedCourses) {
+        //         let thisTeachers = await contract.getCoursesAssignedTeacher(course);
+        //         if (thisTeachers.length === 1) {
+        //             onlyOneTeacher++;
+        //             if (onlyOneTeacher >= 2) {
+        //                 break;
+        //             }
+        //         }
+        //     }
+        //     if (onlyOneTeacher >= 2) {
+        //         return{
+        //             code: -1,
+        //             message: "目标老师独占两门及以上课程，无法转移课程"
+        //         }
+        //     }
+        // }
+        // console.log("目标老师没有独占两门及以上课程，可以转移");
         // 获取目标适合度
         let targetSuitability = (await contract.getTeacherSuitability(targetId, courseId)).toNumber();
 
@@ -1164,7 +1164,7 @@ async function transferCourse(courseId, targetId) {
         if (targetPerf <= currentPerf) {
             return{
                 code: -1,
-                message: `目标老师${targetId}的${scoreTypePrint}需大于当前老师${senderTeacherId}分数（当前: ${currentPerf.toFixed(2)}, 目标: ${targetPerf.toFixed(2)}） 无法转移课程`
+                message: `目标老师${targetId}的${scoreTypePrint}需大于当前老师${senderTeacherId}分数（当前: ${currentPerf.toFixed(2)}, 目标: ${targetPerf.toFixed(2)}） 无法转移课程${courseId}`
             }
         }
 
@@ -1301,7 +1301,7 @@ async function getCompareScore(teacherId, courseId, scoreType){
         salary = salary.toNumber();
         let suitability = await contract.getTeacherSuitability(teacherId, courseId);
         suitability = suitability.toNumber();
-        let CostEffectiveness = suitability/salary;
+        let CostEffectiveness = Math.round(suitability/salary * 1000);
         // console.log(teacherId, courseId)
         // console.log(`计算出来的分数为 ${CostEffectiveness}`)
         return {
@@ -1335,7 +1335,7 @@ async function getCompareScore_agent(agentId, courseId, scoreType){
         salary = salary.toNumber();
         let suitability = await contract.getAgentSuitability(agentId, courseId);
         suitability = suitability.toNumber();
-        let CostEffectiveness = suitability/salary;
+        let CostEffectiveness = Math.round(suitability/salary * 1000);
         // console.log(teacherId, courseId)
         // console.log(`计算出来的分数为 ${CostEffectiveness}`)
         return {
