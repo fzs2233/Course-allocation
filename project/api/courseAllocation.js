@@ -266,8 +266,8 @@ async function printAssignments_gains() { //查看目前的课程分配情况
                     courseId: courseId,
                     score: currentScore
                 });
-                // 按照 score 降序排序
-                coursesWithScores.sort((a, b) => b.score - a.score);
+                // 按照 score 升序排序
+                coursesWithScores.sort((a, b) => a.score - b.score);
                 console.log(coursesWithScores);
                 // 选出最大的性价比并记录courseId
                 console.log(`课程${coursesWithScores[0].courseId}的${scoreTypePrint}置为0`);
@@ -335,7 +335,7 @@ async function printAssignments_gains() { //查看目前的课程分配情况
     let totalCostEffectiveness;
     if (scoreType === "Cost-effectiveness") {
         totalCostEffectiveness = Math.round(suitTotal / costTotal * 1000);
-        let averageCostEffectiveness = Math.round(totalScore / assignments.length * 1000);
+        let averageCostEffectiveness = Math.round(totalScore / assignments.length);
         console.log(`总体${scoreTypePrint}:`, totalCostEffectiveness);
         console.log(`${scoreTypePrint}均值:`, averageCostEffectiveness);
     }else if (scoreType === "Suitability&Preference") {
@@ -1320,6 +1320,7 @@ async function getCompareScore(teacherId, courseId, scoreType){
         let teacherCount = Number(await contract.teacherCount());
         let classCount = Number(await contract.classCount());
         let teacherScore = (currentWeight * courseSuitability + (10 * (teacherCount + classCount -1) - currentWeight) * coursePreference)/60;
+        teacherScore = Math.round(teacherScore);
         return {
             code: 0,
             message: "Suitability&Preference",
@@ -1353,6 +1354,7 @@ async function getCompareScore_agent(agentId, courseId, scoreType){
         let teacherCount = Number(await contract.teacherCount());
         let classCount = Number(await contract.classCount());
         let agentScore = (totalWeight * courseSuitability + (10 * (teacherCount + classCount) - totalWeight) * coursePreference)/60;
+        agentScore = Math.round(agentScore);
         return {
             code: 0,
             message: "Suitability&Preference",
