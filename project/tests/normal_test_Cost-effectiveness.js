@@ -388,9 +388,9 @@ async function initData(){
 }
 
 async function main() {
-    await initializeData();
+    // await initializeData();
     await switchThisUser('Teacher', 'teacher_1');
-    await initData();
+    // await initData();
     console.log(await getTeacherCourseSuitabilityByPython(1));
     console.log(await getTeacherCourseSuitabilityByPython(2));
     console.log(await getTeacherCourseSuitabilityByPython(3));
