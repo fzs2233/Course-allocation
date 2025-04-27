@@ -1353,7 +1353,7 @@ async function getCompareScore_agent(agentId, courseId, scoreType){
         let coursePreference = 100;
         let teacherCount = Number(await contract.teacherCount());
         let classCount = Number(await contract.classCount());
-        let agentScore = (totalWeight * courseSuitability + (10 * (teacherCount + classCount) - totalWeight) * coursePreference)/60;
+        let agentScore = (totalWeight * courseSuitability + (10 * (teacherCount + classCount) - totalWeight) * coursePreference)/70;
         agentScore = Math.round(agentScore);
         return {
             code: 0,
