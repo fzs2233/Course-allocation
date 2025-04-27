@@ -425,6 +425,7 @@ async function main() {
     await handleTransferCourse(6, 3);
     await handleTransferCourse(7, 4);
     await handleTransferCourse(8, 5);
+    
 
     // 查看课程分配情况
     await printAssignments();

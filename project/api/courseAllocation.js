@@ -1103,12 +1103,6 @@ async function transferCourse(courseId, targetId) {
         const isCurrentHolder = currentAssigned.includes(senderTeacherId);
         let coins = (await contract.teachers(senderTeacherId)).transferCourseCoins;
         coins = coins.toNumber();
-        if (coins < 2) {
-            return{
-                code: -1,
-                message: `当前转移课程币的数量为 ${coins}, 无法实现转移课程`
-            }
-        }
 
         if (!isCurrentHolder) {
             return{
@@ -1117,6 +1111,35 @@ async function transferCourse(courseId, targetId) {
             }
         }
 
+        if (coins < 2) {
+            return{
+                code: -1,
+                message: `当前转移课程币的数量为 ${coins}, 无法实现转移课程`
+            }
+        }
+        let onlyOneTeacher = 0;
+        // 看目标是否独占两门及以上课程
+        let targetAssignedCourses = await contract.getTeacherAssignedCourses(targetId);
+        targetAssignedCourses = targetAssignedCourses.map(id => id.toNumber());
+        if (targetAssignedCourses.length >= 2) {
+            // 遍历这些课程，看有多少门课程是只有这一个老师
+            for (let course of targetAssignedCourses) {
+                let thisTeachers = await contract.getCoursesAssignedTeacher(course);
+                if (thisTeachers.length === 1) {
+                    onlyOneTeacher++;
+                    if (onlyOneTeacher >= 2) {
+                        break;
+                    }
+                }
+            }
+            if (onlyOneTeacher >= 2) {
+                return{
+                    code: -1,
+                    message: "目标老师独占两门及以上课程，无法转移课程"
+                }
+            }
+        }
+        console.log("目标老师没有独占两门及以上课程，可以转移");
         // 获取目标适合度
         let targetSuitability = (await contract.getTeacherSuitability(targetId, courseId)).toNumber();
 

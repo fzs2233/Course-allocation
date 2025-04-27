@@ -465,18 +465,18 @@ async function main() {
     // 初始化教师课程分配
     await init_TeacherCourses();
     // 查看课程分配情况
-    await printAssignments();
+    await printAssignments_gains();
     // 转移课程
     await switchThisUser('Teacher', 'teacher_2');
     await handleTransferCourse(6, 5);
     console.log("\n");
+    
     await switchThisUser('Teacher', 'teacher_3');
     await handleTransferCourse(8, 5);
     console.log("\n");
     // 检查课程冲突
     await checkCourseConflicts(); // 没有冲突
     // 预处理冲突课程
-    await printAssignments_gains();
     await preprocessConflictCourses();
 
     await printAssignments_gains();

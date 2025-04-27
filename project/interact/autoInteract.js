@@ -44,6 +44,7 @@ const {
     getTeacherCostPerformance,
     getAgentCostPerformance,
     printAssignments,
+    printAssignments_gains,
     transferCourse,
     checkCourseConflicts,
     preprocessConflictCourses,
@@ -737,7 +738,7 @@ async function handleTransferCourse(courseId,targetId) {
             console.log(result.senderCoins);
             console.log(result.targetCoins);
             // 打印课程分配情况
-            await printAssignments();
+            await printAssignments_gains();
         }
     } catch (error) {
         console.error('转移失败:', error.message);

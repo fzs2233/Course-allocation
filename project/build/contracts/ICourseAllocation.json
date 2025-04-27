@@ -48395,12 +48395,12 @@
     "5777": {
       "events": {},
       "links": {},
-      "address": "0x7a06692c89f8b797808bBEE2e51D755a389c291B",
-      "transactionHash": "0xdf4cdc2ca9dfbe80fcb3ef8cadc6a9f29cddc70f93094a215cb708383bb269c0"
+      "address": "0xDB26077904ed8584995ec201F4E1A0603f4f1550",
+      "transactionHash": "0x05480e44089f35830b4f5aa8f4a477e045f5cc0b5b2c118e18d2984e93ccb126"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2025-04-27T01:57:49.045Z",
+  "updatedAt": "2025-04-27T03:39:07.054Z",
   "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",
