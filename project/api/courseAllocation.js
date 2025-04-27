@@ -299,7 +299,7 @@ async function printAssignments_gains() { //查看目前的课程分配情况
                 cost = (await contract.teachers(assignedTeachers[0])).value.toNumber();
                 suitTotal += (await contract.getTeacherSuitability(assignedTeachers[0], courseId)).toNumber();
             } else if (assignedAgents.length == 1) {
-                gain = (await getCompareScore(assignedAgents[0], courseId, scoreType)).data;
+                gain = (await getCompareScore_agent(assignedAgents[0], courseId, scoreType)).data;
                 cost = (await contract.agents(assignedAgents[0])).value.toNumber();
                 suitTotal += (await contract.getAgentSuitability(assignedAgents[0], courseId)).toNumber();
             }
@@ -1301,6 +1301,39 @@ async function getCompareScore(teacherId, courseId, scoreType){
             code: 0,
             message: "Suitability&Preference",
             data: teacherScore
+        }
+    }
+}
+
+async function getCompareScore_agent(agentId, courseId, scoreType){
+    let agent = await contract.agents(agentId);
+    if(scoreType === "Cost-effectiveness"){
+        let salary = agent.value;
+        salary = salary.toNumber();
+        let suitability = await contract.getAgentSuitability(agentId, courseId);
+        suitability = suitability.toNumber();
+        let CostEffectiveness = suitability/salary;
+        // console.log(teacherId, courseId)
+        // console.log(`计算出来的分数为 ${CostEffectiveness}`)
+        return {
+            code: 0,
+            message: "Cost-effectiveness",
+            data: CostEffectiveness
+        }
+    }else if(scoreType === "Suitability&Preference"){
+        let totalTeacherWeight = await contract.totalWeight();
+        totalTeacherWeight = totalTeacherWeight.toNumber();
+        let totalClassWeight = await classContract.getClassWeight();
+        let totalWeight = totalTeacherWeight + totalClassWeight.toNumber();
+        let courseSuitability = await contract.getAgentSuitability(agentId, courseId);
+        let coursePreference = 100;
+        let teacherCount = Number(await contract.teacherCount());
+        let classCount = Number(await contract.classCount());
+        let agentScore = (totalWeight * courseSuitability + (10 * (teacherCount + classCount -1) - totalWeight) * coursePreference)/60;
+        return {
+            code: 0,
+            message: "Suitability&Preference",
+            data: agentScore
         }
     }
 }
