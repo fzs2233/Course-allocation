@@ -334,12 +334,12 @@ async function printAssignments_gains() { //查看目前的课程分配情况
     
     let totalCostEffectiveness;
     if (scoreType === "Cost-effectiveness") {
-        totalCostEffectiveness = suitTotal / costTotal;
-        let averageCostEffectiveness = totalScore / assignments.length;
+        totalCostEffectiveness = Math.round(suitTotal / costTotal * 1000);
+        let averageCostEffectiveness = Math.round(totalScore / assignments.length * 1000);
         console.log(`总体${scoreTypePrint}:`, totalCostEffectiveness);
         console.log(`${scoreTypePrint}均值:`, averageCostEffectiveness);
     }else if (scoreType === "Suitability&Preference") {
-        totalCostEffectiveness = totalScore / assignments.length;
+        totalCostEffectiveness = Math.round(totalScore / assignments.length);
         console.log(`${scoreTypePrint}均值:`, totalCostEffectiveness);
     }
     
