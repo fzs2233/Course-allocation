@@ -43,6 +43,8 @@ const {
     init_AgentCourses,
     getTeacherCostPerformance,
     getAgentCostPerformance,
+    getCompareScore,
+    getCompareScore_agent,
     printAssignments,
     printAssignments_gains,
     transferCourse,
@@ -497,6 +499,8 @@ async function printAllScore() {
     let studentIds = await classContract.getStudentIds(); // 学生id
     studentIds = studentIds.map(id => Number(id)); // 转换为数字数组
     let assignments = [];
+    let costTotal = 0;
+    let totalGain = 0;
     for (let i = 0; i < courseIds.length; i++) {
         let courseScores = await contract.courseScores(courseIds[i]);
 
@@ -534,16 +538,19 @@ async function printAllScore() {
         let studentScoresAvg = studentScoresTotal / studentIds.length; // 学生平均分
         studentScoresAvg = studentScoresAvg.toFixed(2); // 保留两位小数
         let salary = 0;
+        let gain_weight = 0;
         if(assignedTeachers.length > 0) {
             let teacher = await contract.teachers(assignedTeachers[0]); // 老师
             salary = Number(teacher.value); // 工资
+            gain_weight = (await getCompareScore(assignedTeachers[0], courseIds[i], "Suitability&Preference")).data;
         }else if(assignedAgents.length > 0) {
             let agent = await contract.agents(assignedAgents[0]); // 智能体
             salary = Number(agent.value); // 工资
+            gain_weight = (await getCompareScore_agent(assignedAgents[0], courseIds[i], "Suitability&Preference")).data;
         }
-        
-        
 
+        costTotal += salary;
+        totalGain += gain_weight;
         assignments.push({
             "课程ID": courseIds[i],
             "分配对象": assignedTo.join(' | '),
@@ -552,13 +559,22 @@ async function printAllScore() {
             "学生平均成绩": studentScoresAvg,
             "班级评分": classScore.join(', '),
             "督导评分": supervisorScore.join(', '),
-            "总分": totalScore,
             "薪水": salary,
+            "总分": totalScore,
+            "能力意愿加权":gain_weight,
+            "性价比":Math.round(gain_weight/salary*1000),
+            "实际性价比":Math.round(totalScore/salary*1000)
         });
         // console.log(`课程 ${courseIds[i]} 的评分: 自评 ${teacherScore}, 学生 ${classScore}, 督导 ${supervisorScore}, 总分 ${totalScore}`); // 打印评分 
     }
     console.log('\n目前课程的评分情况:');
     console.table(assignments); // 打印表格
+    // let totalCostEffectiveness;
+    // let totalSuitAndPrefer;
+    // totalCostEffectiveness = Math.round(totalGain / costTotal * 1000);
+    // console.log(`总体性价比:`, totalCostEffectiveness);
+    // totalSuitAndPrefer = Math.round(totalGain / assignments.length);
+    // console.log(`能力意愿加权均值:`, totalSuitAndPrefer);
 }
 
 function formatNumber(num) {

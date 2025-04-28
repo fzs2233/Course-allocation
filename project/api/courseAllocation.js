@@ -225,7 +225,7 @@ async function printAssignments_gains() { //查看目前的课程分配情况
 
     let overCourseIds = [];
     let onlyOneAssign = new Map();
-    let suitTotal = 0;
+    // let suitTotal = 0;
     let costTotal = 0;
     let totalScore = 0; // 总体性价比
 
@@ -292,21 +292,23 @@ async function printAssignments_gains() { //查看目前的课程分配情况
         
         let gain = 0;
         let cost = 1500;
-
+        let gain_weight = 0;
         if (!overCourseIds.includes(courseId) && assignedTeachers.length + assignedAgents.length == 1) {
             if (assignedTeachers.length == 1) {
-                gain = (await getCompareScore(assignedTeachers[0], courseId, scoreType)).data;
+                gain = (await getCompareScore(assignedTeachers[0], courseId, "Cost-effectiveness")).data;
+                gain_weight = (await getCompareScore(assignedTeachers[0], courseId, "Suitability&Preference")).data;
                 cost = (await contract.teachers(assignedTeachers[0])).value.toNumber();
-                suitTotal += (await contract.getTeacherSuitability(assignedTeachers[0], courseId)).toNumber();
+                // suitTotal += (await contract.getTeacherSuitability(assignedTeachers[0], courseId)).toNumber();
             } else if (assignedAgents.length == 1) {
-                gain = (await getCompareScore_agent(assignedAgents[0], courseId, scoreType)).data;
+                gain = (await getCompareScore_agent(assignedAgents[0], courseId, "Cost-effectiveness")).data; 
+                gain_weight = (await getCompareScore_agent(assignedAgents[0], courseId, "Suitability&Preference")).data;
                 cost = (await contract.agents(assignedAgents[0])).value.toNumber();
-                suitTotal += (await contract.getAgentSuitability(assignedAgents[0], courseId)).toNumber();
+                // suitTotal += (await contract.getAgentSuitability(assignedAgents[0], courseId)).toNumber();
             }
         }
         // 计算总薪资
         costTotal += cost;
-        totalScore += gain;
+        totalScore += gain_weight;
         // 构建分配信息
         let assignedTo = [];
         if (assignedTeachers.length > 0) {
@@ -325,7 +327,8 @@ async function printAssignments_gains() { //查看目前的课程分配情况
             "课程重要程度": importance,
             "分配对象": assignedTo.join(' | '),
             "薪资":cost,
-            [scoreTypePrint]:gain
+            "能力意愿加权":gain_weight,
+            "性价比":gain
         });
     }
     // 打印表格
@@ -333,15 +336,11 @@ async function printAssignments_gains() { //查看目前的课程分配情况
     console.table(assignments);
     
     let totalCostEffectiveness;
-    if (scoreType === "Cost-effectiveness") {
-        totalCostEffectiveness = Math.round(suitTotal / costTotal * 1000);
-        let averageCostEffectiveness = Math.round(totalScore / assignments.length);
-        console.log(`总体${scoreTypePrint}:`, totalCostEffectiveness);
-        console.log(`${scoreTypePrint}均值:`, averageCostEffectiveness);
-    }else if (scoreType === "Suitability&Preference") {
-        totalCostEffectiveness = Math.round(totalScore / assignments.length);
-        console.log(`${scoreTypePrint}均值:`, totalCostEffectiveness);
-    }
+    let totalSuitAndPrefer;
+    totalCostEffectiveness = Math.round(totalScore / costTotal * 1000);
+    console.log(`总体性价比:`, totalCostEffectiveness);
+    totalSuitAndPrefer = Math.round(totalScore / assignments.length);
+    console.log(`能力意愿加权均值:`, totalSuitAndPrefer);
     
     return assignments;
 }
@@ -1296,12 +1295,21 @@ async function preprocessConflictCourses() {
 // 设定比较的分数
 async function getCompareScore(teacherId, courseId, scoreType){
     let teacher = await contract.teachers(teacherId);
+    let totalTeacherWeight = await contract.totalWeight();
+    totalTeacherWeight = totalTeacherWeight.toNumber();
+    let totalClassWeight = await classContract.getClassWeight();
+    let totalWeight = totalTeacherWeight + totalClassWeight.toNumber();
+    let currentWeight = totalWeight - (teacher.suitabilityWeight).toNumber();
+    let courseSuitability = await contract.getTeacherSuitability(teacherId, courseId);
+    let coursePreference = await contract.getPreference(teacherId, courseId);
+    let teacherCount = Number(await contract.teacherCount());
+    let classCount = Number(await contract.classCount());
+    let teacherScore = (currentWeight * courseSuitability + (10 * (teacherCount + classCount -1) - currentWeight) * coursePreference)/60;
+
     if(scoreType === "Cost-effectiveness"){
         let salary = teacher.value;
         salary = salary.toNumber();
-        let suitability = await contract.getTeacherSuitability(teacherId, courseId);
-        suitability = suitability.toNumber();
-        let CostEffectiveness = Math.round(suitability/salary * 1000);
+        let CostEffectiveness = Math.round(teacherScore/salary * 1000);
         // console.log(teacherId, courseId)
         // console.log(`计算出来的分数为 ${CostEffectiveness}`)
         return {
@@ -1310,16 +1318,6 @@ async function getCompareScore(teacherId, courseId, scoreType){
             data: CostEffectiveness
         }
     }else if(scoreType === "Suitability&Preference"){
-        let totalTeacherWeight = await contract.totalWeight();
-        totalTeacherWeight = totalTeacherWeight.toNumber();
-        let totalClassWeight = await classContract.getClassWeight();
-        let totalWeight = totalTeacherWeight + totalClassWeight.toNumber();
-        let currentWeight = totalWeight - (teacher.suitabilityWeight).toNumber();
-        let courseSuitability = await contract.getTeacherSuitability(teacherId, courseId);
-        let coursePreference = await contract.getPreference(teacherId, courseId);
-        let teacherCount = Number(await contract.teacherCount());
-        let classCount = Number(await contract.classCount());
-        let teacherScore = (currentWeight * courseSuitability + (10 * (teacherCount + classCount -1) - currentWeight) * coursePreference)/60;
         teacherScore = Math.round(teacherScore);
         return {
             code: 0,
@@ -1331,12 +1329,20 @@ async function getCompareScore(teacherId, courseId, scoreType){
 
 async function getCompareScore_agent(agentId, courseId, scoreType){
     let agent = await contract.agents(agentId);
+    let totalTeacherWeight = await contract.totalWeight();
+    totalTeacherWeight = totalTeacherWeight.toNumber();
+    let totalClassWeight = await classContract.getClassWeight();
+    let totalWeight = totalTeacherWeight + totalClassWeight.toNumber();
+    let courseSuitability = await contract.getAgentSuitability(agentId, courseId);
+    let coursePreference = 100;
+    let teacherCount = Number(await contract.teacherCount());
+    let classCount = Number(await contract.classCount());
+    let agentScore = (totalWeight * courseSuitability + (10 * (teacherCount + classCount) - totalWeight) * coursePreference)/70;
+
     if(scoreType === "Cost-effectiveness"){
         let salary = agent.value;
         salary = salary.toNumber();
-        let suitability = await contract.getAgentSuitability(agentId, courseId);
-        suitability = suitability.toNumber();
-        let CostEffectiveness = Math.round(suitability/salary * 1000);
+        let CostEffectiveness = Math.round(agentScore/salary * 1000);
         // console.log(teacherId, courseId)
         // console.log(`计算出来的分数为 ${CostEffectiveness}`)
         return {
@@ -1345,15 +1351,7 @@ async function getCompareScore_agent(agentId, courseId, scoreType){
             data: CostEffectiveness
         }
     }else if(scoreType === "Suitability&Preference"){
-        let totalTeacherWeight = await contract.totalWeight();
-        totalTeacherWeight = totalTeacherWeight.toNumber();
-        let totalClassWeight = await classContract.getClassWeight();
-        let totalWeight = totalTeacherWeight + totalClassWeight.toNumber();
-        let courseSuitability = await contract.getAgentSuitability(agentId, courseId);
-        let coursePreference = 100;
-        let teacherCount = Number(await contract.teacherCount());
-        let classCount = Number(await contract.classCount());
-        let agentScore = (totalWeight * courseSuitability + (10 * (teacherCount + classCount) - totalWeight) * coursePreference)/70;
+        
         agentScore = Math.round(agentScore);
         return {
             code: 0,
@@ -1492,6 +1490,8 @@ module.exports = {
     init_AgentCourses,
     getTeacherCostPerformance,
     getAgentCostPerformance,
+    getCompareScore,
+    getCompareScore_agent,
     printAssignments,
     printAssignments_gains,
     transferCourse, // 给课
