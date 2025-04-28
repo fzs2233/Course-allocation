@@ -366,20 +366,25 @@ async function switchCurrentSigner_everyTest(newAddress, newCurrentName) {
 async function initData(){
     await contract.setAllTeacherCourseSuitability(1, [80,81,82,94,70,68,89,96,57,93]);
     await contract.setAllTeacherCoursePreferences(1, [95,70,94,20,53,58,44,70,46,40]);
+    await contract.setTeacherValue(1, 2000);
     console.log("老师1的意愿设置完成");
 
     await contract.setAllTeacherCourseSuitability(2, [71,62,73,64,85,66,77,88,95,73]);
     await contract.setAllTeacherCoursePreferences(2, [35,54,47,55,47,50,68,56,54,40]);
+    await contract.setTeacherValue(1, 1600);
     console.log("老师2的意愿设置完成");
     await contract.setAllTeacherCourseSuitability(3, [62,61,74,73,68,77,64,52,58,70]);
     await contract.setAllTeacherCoursePreferences(3, [31,42,43,34,55,76,27,50,55,37]);
+    await contract.setTeacherValue(1, 800);
     console.log("老师3的意愿设置完成");
  
     await contract.setAllTeacherCourseSuitability(4, [73,64,65,66,97,68,79,80,81,63]);
     await contract.setAllTeacherCoursePreferences(4, [42,33,24,45,26,57,58,59,47,70]);
+    await contract.setTeacherValue(1, 1300);
     console.log("老师4的意愿设置完成");
     await contract.setAllTeacherCourseSuitability(5, [62,83,84,75,100,77,71,72,73,74]);
     await contract.setAllTeacherCoursePreferences(5, [43,34,45,45,46,37,58,59,79,49]);
+    await contract.setTeacherValue(1,1100);
     console.log("老师5的意愿设置完成");
 
     await contract.setAllAgentCourseSuitability(1, [75,79,72,91,68,63,70,76,66,50]);
@@ -466,12 +471,12 @@ async function main() {
     // 查看课程分配情况
     await printAssignments();
     // 转移课程
-    await switchThisUser('Teacher', 'teacher_2');
-    await handleTransferCourse(6, 5);
-    console.log("\n");
-    await switchThisUser('Teacher', 'teacher_3');
-    await handleTransferCourse(8, 5);
-    console.log("\n");
+    // await switchThisUser('Teacher', 'teacher_2');
+    // await handleTransferCourse(6, 5);
+    // console.log("\n");
+    // await switchThisUser('Teacher', 'teacher_3');
+    // await handleTransferCourse(8, 5);
+    // console.log("\n");
     // 检查课程冲突
     await checkCourseConflicts(); // 没有冲突
     // 预处理冲突课程

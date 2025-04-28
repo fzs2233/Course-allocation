@@ -94,6 +94,8 @@ const {
 
 const {
     switchCurrentSigner_newinteract,
+    set_ImportanceForAllCourses,
+    save_AverageImportance,
     checkCourseImportance,
     voteForProposal,
     endProposal
@@ -111,19 +113,28 @@ async function switchCurrentSigner_nowTestjs(newAddress, newCurrentName){
 async function initData(){
     await contract.setAllTeacherCourseSuitability(1, [60,72,82,94,70,68,89,96,57,93]);
     await contract.setAllTeacherCoursePreferences(1, [95,84,76,60,93,78,64,60,86,70]);
+    await contract.setTeacherValue(1, 2000);
+    console.log("老师1的意愿设置完成");
     
     await contract.setAllTeacherCourseSuitability(2, [71,62,73,64,85,66,77,88,95,73]);
     await contract.setAllTeacherCoursePreferences(2, [65,74,77,95,67,63,88,66,64,60]);
-    
+    await contract.setTeacherValue(2, 1600);
+    console.log("老师2的意愿设置完成");
+
     await contract.setAllTeacherCourseSuitability(3, [62,61,74,73,68,77,64,72,58,70]);
     await contract.setAllTeacherCoursePreferences(3, [61,72,83,64,95,76,77,70,75,67]);
-    
+    await contract.setTeacherValue(3, 1200);
+    console.log("老师3的意愿设置完成");
+
     await contract.setAllTeacherCourseSuitability(4, [73,64,65,66,97,68,79,80,81,63]);
     await contract.setAllTeacherCoursePreferences(4, [82,63,64,85,66,87,78,79,87,60]);
-    
+    await contract.setTeacherValue(4, 1200);
+    console.log("老师4的意愿设置完成");
+
     await contract.setAllTeacherCourseSuitability(5, [62,83,84,75,100,77,71,72,73,74]);
     await contract.setAllTeacherCoursePreferences(5, [73,64,75,75,76,67,68,79,79,89]);
-    
+    await contract.setTeacherValue(5, 2000);
+    console.log("老师5的意愿设置完成");
     
     await contract.setAllAgentCourseSuitability(1, [75,79,72,51,68,63,70,76,66,50]);
     await contract.setAllAgentCourseSuitability(2, [66,48,53,50,57,54,51,57,58,59]);
@@ -259,7 +270,7 @@ async function begin(){
     // 冲突提案前预处理
     await preprocessConflictCourses();
     for(let k = 1; k <= 8; k++){
-        // 为没有课程的老师创建提案
+        // 创建冲突提案
         let proposal = await createConflictProposal();
         console.log(proposal)
         await autoVote(proposal)

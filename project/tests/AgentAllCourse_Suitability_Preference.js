@@ -94,6 +94,8 @@ const {
 
 const {
     switchCurrentSigner_newinteract,
+    set_ImportanceForAllCourses,
+    save_AverageImportance,
     checkCourseImportance,
     voteForProposal,
     endProposal
@@ -111,18 +113,23 @@ async function switchCurrentSigner_nowTestjs(newAddress, newCurrentName){
 async function initData(){
     await contract.setAllTeacherCourseSuitability(1, [26,44,65,88,40,37,79,92,14,87]);
     await contract.setAllTeacherCoursePreferences(1, [35,54,76,80,93,48,64,17,86,70]);
+    await contract.setTeacherValue(1, 2000);
     console.log("老师1的意愿设置完成");
     await contract.setAllTeacherCourseSuitability(2, [51,32,53,34,85,26,37,48,55,43]);
     await contract.setAllTeacherCoursePreferences(2, [35,74,17,95,57,23,88,46,64,60]);
+    await contract.setTeacherValue(2, 1700);
     console.log("老师2的意愿设置完成");
     await contract.setAllTeacherCourseSuitability(3, [32,31,54,43,68,27,44,72,58,30]);
     await contract.setAllTeacherCoursePreferences(3, [51,32,83,14,95,76,27,70,45,67]);
+    await contract.setTeacherValue(3, 500);
     console.log("老师3的意愿设置完成");
     await contract.setAllTeacherCourseSuitability(4, [43,24,35,36,67,18,39,80,61,33]);
     await contract.setAllTeacherCoursePreferences(4, [22,63,44,85,66,87,38,79,57,60]);
+    await contract.setTeacherValue(4, 800);
     console.log("老师4的意愿设置完成");
     await contract.setAllTeacherCourseSuitability(5, [22,43,44,35,100,37,31,32,33,34]);
     await contract.setAllTeacherCoursePreferences(5, [43,14,75,35,46,67,28,59,59,79]);
+    await contract.setTeacherValue(5, 1000);
     console.log("老师5的意愿设置完成");
 
     await contract.setAllAgentCourseSuitability(1, [75,99,72,91,88,73,70,76,86,100]);
@@ -149,12 +156,12 @@ async function autoVote(proposal){
     // 智能体投票
     await switchThisUser('Agent', 'agent_1');
     let result = await voteForProposal(proposalId);
-    console.log(result)
+    // console.log(result)
     let str = result.message;
     let startIndex = str.indexOf('teacher ') + 'teacher '.length;
     let endIndex = str.indexOf(' successfully');
     let chooseId = str.substring(startIndex, endIndex);
-    console.log(chooseId);
+    // console.log(chooseId);
 
     await switchThisUser('Agent', 'agent_2');
     await voteForProposal(proposalId);
