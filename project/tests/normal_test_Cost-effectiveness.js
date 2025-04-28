@@ -492,20 +492,20 @@ async function main() {
         await printAssignments_gains();
     }
 
-    // for(let k = 1; k <= 1; k++){
-    //     // 为没有课程的老师创建提案
-    //     let proposal = await checkAndCreateProposalForTeacher();
-    //     console.log(proposal);
-    //     await autoVote_teacherWithoutCourse(proposal);
+    for(let k = 1; k <= 1; k++){
+        // 为没有课程的老师创建提案
+        let proposal = await checkAndCreateProposalForTeacher();
+        console.log(proposal);
+        await autoVote_teacherWithoutCourse(proposal);
 
-    //     await switchThisUser('Teacher', `teacher_1`);
-    //     await endProposal(`other`, proposal.proposalId);
-    //     await printAssignments_gains();
-    // }
+        await switchThisUser('Teacher', `teacher_1`);
+        await endProposal(`other`, proposal.proposalId);
+        await printAssignments_gains();
+    }
     console.log(await checkAndCreateProposalForTeacher());
     await printAssignments_gains();
 
-    for(let k = 1; k <= 2; k++){
+    for(let k = 1; k <= 1; k++){
         // 为没有课程的老师创建提案
         let proposal = await proposalForCoursesWithoutAssigned();
         console.log(proposal);

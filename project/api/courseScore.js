@@ -324,7 +324,7 @@ async function calculateCourseTotalScore(courseId) {
     return {
         code: 0,
         message: `课程Id:${courseId}  ${type}Id:${typeId}  适合程度:${suitAfter}`,
-        data: suitAfter,
+        data: suitAfter.toFixed(2),
         classScoreAvg: classScoreAvg.toFixed(2),
         supervisorScoreAvg: supervisorScoreAvg.toFixed(2),
         teacherScoreAvg: teacherScoreAvg.toFixed(2),

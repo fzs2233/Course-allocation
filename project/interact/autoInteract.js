@@ -560,8 +560,8 @@ async function printAllScore() {
             "班级评分": classScore.join(', '),
             "督导评分": supervisorScore.join(', '),
             "薪水": salary,
-            "总分": totalScore,
             "能力意愿加权":gain_weight,
+            "总分": totalScore,
             "性价比":Math.round(gain_weight/salary*1000),
             "实际性价比":Math.round(totalScore/salary*1000)
         });
