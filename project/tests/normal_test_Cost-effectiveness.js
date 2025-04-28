@@ -385,6 +385,12 @@ async function initData(){
     console.log("老师5的意愿设置完成");
     await contract.setAllAgentCourseSuitability(1, [75,79,72,91,68,63,70,76,66,50]);
     await contract.setAllAgentCourseSuitability(2, [66,48,53,50,87,54,51,57,79,69]);
+
+    await contract.setTeacherValue(1, 800);
+    await contract.setTeacherValue(2, 1300);
+    await contract.setTeacherValue(3, 900);
+    await contract.setTeacherValue(4, 1200);
+    await contract.setTeacherValue(5, 1100);
 }
 
 async function main() {

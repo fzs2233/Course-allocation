@@ -360,13 +360,13 @@ async function switchCurrentSigner_everyTest(newAddress, newCurrentName) {
 }
 
 async function initData(){
-    await contract.setAllTeacherCourseSuitability(1, [80,81,82,94,70,68,89,96,57,93]);
-    await contract.setAllTeacherCoursePreferences(1, [95,94,66,62,93,48,44,40,46,40]);
+    await contract.setAllTeacherCourseSuitability(1, [60,61,62,74,52,68,89,96,57,93]);
+    await contract.setAllTeacherCoursePreferences(1, [65,64,66,62,63,48,44,40,46,40]);
 
-    await contract.setAllTeacherCourseSuitability(2, [71,62,73,64,85,86,87,88,95,73]);
-    await contract.setAllTeacherCoursePreferences(2, [35,44,47,55,47,83,88,66,64,80]);
+    await contract.setAllTeacherCourseSuitability(2, [71,62,73,64,85,76,77,78,75,63]);
+    await contract.setAllTeacherCoursePreferences(2, [35,44,47,55,47,63,68,66,64,60]);
 
-    await contract.setAllTeacherCourseSuitability(3, [62,61,74,73,68,77,64,72,58,70]);
+    await contract.setAllTeacherCourseSuitability(3, [62,61,74,73,78,77,64,72,58,70]);
     await contract.setAllTeacherCoursePreferences(3, [31,42,43,34,55,46,47,40,45,37]);
 
     await contract.setAllTeacherCourseSuitability(4, [73,64,65,66,97,68,79,80,81,63]);
@@ -378,6 +378,12 @@ async function initData(){
 
     await contract.setAllAgentCourseSuitability(1, [75,79,72,51,68,63,70,76,66,50]);
     await contract.setAllAgentCourseSuitability(2, [66,48,53,50,57,54,51,57,58,59]);
+
+    await contract.setTeacherValue(1, 800);
+    await contract.setTeacherValue(2, 1200);
+    await contract.setTeacherValue(3, 1000);
+    await contract.setTeacherValue(4, 1100);
+    await contract.setTeacherValue(5, 1300);
 }
 
 async function main() {
@@ -434,7 +440,7 @@ async function main() {
     // 预处理冲突课程
     await preprocessConflictCourses();
 
-    for(let k = 1; k <= 2; k++){
+    for(let k = 1; k <= 1; k++){
         // 为没有课程的老师创建提案
         let proposal = await checkAndCreateProposalForTeacher();
         console.log(proposal)
@@ -448,7 +454,7 @@ async function main() {
     await printAssignments_gains();
 
     for(let k = 1; k <= 2; k++){
-        // 为没有课程的老师创建提案
+        // 为没有老师的课程创建提案
         let proposal = await proposalForCoursesWithoutAssigned();
         console.log(proposal)
         await autoVote_coursesWithoutTeacher(proposal)

@@ -363,31 +363,32 @@ async function switchCurrentSigner_everyTest(newAddress, newCurrentName) {
 async function initData(){
     await contract.setAllTeacherCourseSuitability(1, [80,81,82,94,70,68,89,96,57,93]);
     await contract.setAllTeacherCoursePreferences(1, [95,61,94,20,53,78,44,40,46,40]);
-    await contract.setTeacherSuitabilityWeight(1,1);
     console.log("老师1的意愿设置完成");
 
     await contract.setAllTeacherCourseSuitability(2, [71,62,73,64,85,66,77,88,95,73]);
     await contract.setAllTeacherCoursePreferences(2, [35,44,47,55,47,100,48,66,64,40]);
-    await contract.setTeacherSuitabilityWeight(2,2);
     console.log("老师2的意愿设置完成");
 
     await contract.setAllTeacherCourseSuitability(3, [62,61,74,73,68,77,64,52,58,70]);
     await contract.setAllTeacherCoursePreferences(3, [31,42,43,34,55,76,27,60,75,37]);
-    await contract.setTeacherSuitabilityWeight(3,3);
     console.log("老师3的意愿设置完成");
 
     await contract.setAllTeacherCourseSuitability(4, [73,64,65,66,97,68,79,80,81,63]);
     await contract.setAllTeacherCoursePreferences(4, [42,33,24,45,26,87,48,79,47,10]);
-    await contract.setTeacherSuitabilityWeight(4,4);
     console.log("老师4的意愿设置完成");
 
     await contract.setAllTeacherCourseSuitability(5, [62,83,84,75,100,77,71,72,73,74]);
-    await contract.setAllTeacherCoursePreferences(5, [43,34,45,45,46,37,48,59,79,49]);
-    await contract.setTeacherSuitabilityWeight(5,5);
+    await contract.setAllTeacherCoursePreferences(5, [43,54,45,45,46,37,48,59,79,49]);
     console.log("老师5的意愿设置完成");
 
     await contract.setAllAgentCourseSuitability(1, [75,79,72,91,68,63,70,76,66,50]);
     await contract.setAllAgentCourseSuitability(2, [66,48,53,50,87,54,51,57,79,69]);
+
+    await contract.setTeacherValue(1, 800);
+    await contract.setTeacherValue(2, 1300);
+    await contract.setTeacherValue(3, 900);
+    await contract.setTeacherValue(4, 1200);
+    await contract.setTeacherValue(5, 1100);
 }
 
 async function main() {
@@ -487,7 +488,7 @@ async function main() {
     await printAssignments_gains();
 
     for(let k = 1; k <= 3; k++){
-        // 为没有课程的老师创建提案
+        // 创建冲突提案
         let proposal = await createConflictProposal();
         console.log(proposal);
         await autoVote_conflictProposal(proposal);
@@ -501,7 +502,7 @@ async function main() {
     await printAssignments_gains();
 
     for(let k = 1; k <= 2; k++){
-        // 为没有课程的老师创建提案
+        // 为没有老师的课程创建提案
         let proposal = await proposalForCoursesWithoutAssigned();
         console.log(proposal);
         await autoVote_coursesWithoutTeacher(proposal);
