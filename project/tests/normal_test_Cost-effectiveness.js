@@ -221,7 +221,7 @@ async function autoVote_coursesWithoutTeacher(proposal){
 
 const { ethers } = require("ethers");
 const fs = require("fs");
-require('dotenv').config({ path: './interact/.env' });
+require('dotenv').config({ path: './interact/.env.visible' });
 const Web3 = require("web3");
 const web3 = new Web3("http://127.0.0.1:7545");
 
