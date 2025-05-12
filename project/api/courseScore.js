@@ -11,9 +11,21 @@ const voteData = JSON.parse(fs.readFileSync("./build/contracts/Vote.json", "utf8
 const classData = JSON.parse(fs.readFileSync("./build/contracts/IStudentVote.json", "utf8"));
 
 // 提取合约地址和 ABI
-const contractAddress = process.env.contractAddress;
-const voteAddress = process.env.VotingContractAddress;
-const classContractAddress = process.env.classAddress;
+// const contractAddress = process.env.contractAddress;
+// const voteAddress = process.env.VotingContractAddress;
+// const classContractAddress = process.env.classAddress;
+
+const {
+  ContractAddress,
+  VotingContractAddress,
+  classAddress
+} = require("../interact/contractConfig");
+const contractAddress = ContractAddress;
+const voteAddress = VotingContractAddress;
+const classContractAddress =classAddress;
+
+
+
 const contractABI = contractData.abi;
 const voteABI = voteData.abi;
 const classABI = classData.abi;

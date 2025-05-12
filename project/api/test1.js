@@ -10,8 +10,16 @@ const contractData = JSON.parse(fs.readFileSync("./build/contracts/ICourseAlloca
 const teacherVoteData = JSON.parse(fs.readFileSync("./build/contracts/TeacherVote.json", "utf8"));
 
 // Extract addresses and ABI
-const contractAddress = process.env.contractAddress;
-const teacherVoteAddress = process.env.teachervoteAddress;
+// const contractAddress = process.env.contractAddress;
+// const teacherVoteAddress = process.env.teachervoteAddress;
+
+const {
+  ContractAddress,
+  teachervoteAddress
+} = require("../interact/contractConfig");
+const contractAddress = ContractAddress;
+const teacherVoteAddress =teachervoteAddress;
+
 const contractABI = contractData.abi;
 const teacherVoteABI = teacherVoteData.abi;
 
