@@ -13,7 +13,7 @@
         <h2>主要功能</h2>
         <el-collapse>
           <el-collapse-item title="课程初始化" name="1">
-            <p>系统管理员可以创建课程，设置课程重要性和难度等属性。</p>
+            <p>可以创建课程，设置课程重要性和难度等属性。</p>
           </el-collapse-item>
           <el-collapse-item title="教师注册" name="2">
             <p>教师可以在系统中注册，设置研究方向、发表论文数量，以及课程偏好等信息。</p>

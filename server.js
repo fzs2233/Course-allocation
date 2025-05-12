@@ -21,8 +21,8 @@ app.use(express.static(path.join(__dirname, 'frontend/dist')));
 app.post('/initialize', async (req, res) => {
   try {
     console.log('开始初始化系统数据...');
-    // 这里可以添加调用initializeData的逻辑，但暂时返回成功响应
-    // await initializeData();
+    // 注意：直接返回成功响应，而不是调用initializeData函数
+    // 实际项目中，这里应该调用相应的初始化函数
     console.log('系统数据初始化成功!');
     res.json({ code: 0, message: '系统数据初始化成功' });
   } catch (error) {
@@ -35,8 +35,7 @@ app.post('/initialize', async (req, res) => {
 app.post('/api/initialize', async (req, res) => {
   try {
     console.log('通过/api前缀开始初始化系统数据...');
-    // 这里可以添加调用initializeData的逻辑，但暂时返回成功响应
-    // await initializeData();
+    // 同样直接返回成功响应
     console.log('系统数据初始化成功!');
     res.json({ code: 0, message: '系统数据初始化成功' });
   } catch (error) {
