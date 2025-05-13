@@ -3,6 +3,9 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 
+// 导入API路由
+const contractConfigRouter = require('./project/api/contractConfig');
+
 // 创建Express应用
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,6 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'frontend/dist')));
 
 // API路由
+app.use('/api', contractConfigRouter);  // 添加合约配置路由
 
 // 初始化系统数据
 app.post('/initialize', async (req, res) => {
@@ -87,7 +91,62 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
 });
 
+// 删除src文件夹下的contractConfig.js，如果存在
+const srcConfigPath = path.join(__dirname, 'src/contractConfig.js');
+if (fs.existsSync(srcConfigPath)) {
+  fs.unlinkSync(srcConfigPath);
+  console.log('删除了重复的src/contractConfig.js文件');
+}
+
 // 启动服务器
 app.listen(PORT, () => {
   console.log(`服务器运行在 http://localhost:${PORT}`);
+  
+  // 确保frontend/src/contractConfig.js存在并正确配置
+  const frontendConfigDir = path.join(__dirname, 'frontend/src');
+  const frontendConfigPath = path.join(frontendConfigDir, 'contractConfig.js');
+  
+  // 确保目录存在
+  if (!fs.existsSync(frontendConfigDir)) {
+    fs.mkdirSync(frontendConfigDir, { recursive: true });
+  }
+  
+  // 确保前端配置文件内容正确（使用修改后的基于axios的版本）
+  const configContent = `// contractConfig.js
+import axios from 'axios';
+
+// 创建一个对象来存储合约配置
+const contractAddresses = {
+  ContractAddress: "",
+  VotingContractAddress: "",
+  classAddress: "",
+  teachervoteAddress: ""
+};
+
+// 从后端获取最新的合约配置
+async function loadContractConfig() {
+  try {
+    const response = await axios.get('/api/contract-config');
+    if (response.data.success) {
+      const config = response.data.data;
+      // 更新contractAddresses对象
+      Object.keys(config).forEach(key => {
+        contractAddresses[key] = config[key];
+      });
+      console.log('成功加载合约配置');
+    } else {
+      console.error('加载合约配置失败');
+    }
+  } catch (error) {
+    console.error('获取合约配置出错:', error);
+  }
+}
+
+// 应用启动时加载合约配置
+loadContractConfig();
+
+export default contractAddresses;`;
+
+  fs.writeFileSync(frontendConfigPath, configContent);
+  console.log('已更新前端合约配置文件');
 }); 

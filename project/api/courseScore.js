@@ -1,14 +1,14 @@
 const { ethers } = require("ethers");
 const fs = require("fs");
-
-const inquirer = require('inquirer');
 const Web3 = require("web3");
+const inquirer = require('inquirer');
+const path = require('path');
 const web3 = new Web3("http://127.0.0.1:7545");
 
 // 读取 JSON 文件
-const contractData = JSON.parse(fs.readFileSync("./build/contracts/ICourseAllocation.json", "utf8"));
-const voteData = JSON.parse(fs.readFileSync("./build/contracts/Vote.json", "utf8"));
-const classData = JSON.parse(fs.readFileSync("./build/contracts/IStudentVote.json", "utf8"));
+const contractData = JSON.parse(fs.readFileSync(path.join(__dirname, '../build/contracts/ICourseAllocation.json'), "utf8"));
+const voteData = JSON.parse(fs.readFileSync(path.join(__dirname, '../build/contracts/Vote.json'), "utf8"));
+const classData = JSON.parse(fs.readFileSync(path.join(__dirname, '../build/contracts/IStudentVote.json'), "utf8"));
 
 // 提取合约地址和 ABI
 // const contractAddress = process.env.contractAddress;
