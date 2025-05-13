@@ -5,6 +5,8 @@ const path = require('path');
 
 // 导入API路由
 const contractConfigRouter = require('./project/api/contractConfig');
+const contractABIRouter = require('./project/api/contractABI');
+const initializeRouter = require('./project/api/initialize');
 
 // 创建Express应用
 const app = express();
@@ -19,72 +21,18 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'frontend/dist')));
 
 // API路由
-app.use('/api', contractConfigRouter);  // 添加合约配置路由
+app.use('/api', [
+  contractConfigRouter,
+  contractABIRouter,
+  initializeRouter
+]);
 
-// 初始化系统数据
-app.post('/initialize', async (req, res) => {
-  try {
-    console.log('开始初始化系统数据...');
-    // 注意：直接返回成功响应，而不是调用initializeData函数
-    // 实际项目中，这里应该调用相应的初始化函数
-    console.log('系统数据初始化成功!');
-    res.json({ code: 0, message: '系统数据初始化成功' });
-  } catch (error) {
-    console.error('初始化系统数据时出错:', error);
-    res.status(500).json({ code: -1, message: '初始化系统数据失败: ' + error.message });
-  }
-});
-
-// 为了支持直接通过/api前缀访问
-app.post('/api/initialize', async (req, res) => {
-  try {
-    console.log('通过/api前缀开始初始化系统数据...');
-    // 同样直接返回成功响应
-    console.log('系统数据初始化成功!');
-    res.json({ code: 0, message: '系统数据初始化成功' });
-  } catch (error) {
-    console.error('初始化系统数据时出错:', error);
-    res.status(500).json({ code: -1, message: '初始化系统数据失败: ' + error.message });
-  }
-});
-
-// 获取合约ABI
-app.get('/contract-abi', (req, res) => {
-  try {
-    // 模拟返回ABI数据
-    res.json({
-      code: 0,
-      data: {
-        courseAllocationABI: [],
-        voteABI: [],
-        studentVoteABI: [],
-        teacherVoteABI: []
-      }
-    });
-  } catch (error) {
-    console.error('获取合约ABI时出错:', error);
-    res.status(500).json({ code: -1, message: '获取合约ABI失败: ' + error.message });
-  }
-});
-
-// 同样为ABI提供/api前缀路由
-app.get('/api/contract-abi', (req, res) => {
-  try {
-    // 模拟返回ABI数据
-    res.json({
-      code: 0,
-      data: {
-        courseAllocationABI: [],
-        voteABI: [],
-        studentVoteABI: [],
-        teacherVoteABI: []
-      }
-    });
-  } catch (error) {
-    console.error('获取合约ABI时出错:', error);
-    res.status(500).json({ code: -1, message: '获取合约ABI失败: ' + error.message });
-  }
-});
+// 为了向后兼容，保留旧的直接路由
+app.use('/', [
+  contractConfigRouter,
+  contractABIRouter,
+  initializeRouter
+]);
 
 // 前端路由处理
 app.get('*', (req, res) => {

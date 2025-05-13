@@ -31,4 +31,4 @@ async function loadContractConfig() {
 // 应用启动时加载合约配置
 loadContractConfig();
 
-export default contractAddresses; 
+export default contractAddresses;

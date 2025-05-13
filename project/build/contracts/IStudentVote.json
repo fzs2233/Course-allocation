@@ -30119,12 +30119,12 @@
     "5777": {
       "events": {},
       "links": {},
-      "address": "0x95FF8676517A698c61310e092A4Bd367F1a0630C",
-      "transactionHash": "0x6df18c8f73c29870fde435ff742b6ba9c3ee34a9c7d5802bca798d559f3fbc24"
+      "address": "0x60120f11373751f8bBb5DfE4B5BCf3AAF9E2DED6",
+      "transactionHash": "0xc7fc27a5c20c36637345b8824ce1bebac0ebfd993115603b097382758e9a0a40"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2025-05-13T07:32:26.040Z",
+  "updatedAt": "2025-05-13T13:49:15.438Z",
   "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",
