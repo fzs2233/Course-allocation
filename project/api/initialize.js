@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { initializeData } = require('./register');
-const { checkCourseImportance } = require('../interact/newinteract');
+const { checkCourseImportance, checkTeacherSuitability } = require('../interact/newinteract');
 
 // 初始化系统数据API端点
 router.post('/initialize', async (req, res) => {
@@ -26,6 +26,18 @@ router.get('/course-importance', async (req, res) => {
   } catch (error) {
     console.error('获取课程重要程度时出错:', error);
     res.status(500).json({ code: -1, message: '获取课程重要程度失败: ' + error.message });
+  }
+});
+
+// 获取教师对课程适合程度API端点
+router.get('/teacher-suitability', async (req, res) => {
+  try {
+    console.log('获取教师对课程适合程度...');
+    const teacherData = await checkTeacherSuitability();
+    res.json({ code: 0, data: teacherData });
+  } catch (error) {
+    console.error('获取教师对课程适合程度时出错:', error);
+    res.status(500).json({ code: -1, message: '获取教师对课程适合程度失败: ' + error.message });
   }
 });
 

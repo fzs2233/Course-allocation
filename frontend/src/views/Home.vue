@@ -36,10 +36,20 @@
           <el-button 
             type="primary" 
             @click="getCourseImportance"
-            :loading="loading"
+            :loading="loadingCourseData"
             :disabled="!initialized"
           >
             查看课程重要程度
+          </el-button>
+          
+          <!-- 添加查看教师对课程适合程度的按钮 -->
+          <el-button 
+            type="warning" 
+            @click="getTeacherSuitability"
+            :loading="loadingTeacherData"
+            :disabled="!initialized"
+          >
+            查看教师适合程度
           </el-button>
         </div>
         <el-result 
@@ -57,6 +67,21 @@
             <el-table-column prop="重要程度" label="重要程度" width="120" />
             <el-table-column prop="智能体1对课程的适合程度" label="智能体1适合程度" />
             <el-table-column prop="智能体2对课程的适合程度" label="智能体2适合程度" />
+          </el-table>
+        </div>
+        
+        <!-- 教师对课程适合程度数据表格 -->
+        <div v-if="teacherData.length > 0" class="data-table-container">
+          <h2>教师对课程适合程度</h2>
+          <el-table :data="teacherData" border style="width: 100%">
+            <el-table-column prop="课程ID" label="课程ID" width="80" />
+            <el-table-column prop="课程名称" label="课程名称" width="200" />
+            <el-table-column 
+              v-for="(_, index) in getTeacherColumns()" 
+              :key="index"
+              :prop="'教师' + (index + 1) + ' suit'"
+              :label="'教师' + (index + 1)"
+            />
           </el-table>
         </div>
       </div>
@@ -81,8 +106,21 @@ export default {
     const initializing = ref(false)
     const initialized = ref(false)
     const connectError = ref('')
-    const loading = ref(false)
+    const loadingCourseData = ref(false)
+    const loadingTeacherData = ref(false)
     const courseData = ref([])
+    const teacherData = ref([])
+
+    // 获取教师列数（动态生成表头）
+    const getTeacherColumns = () => {
+      if (teacherData.value.length === 0) return []
+      
+      // 从第一个课程数据中提取教师数量
+      const firstCourse = teacherData.value[0]
+      const teacherCount = Object.keys(firstCourse).filter(key => key.includes('教师') && key.includes('suit')).length
+      
+      return Array(teacherCount).fill(0)
+    }
 
     // 从Vuex获取状态
     const account = computed(() => store.state.account)
@@ -140,7 +178,7 @@ export default {
     
     // 获取课程重要程度和智能体适合程度
     const getCourseImportance = async () => {
-      loading.value = true
+      loadingCourseData.value = true
       try {
         const response = await api.getCourseImportance()
         console.log('课程重要程度数据:', response)
@@ -154,7 +192,27 @@ export default {
         console.error('获取课程重要程度错误:', error)
         alert('获取课程重要程度时发生错误: ' + error.message)
       } finally {
-        loading.value = false
+        loadingCourseData.value = false
+      }
+    }
+    
+    // 获取教师对课程适合程度
+    const getTeacherSuitability = async () => {
+      loadingTeacherData.value = true
+      try {
+        const response = await api.getTeacherSuitability()
+        console.log('教师对课程适合程度数据:', response)
+        
+        if (response.code === 0) {
+          teacherData.value = response.data
+        } else {
+          alert('获取教师对课程适合程度失败: ' + response.message)
+        }
+      } catch (error) {
+        console.error('获取教师对课程适合程度错误:', error)
+        alert('获取教师对课程适合程度时发生错误: ' + error.message)
+      } finally {
+        loadingTeacherData.value = false
       }
     }
 
@@ -170,13 +228,17 @@ export default {
       connectMetaMask,
       initializeData,
       getCourseImportance,
+      getTeacherSuitability,
+      getTeacherColumns,
       courseData,
+      teacherData,
       account,
       isConnected,
       connecting,
       initializing,
       initialized,
-      loading,
+      loadingCourseData,
+      loadingTeacherData,
       connectError
     }
   }

@@ -1,8 +1,8 @@
 // interact/contractConfig.js
 
 module.exports = {
-  ContractAddress: "0xf80878F88Fdc360AE7fff3edA14A17eB68Dd6846",
-  VotingContractAddress: "0x292130A47ebDD3cd848e13354AB0E40f1a400238",
-  classAddress: "0xb6a10F8640E0291fD94F006468e5a2759b58584D",
-  teachervoteAddress: "0x8A2483c0395f7AE3B483012af3d2D025a7fE9bdF"
+  ContractAddress: "0xaE9c3DDa743064943c84078253279f29aC26849D",
+  VotingContractAddress: "0x551c1c1C2b36dbF259d28c62eE50d3E675C4b4D0",
+  classAddress: "0xe6405Fa8e6eeF66606d9EdF9454bBcc23178bB4A",
+  teachervoteAddress: "0xA2d9E0195f99830a2592ff881F979c755603f1B6"
 };

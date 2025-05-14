@@ -623,6 +623,7 @@ async function checkTeacherSuitability() {
     }
     console.log('\n目前课程的重要程度:');
     console.table(assignments); // 打印表格
+    return assignments; // 返回数据以供API使用
 }
 
 async function giveExamineScore() {
@@ -965,5 +966,6 @@ begin();
 
 // 导出函数供API使用
 module.exports = {
-  checkCourseImportance
+  checkCourseImportance,
+  checkTeacherSuitability
 };

@@ -53,5 +53,10 @@ export default {
   // 获取课程重要程度和智能体适合程度
   getCourseImportance() {
     return api.get('/course-importance');
+  },
+  
+  // 获取教师对课程适合程度
+  getTeacherSuitability() {
+    return api.get('/teacher-suitability');
   }
 }; 
