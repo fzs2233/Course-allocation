@@ -4,10 +4,12 @@ const fs = require("fs");
 const Web3 = require("web3");
 const web3 = new Web3("http://127.0.0.1:7545");
 const inquirer = require('inquirer');
+const path = require('path');
 
-// Load JSON files
-const contractData = JSON.parse(fs.readFileSync("./build/contracts/ICourseAllocation.json", "utf8"));
-const teacherVoteData = JSON.parse(fs.readFileSync("./build/contracts/TeacherVote.json", "utf8"));
+
+// 读取 JSON 文件
+const contractData = JSON.parse(fs.readFileSync(path.join(__dirname, '../build/contracts/ICourseAllocation.json'), "utf8"));
+const teacherVoteData = JSON.parse(fs.readFileSync(path.join(__dirname, '../build/contracts/TeacherVote.json'), "utf8"));
 
 // Extract addresses and ABI
 // const contractAddress = process.env.contractAddress;

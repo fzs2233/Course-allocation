@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { initializeData } = require('./register');
+const { checkCourseImportance } = require('../interact/newinteract');
 
 // 初始化系统数据API端点
 router.post('/initialize', async (req, res) => {
@@ -13,6 +14,18 @@ router.post('/initialize', async (req, res) => {
   } catch (error) {
     console.error('初始化系统数据时出错:', error);
     res.status(500).json({ code: -1, message: '初始化系统数据失败: ' + error.message });
+  }
+});
+
+// 获取课程重要程度和智能体适合程度API端点
+router.get('/course-importance', async (req, res) => {
+  try {
+    console.log('获取课程重要程度和智能体适合程度...');
+    const courseData = await checkCourseImportance();
+    res.json({ code: 0, data: courseData });
+  } catch (error) {
+    console.error('获取课程重要程度时出错:', error);
+    res.status(500).json({ code: -1, message: '获取课程重要程度失败: ' + error.message });
   }
 });
 

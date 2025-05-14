@@ -48,5 +48,10 @@ export default {
   // 切换用户
   switchUser(data) {
     return api.post('/switch-user', data);
+  },
+  
+  // 获取课程重要程度和智能体适合程度
+  getCourseImportance() {
+    return api.get('/course-importance');
   }
 }; 

@@ -31,6 +31,16 @@
             一键初始化系统数据
           </el-button>
           <el-button type="info" @click="$router.push('/about')">关于系统</el-button>
+          
+          <!-- 添加查看课程重要程度和智能体适合程度的按钮 -->
+          <el-button 
+            type="primary" 
+            @click="getCourseImportance"
+            :loading="loading"
+            :disabled="!initialized"
+          >
+            查看课程重要程度
+          </el-button>
         </div>
         <el-result 
           v-if="initialized" 
@@ -38,6 +48,17 @@
           title="初始化成功" 
           sub-title="系统数据已成功初始化，可以开始使用系统功能"
         />
+        
+        <!-- 课程重要程度和智能体适合程度数据表格 -->
+        <div v-if="courseData.length > 0" class="data-table-container">
+          <h2>课程重要程度和智能体适合程度</h2>
+          <el-table :data="courseData" border style="width: 100%">
+            <el-table-column prop="课程ID" label="课程ID" width="100" />
+            <el-table-column prop="重要程度" label="重要程度" width="120" />
+            <el-table-column prop="智能体1对课程的适合程度" label="智能体1适合程度" />
+            <el-table-column prop="智能体2对课程的适合程度" label="智能体2适合程度" />
+          </el-table>
+        </div>
       </div>
     </el-card>
   </div>
@@ -60,6 +81,8 @@ export default {
     const initializing = ref(false)
     const initialized = ref(false)
     const connectError = ref('')
+    const loading = ref(false)
+    const courseData = ref([])
 
     // 从Vuex获取状态
     const account = computed(() => store.state.account)
@@ -114,6 +137,26 @@ export default {
         initializing.value = false
       }
     }
+    
+    // 获取课程重要程度和智能体适合程度
+    const getCourseImportance = async () => {
+      loading.value = true
+      try {
+        const response = await api.getCourseImportance()
+        console.log('课程重要程度数据:', response)
+        
+        if (response.code === 0) {
+          courseData.value = response.data
+        } else {
+          alert('获取课程重要程度失败: ' + response.message)
+        }
+      } catch (error) {
+        console.error('获取课程重要程度错误:', error)
+        alert('获取课程重要程度时发生错误: ' + error.message)
+      } finally {
+        loading.value = false
+      }
+    }
 
     // 组件挂载时执行
     onMounted(async () => {
@@ -126,11 +169,14 @@ export default {
     return {
       connectMetaMask,
       initializeData,
+      getCourseImportance,
+      courseData,
       account,
       isConnected,
       connecting,
       initializing,
       initialized,
+      loading,
       connectError
     }
   }
@@ -162,5 +208,15 @@ export default {
   display: flex;
   gap: 15px;
   margin: 20px 0;
+}
+
+.data-table-container {
+  margin-top: 30px;
+  width: 100%;
+}
+
+.data-table-container h2 {
+  margin-bottom: 15px;
+  text-align: center;
 }
 </style> 
